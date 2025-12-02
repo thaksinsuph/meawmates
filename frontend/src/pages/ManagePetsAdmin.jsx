@@ -1,0 +1,96 @@
+import { useEffect, useState } from "react";
+import api from "../api";
+
+export default function ManagePetsAdmin() {
+  const [pets, setPets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadPets = async () => {
+    try {
+      const res = await api.get("/api/admin/pets");
+      setPets(res.data);
+    } catch (err) {
+      console.error("Pets load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deletePet = async (id) => {
+    if (!confirm("Delete this pet?")) return;
+    try {
+      await api.delete(`/api/admin/pets/${id}`);
+      loadPets();
+    } catch (err) {
+      console.error("Delete pet error:", err);
+      alert("Failed to delete pet");
+    }
+  };
+
+  useEffect(() => {
+    loadPets();
+  }, []);
+
+  return (
+    <div>
+      <h2 className="text-lg md:text-xl font-semibold text-purple-600 mb-4 flex items-center gap-2">
+        <img src="/images/cat.png" className="w-6 h-6 object-contain" />
+         Manage Pets
+      </h2>
+
+      {loading ? (
+        <p className="text-sm text-gray-500">Loading pets…</p>
+      ) : pets.length === 0 ? (
+        <p className="text-sm text-gray-500">No pets found.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {pets.map((p) => (
+            <div
+              key={p._id}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3"
+            >
+              {p.image && (
+                <img
+                  src={
+                    p.image.startsWith("data:")
+                      ? p.image
+                      : `http://localhost:4000${p.image.replace(/\\/g, "/")}`
+                  }
+                  className="w-full h-80 object-cover rounded-xl"
+                />
+              )}
+
+              <div>
+                <p className="font-semibold text-gray-800 text-sm">
+                  {p.name || "Unnamed"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Breed: {p.breed || "-"} • Color: {p.color || "-"}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Slot #{p.slot} • Age: {p.age ?? "-"}
+                </p>
+              </div>
+
+              <div className="flex justify-between items-center mt-2">
+                <div className="text-xs text-gray-500">
+                  Owner:{" "}
+                  <span className="font-medium">
+                    {p.user?.email || p.user?.name || "Unknown"}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => deletePet(p._id)}
+                  className="px-3 py-1.5 rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

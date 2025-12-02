@@ -1,0 +1,24 @@
+[
+  {
+    "id": "48e6fa83-423a-46ea-871d-1231cc1217d7",
+    "name": "Admin",
+    "email": "admin@meow.com",
+    "passwordHash": "$2a$10$gaKHkBvjMXRuY1y.W.xwsu4uMZEvdHSZ7gFa/eOYEWhi.bSZWsvja",
+    "role": "admin"
+  },
+  {
+    "id": "7d83850a-61ab-4bd2-bcb1-a64263eddcf8",
+    "name": "User A",
+    "email": "a@meow.com",
+    "passwordHash": "$2a$10$s614OWbaBJUTMf37sRHx3OcuR5hAmhQdkun/ab7STOIYJ41Dv2IF2",
+    "role": "user"
+  },
+  {
+    "id": "be72cf5f-6e92-45da-98b5-2e9323f85c23",
+    "name": "Thaksin Suphachokpongsiri",
+    "email": "hanggy2546@gmail.com",
+    "passwordHash": "$2a$10$pLMoDQcIQHMoBHXKA4FS1Oag9G2ikZMiNRQShWVRidCygNUnQ6qny",
+    "role": "user",
+    "avatar": ""
+  }
+]
