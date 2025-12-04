@@ -17,7 +17,6 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 console.log("🔍 FRONTEND_URL =", FRONTEND_URL);
 console.log("🔍 JWT_SECRET =", process.env.JWT_SECRET);
-console.log("🔍 GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
 
 // Fix dirname (ESM)
 const __filename = fileURLToPath(import.meta.url);
@@ -41,16 +40,20 @@ import reportRoutes from "./routes/report.routes.js";
 const app = express();
 
 /* ======================================================
-      CORS (Production Ready)
+      CORS (รองรับ Credential + OAuth)
 ====================================================== */
 app.use(
   cors({
-    origin: [FRONTEND_URL, "http://localhost:5173"],
+    origin: FRONTEND_URL,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   })
 );
 
-app.use(express.json({ limit: "20mb" }));
+/* ======================================================
+      JSON Parser
+====================================================== */
+app.use(express.json({ limit: "20mb", extended: true }));
 
 /* ======================================================
       Session สำหรับ OAuth

@@ -10,15 +10,12 @@ export default function Layout() {
   const location = useLocation();
   const profileRef = useRef();
 
-  /* 🔔 Notifications */
   const [notiOpen, setNotiOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unseenCount, setUnseenCount] = useState(0);
   const notiRef = useRef();
 
-  /* ===============================================
-     LOAD USER
-  =============================================== */
+  /* LOAD USER */
   useEffect(() => {
     const fetchUser = async () => {
       const token = getToken();
@@ -39,9 +36,7 @@ export default function Layout() {
     fetchUser();
   }, [location]);
 
-  /* ===============================================
-     LOAD NOTIFICATIONS
-  =============================================== */
+  /* LOAD NOTIFICATIONS */
   useEffect(() => {
     if (!user?._id) return;
 
@@ -53,61 +48,45 @@ export default function Layout() {
         );
 
         setNotifications(res.data || []);
-
-        const unread = res.data.filter((n) => !n.read).length;
-        setUnseenCount(unread);
+        setUnseenCount(res.data.filter((n) => !n.read).length);
       } catch (err) {
-        console.error("❌ Load notifications error:", err);
+        console.error("Load notifications error:", err);
       }
     };
 
     loadNoti();
   }, [user?._id]);
 
-  /* ===============================================
-     MARK AS READ
-  =============================================== */
+  /* MARK SEEN */
   const toggleNoti = async () => {
     const newState = !notiOpen;
     setNotiOpen(newState);
 
     if (!notiOpen) {
-      try {
-        await axios.post(
-          "http://localhost:4000/api/users/me/notifications/read",
-          {},
-          { headers: { Authorization: `Bearer ${getToken()}` } }
-        );
-
-        setUnseenCount(0);
-      } catch (err) {
-        console.error("❌ mark seen error:", err);
-      }
-    }
-  };
-
-  /* ===============================================
-     CLEAR ALL NOTIFICATIONS
-  =============================================== */
-  const handleClearNoti = async (e) => {
-    // กันไม่ให้คลิก Clear All ไป trigger ปิด dropdown
-    e.stopPropagation();
-    try {
       await axios.post(
-        "http://localhost:4000/api/users/me/notifications/clear",
+        "http://localhost:4000/api/users/me/notifications/read",
         {},
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
-      setNotifications([]);
       setUnseenCount(0);
-    } catch (err) {
-      console.error("❌ clear noti error:", err);
     }
   };
 
-  /* ===============================================
-     CLOSE MENUS
-  =============================================== */
+  /* CLEAR ALL NOTIFICATIONS */
+  const handleClearNoti = async (e) => {
+    e.stopPropagation();
+
+    await axios.post(
+      "http://localhost:4000/api/users/me/notifications/clear",
+      {},
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+
+    setNotifications([]);
+    setUnseenCount(0);
+  };
+
+  /* CLOSE MENUS WHEN CLICK OUTSIDE */
   useEffect(() => {
     const handleClick = (e) => {
       if (!profileRef.current?.contains(e.target)) setProfileOpen(false);
@@ -118,9 +97,7 @@ export default function Layout() {
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
-  /* ===============================================
-     AUTO LOGOUT
-  =============================================== */
+  /* AUTO LOGOUT */
   useEffect(() => {
     const timer = setInterval(() => {
       if (!getUser()) {
@@ -128,12 +105,11 @@ export default function Layout() {
         window.location.href = "/login";
       }
     }, 60000);
+
     return () => clearInterval(timer);
   }, []);
 
-  /* ===============================================
-     SYNC USER BETWEEN TABS
-  =============================================== */
+  /* SYNC BETWEEN TABS */
   useEffect(() => {
     const syncUser = () => setUser(getUser());
     window.addEventListener("storage", syncUser);
@@ -145,7 +121,6 @@ export default function Layout() {
     window.location.href = "/login";
   };
 
-  /* FIX AVATAR */
   const fixAvatar = (av) => {
     if (!av) return "/images/default-avatar.png";
     if (av.startsWith("http")) return av;
@@ -155,23 +130,30 @@ export default function Layout() {
 
   const avatarSrc = fixAvatar(user?.avatar);
 
-  /* ===============================================
-     HANDLE CLICK NOTIFICATION
-  =============================================== */
   const handleNotiClick = (n) => {
     setNotiOpen(false);
-
     if (n.type === "like" || n.type === "comment") {
-      if (n.postId) window.location.href = `/post/${n.postId}`;
+      window.location.href = `/post/${n.postId}`;
     }
-
     if (n.type === "follow") {
-      if (n.fromUser?._id) window.location.href = `/profile/${n.fromUser._id}`;
+      window.location.href = `/profile/${n.fromUser._id}`;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div
+      className="
+        min-h-screen flex flex-col relative
+        bg-[#fdf9ff]
+        
+      "
+    >
+
+      {/* 🌸 Soft Light Background Blobs */}
+      <div className="absolute top-[-15%] left-[-15%] w-[460px] h-[460px] bg-pink-300/30 rounded-full blur-[140px]"></div>
+      <div className="absolute bottom-[-15%] right-[-10%] w-[520px] h-[520px] bg-indigo-300/30 rounded-full blur-[150px]"></div>
+      <div className="absolute top-[45%] right-[20%] w-[300px] h-[300px] bg-purple-300/20 rounded-full blur-[170px]"></div>
+
 
       {/* NAVBAR */}
       <header className="border-b bg-white/80 backdrop-blur-md fixed top-0 left-0 w-full z-30 shadow-sm">
@@ -189,7 +171,6 @@ export default function Layout() {
             <NavLink to="/matching">Matching</NavLink>
             <NavLink to="/messages">Chat</NavLink>
 
-            {/* MENU */}
             <div className="relative">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -205,7 +186,7 @@ export default function Layout() {
                   </Link>
 
                   <Link to="/saved" onClick={() => setMenuOpen(false)} className="flex gap-2 px-4 py-2 hover:bg-slate-100">
-                    <img src="/images/Saved.png" className="w-5 h-5" /> Saved Posts
+                    <img src="/images/Savedd.png" className="w-5 h-5" /> Saved Posts
                   </Link>
 
                   <Link to="/match-history" onClick={() => setMenuOpen(false)} className="flex gap-2 px-4 py-2 hover:bg-slate-100">
@@ -213,8 +194,7 @@ export default function Layout() {
                   </Link>
 
                   {user?.role === "admin" && (
-                    <Link to="/admin" onClick={() => setMenuOpen(false)}
-                      className="flex gap-2 px-4 py-2 hover:bg-slate-100 text-red-600">
+                    <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex gap-2 px-4 py-2 hover:bg-slate-100 text-red-600">
                       <img src="/images/admin.png" className="w-5 h-5" /> Admin Dashboard
                     </Link>
                   )}
@@ -231,7 +211,6 @@ export default function Layout() {
               <div className="relative" ref={notiRef}>
                 <button onClick={toggleNoti} className="relative">
                   <img src="/images/bell.png" className="w-7 h-7 opacity-80 hover:opacity-100" />
-
                   {unseenCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
                       {unseenCount}
@@ -239,20 +218,19 @@ export default function Layout() {
                   )}
                 </button>
 
+                {/* DROPDOWN */}
                 {notiOpen && (
                   <div
                     className="absolute right-0 mt-3 w-80 rounded-xl border bg-white shadow-xl z-30 animate-fadeIn"
                     style={{
                       maxHeight: "420px",
                       overflowY: "auto",
-                      overflowX: "hidden",   // ✅ กันไม่ให้มี scroll ด้านล่าง (แนวนอน)
-                      scrollbarWidth: "thin",
-                      scrollbarColor: "#ddd transparent",
+                      overflowX: "hidden",
                     }}
                   >
-                    {/* HEADER + CLEAR ALL */}
                     <div className="sticky top-0 bg-white border-b px-4 py-2 flex items-center justify-between">
                       <span className="font-semibold text-gray-700">Notifications</span>
+
                       {notifications.length > 0 && (
                         <button
                           onClick={handleClearNoti}
@@ -264,9 +242,7 @@ export default function Layout() {
                     </div>
 
                     {notifications.length === 0 ? (
-                      <p className="text-gray-400 text-center py-4 text-sm">
-                        No notifications
-                      </p>
+                      <p className="text-gray-400 text-center py-4 text-sm">No notifications</p>
                     ) : (
                       notifications.map((n, i) => (
                         <div
@@ -274,7 +250,6 @@ export default function Layout() {
                           onClick={() => handleNotiClick(n)}
                           className="flex gap-3 px-4 py-3 border-b hover:bg-gray-50 cursor-pointer transition"
                         >
-                          {/* AVATAR */}
                           <img
                             src={fixAvatar(n?.fromUser?.avatar)}
                             className="w-10 h-10 rounded-full object-cover border"
@@ -294,7 +269,6 @@ export default function Layout() {
                             </p>
                           </div>
 
-                          {/* ICON TYPE */}
                           <div className="flex items-center pl-1">
                             {n.type === "like" && <span className="text-red-500 text-lg">❤️</span>}
                             {n.type === "comment" && <span className="text-blue-500 text-lg">💬</span>}
@@ -308,7 +282,7 @@ export default function Layout() {
               </div>
             )}
 
-            {/* PROFILE */}
+            {/* PROFILE DROPDOWN */}
             {user ? (
               <>
                 <button
@@ -324,8 +298,8 @@ export default function Layout() {
                   <div className="absolute right-0 top-12 w-44 rounded-xl border bg-white shadow-lg py-2 text-sm">
                     <Link
                       to={`/profile/${user._id}`}
-                      onClick={() => setProfileOpen(false)}
                       className="flex gap-2 px-4 py-2 hover:bg-slate-100"
+                      onClick={() => setProfileOpen(false)}
                     >
                       <img src="/images/User.png" className="w-5 h-5 opacity-70" />
                       View My Profile
@@ -356,7 +330,7 @@ export default function Layout() {
       </header>
 
       {/* PAGE CONTENT */}
-      <main className="flex-1 pt-16 bg-gradient-to-br from-white via-pink-50/50 to-indigo-50/50 min-h-screen">
+      <main className="flex-1 pt-16 bg-transparent">
         <Outlet />
       </main>
 

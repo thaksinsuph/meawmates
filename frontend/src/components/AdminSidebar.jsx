@@ -8,6 +8,8 @@ export default function AdminSidebar() {
     { icon: "/images/profile.png", label: "Users", path: "/admin/users" },
     { icon: "/images/cat.png", label: "Pets", path: "/admin/pets" },
     { icon: "/images/edit.png", label: "Posts", path: "/admin/posts" },
+    { icon: "/images/report.png", label: "Reports", path: "/admin/reports" },
+
   ];
 
   return (

@@ -5,7 +5,8 @@ import { fileURLToPath } from "url";
 import auth from "../auth.js";
 import Post from "../models/Post.js";
 import User from "../models/User.js";
-import Notification from "../models/Notification.js";
+import Report from "../models/Report.js";
+
 
 const router = express.Router();
 
@@ -51,69 +52,78 @@ router.get("/saved/:userId", auth, async (req, res) => {
 });
 
 /* ======================================================
-   2) GET ALL POSTS
+   2) GET ALL POSTS (แก้เวอร์ชันถูกต้อง)
 ====================================================== */
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
-    let posts = await Post.find()
+    const posts = await Post.find()
       .populate("author", "name avatar")
       .sort({ createdAt: -1 });
 
-    const validPosts = [];
-    const orphanPosts = [];
+    // ⭐ โหลด user เพื่อดูว่าเซฟโพสต์ไหนบ้าง
+    const user = await User.findById(req.user._id);
+    const savedList = user.savedPosts.map(id => id.toString());
 
-    for (let p of posts) {
-      if (!p.author) {
-        orphanPosts.push(p._id);
-        continue;
-      }
-
-      validPosts.push({
+    const formatted = await Promise.all(
+      posts.map(async (p) => ({
         ...p._doc,
+
         image: fixPath(p.image),
-        author: {
-          ...p.author._doc,
-          avatar: fixPath(p.author.avatar),
-        },
+
+        // ⭐ POST นี้ถูก save หรือไม่
+        isSaved: savedList.includes(p._id.toString()),
+
+        // ⭐ จำนวน save ที่แท้จริง
         savedCount: await User.countDocuments({ savedPosts: p._id }),
-      });
-    }
 
-    if (orphanPosts.length > 0) {
-      await Post.deleteMany({ _id: { $in: orphanPosts } });
-    }
+        author: {
+          _id: p.author?._id,
+          name: p.author?.name,
+          avatar: p.author?.avatar ? fixPath(p.author.avatar) : null,
+        },
+      }))
+    );
 
-    res.json(validPosts);
+    res.json(formatted);
   } catch (err) {
-    console.error("🔥 GET Posts Error:", err);
+    console.log(err);
     res.status(500).json({ message: err.message });
   }
 });
 
 /* ======================================================
-   3) GET ONE POST
+   GET ONE POST (เพิ่ม userId ใน comments)
 ====================================================== */
-router.get("/:id", async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   try {
-    let post = await Post.findById(req.params.id).populate(
+    const post = await Post.findById(req.params.id).populate(
       "author",
       "name avatar email"
     );
 
     if (!post) return res.status(404).json({ message: "Post not found" });
 
+    const user = await User.findById(req.user._id);
+    const isSaved = user.savedPosts.map(id => id.toString()).includes(post._id.toString());
+    const savedCount = await User.countDocuments({ savedPosts: post._id });
+
     const formatted = {
       ...post._doc,
       image: fixPath(post.image),
+      isSaved,
+      savedCount,
       author: {
         ...post.author._doc,
         avatar: fixPath(post.author.avatar),
       },
-      savedCount: await User.countDocuments({ savedPosts: post._id }),
       comments: post.comments.map((c) => ({
-        ...c._doc,
+        _id: c._id,
+        content: c.content,
+        author: c.author,
         avatar: c.avatar,
-      })),
+        userId: c.userId,
+        date: c.date
+      }))
     };
 
     res.json(formatted);
@@ -121,6 +131,8 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
 
 /* ======================================================
    3.5) GET POSTS BY USER ID
@@ -310,11 +322,44 @@ router.post("/:id/save", auth, async (req, res) => {
 
     await user.save();
 
-    res.json({ saved });
+    // ⭐ นับจำนวนคนที่ save post นี้
+    const savedCount = await User.countDocuments({ savedPosts: pid });
+
+    // ⭐ ส่งกลับไปให้ frontend
+    res.json({ 
+      saved,
+      savedCount 
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
+
+/* ======================================================
+   REPORT POST → ส่งถึง Admin
+====================================================== */
+router.post("/:id/report", auth, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const postId = req.params.id;
+
+    await Report.create({
+      type: "post",
+      postId,
+      reporter: req.user._id,
+      reason,
+      status: "pending"
+    });
+
+    res.json({ success: true, message: "Report sent to admin." });
+  } catch (err) {
+    console.error("REPORT POST ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 /* ======================================================
    8) DELETE COMMENT
@@ -329,7 +374,11 @@ router.delete("/:postId/comment/:commentId", auth, async (req, res) => {
     const comment = post.comments.id(commentId);
     if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-    if (String(comment.userId) !== String(req.user._id)) {
+    // ⭐ Allow admin OR comment owner
+    if (
+      String(comment.userId) !== String(req.user._id) &&
+      req.user.role !== "admin"
+    ) {
       return res.status(403).json({ message: "Not allowed" });
     }
 
@@ -342,12 +391,14 @@ router.delete("/:postId/comment/:commentId", auth, async (req, res) => {
   }
 });
 
+
 /* ======================================================
-   9) REPORT COMMENT
+   REPORT COMMENT → ส่งถึง Admin
 ====================================================== */
 router.post("/:postId/comment/:commentId/report", auth, async (req, res) => {
   try {
     const { postId, commentId } = req.params;
+    const { reason } = req.body;
 
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: "Post not found" });
@@ -355,18 +406,47 @@ router.post("/:postId/comment/:commentId/report", auth, async (req, res) => {
     const comment = post.comments.id(commentId);
     if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-    const { reason } = req.body;
+    await Report.create({
+      type: "comment",
+      postId,
+      commentId,
+      commentText: comment.content,   // ⭐ สำคัญมาก ต้องมี
+      reporter: req.user._id,
+      reason,
+      status: "pending"
+    });
 
-    comment.reported = true;
-    comment.reportReason = reason;
-    comment.reportedBy = req.user._id;
-    comment.reportDate = new Date();
-    await post.save();
-
-    res.json({ success: true, message: "Comment reported" });
+    res.json({ success: true, message: "Comment report sent to admin." });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
+
+
+/* ======================================================
+   10) DELETE POST
+====================================================== */
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // ❗ ลบได้เฉพาะคนที่เป็นเจ้าของโพสต์เท่านั้น
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    await post.deleteOne();
+
+    res.json({ message: "Deleted successfully" });
+  } catch (err) {
+    console.error("DELETE POST ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 export default router;

@@ -8,14 +8,15 @@ export default function Home() {
   const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
   const [showPostBox, setShowPostBox] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null); // ⭐ เมนู 3 จุด
 
   const user = getUser();
 
+  /* ------------------ FETCH POSTS ------------------ */
   useEffect(() => {
     fetchPosts();
   }, []);
 
-  // ✅ ใช้ API แบบเดิม
   const fetchPosts = async () => {
     try {
       const res = await api.get("/api/posts");
@@ -25,16 +26,17 @@ export default function Home() {
     }
   };
 
+  /* ------------------ TIME AGO ------------------ */
   const timeAgo = (dateString) => {
     const date = new Date(dateString);
     const diff = (Date.now() - date.getTime()) / 1000;
-
     if (diff < 60) return "Just now";
     if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
     return `${Math.floor(diff / 86400)} days ago`;
   };
 
+  /* ------------------ IMAGE UPLOAD ------------------ */
   const handleImage = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -44,6 +46,7 @@ export default function Home() {
     }
   };
 
+  /* ------------------ CREATE POST ------------------ */
   const handlePost = async () => {
     if (!content && !image)
       return alert("Please write something or select an image before posting.");
@@ -59,44 +62,52 @@ export default function Home() {
     }
   };
 
+  /* ------------------ LIKE ------------------ */
   const toggleLike = async (id) => {
     try {
-      // ⭐ endpoint แบบเดิม
       const res = await api.post(`/api/posts/${id}/like`);
-      const { liked } = res.data;
       setPosts((prev) =>
-      prev.map((p) =>
-        p._id === id
-          ? {
-              ...p,
-              likes:
-                res.data.message === "Liked"
-                  ? [...p.likes, user._id]
-                  : p.likes.filter((uid) => uid !== user._id),
-            }
-          : p
-      )
-    );
-  } catch (err) {
-    console.error("Like error:", err);
-  }
-};
+        prev.map((p) =>
+          p._id === id
+            ? {
+                ...p,
+                likes:
+                  res.data.message === "Liked"
+                    ? [...p.likes, user._id]
+                    : p.likes.filter((uid) => uid !== user._id),
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Like error:", err);
+    }
+  };
 
-      
-
+  /* ------------------ SAVE ------------------ */
   const toggleSave = async (id) => {
     try {
       const res = await api.post(`/api/posts/${id}/save`);
-      alert(res.data.saved ? "Post saved!" : "Removed from saved posts!");
+      setPosts((prev) =>
+        prev.map((p) =>
+          p._id === id
+            ? {
+                ...p,
+                isSaved: res.data.saved,
+                savedCount: res.data.savedCount,
+              }
+            : p
+        )
+      );
     } catch (err) {
       console.error("Save error:", err);
     }
   };
 
+  /* ------------------ REPORT ------------------ */
   const reportPost = async (id) => {
     const reason = prompt("Reason for reporting this post?");
     if (!reason) return;
-
     try {
       await api.post(`/api/posts/${id}/report`, { reason });
       alert("Report submitted.");
@@ -105,6 +116,18 @@ export default function Home() {
     }
   };
 
+  /* ------------------ DELETE POST ------------------ */
+  const deletePost = async (id) => {
+    if (!confirm("Do you really want to delete this post?")) return;
+    try {
+      await api.delete(`/api/posts/${id}`);
+      setPosts((prev) => prev.filter((p) => p._id !== id));
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  };
+
+  /* ------------------ URL HELPERS ------------------ */
   const imageURL = (img) =>
     !img
       ? "https://placekitten.com/400/300"
@@ -129,7 +152,7 @@ export default function Home() {
         Meow Posts
       </h1>
 
-      {/* Post Box */}
+      {/* ------------------ POST BOX ------------------ */}
       {user && (
         <div className="bg-white p-4 rounded-2xl shadow-md mb-10">
           {!showPostBox ? (
@@ -165,7 +188,6 @@ export default function Home() {
               )}
 
               <div className="mt-3 flex items-center justify-between">
-
                 <label className="cursor-pointer flex items-center gap-2 text-sm text-pink-600 font-medium hover:underline">
                   <img src="/images/pictures.png" className="w-5 h-5" />
                   Select Image
@@ -197,11 +219,12 @@ export default function Home() {
         </div>
       )}
 
-      {/* Posts List */}
+      {/* ------------------ POSTS LIST ------------------ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {posts.map((p) => (
-          <div key={p._id} className="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-3">
+          <div key={p._id} className="relative bg-white rounded-2xl shadow-md hover:shadow-lg transition p-3">
 
+            {/* IMAGE */}
             <Link to={`/post/${p._id}`}>
               <img
                 src={imageURL(p.image)}
@@ -209,51 +232,113 @@ export default function Home() {
               />
             </Link>
 
+            {/* CONTENT */}
             <p className="text-gray-800 text-sm mb-2">{p.content}</p>
 
             <div className="flex justify-between items-center">
-
+              {/* AUTHOR */}
               <div className="flex items-center gap-2">
-              <Link to={`/profile/${p.author?._id}`}>
-                <img
-                  src={avatarURL(p.author?.avatar)}
-                  className="w-7 h-7 rounded-full border object-cover cursor-pointer hover:scale-110 transition"
-                />
-              </Link>
+                <Link to={`/profile/${p.author?._id}`}>
+                  <img
+                    src={avatarURL(p.author?.avatar)}
+                    className="w-7 h-7 rounded-full border object-cover cursor-pointer hover:scale-110 transition"
+                  />
+                </Link>
                 <div>
-
                   <p className="font-medium text-gray-700 text-sm">{p.author?.name}</p>
                   <p className="text-xs text-gray-500">{timeAgo(p.createdAt)}</p>
                 </div>
               </div>
 
+              {/* ACTIONS */}
               <div className="flex gap-4 text-sm items-center">
+
+                {/* LIKE */}
                 <button onClick={() => toggleLike(p._id)} className="flex items-center gap-1">
                   <img
                     src="/images/Like.png"
-                    className={`w-6 h-6 ${
-                      isLiked(p) ? "opacity-100 scale-110" : "opacity-40"
-                    }`}
+                    className={`w-6 h-6 ${isLiked(p) ? "opacity-100 scale-110" : "opacity-40"}`}
                   />
-                  <span className="text-gray-700 text-sm">{p.likes?.length || 0}</span>
+                  <span>{p.likes?.length || 0}</span>
                 </button>
 
+                {/* Comment */}
+                <Link to={`/post/${p._id}`} className="flex items-center gap-1">
+                  <img src="/images/comment-icon.png" className="w-6 h-6 opacity-70" /> 
+                  <span>{p.comments?.length || 0}</span>
+                </Link>
+
+                
+
+                {/* SAVE */}
                 <button onClick={() => toggleSave(p._id)} className="flex items-center gap-1">
-                  <img src="/images/Saved.png" className="w-6 h-6 opacity-70 hover:opacity-100" />
-                  <span className="text-gray-700 text-sm">{p.savedCount ?? "-"}</span>
+                  <img
+                    src={p.isSaved ? "/images/Savedd.png" : "/images/Saved.png"}
+                    className="w-6 h-6 transition-all"
+                  />
+                  <span>{p.savedCount || 0}</span>
                 </button>
 
-                <button onClick={() => reportPost(p._id)}>
-                  <img src="/images/report.png" className="w-6 h-6 opacity-70 hover:opacity-100" />
+                {/* ⭐ MENU 3 DOTS */}
+                <button
+                  onClick={() => setOpenMenu(openMenu === p._id ? null : p._id)}
+                  className="text-2xl text-gray-500 hover:text-gray-700"
+                >
+                  ⋮
                 </button>
+
+                {openMenu === p._id && (
+  <div className="absolute right-3 top-10 bg-white shadow-xl border border-gray-200 rounded-xl w-64 py-2 z-30 animate-fadeIn">
+
+    {/* SAVE / UNSAVE */}
+    <button
+      onClick={() => {
+        toggleSave(p._id);
+        setOpenMenu(null);
+      }}
+      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition-all rounded-lg"
+    >
+      <img src="/images/save-menu.png" className="w-5 h-5 opacity-70" />
+      <span className="text-gray-800 text-sm">
+        {p.isSaved ? "Remove from saved" : "Save post"}
+      </span>
+    </button>
+
+    {/* REPORT */}
+    <button
+      onClick={() => {
+        reportPost(p._id);
+        setOpenMenu(null);
+      }}
+      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition-all rounded-lg"
+    >
+      <img src="/images/report.png" className="w-5 h-5 opacity-70" />
+      <span className="text-gray-800 text-sm">Report post</span>
+    </button>
+
+    {/* DELETE (เจ้าของโพสต์เท่านั้น) */}
+    {user?._id === p.author?._id && (
+      <button
+        onClick={() => {
+          deletePost(p._id);
+          setOpenMenu(null);
+        }}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-100 transition-all rounded-lg"
+      >
+        <img src="/images/delete.png" className="w-5 h-5 opacity-70" />
+        <span className="text-red-600 text-sm">Delete post</span>
+      </button>
+    )}
+
+  </div>
+)}
+
               </div>
-
             </div>
 
           </div>
         ))}
       </div>
-
     </div>
   );
 }

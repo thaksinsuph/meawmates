@@ -100,7 +100,7 @@ export default function Saved() {
     <div className="max-w-7xl mx-auto py-20 px-6">
       {/* Header */}
       <h1 className="text-4xl font-bold flex items-center gap-3 mb-6">
-        <img src="/images/Saved.png" className="w-10 h-10" />
+        <img src="/images/Savedd.png" className="w-10 h-10" />
         Saved Posts
       </h1>
 
@@ -167,7 +167,7 @@ export default function Saved() {
                   className="flex items-center gap-1"
                 >
                   <img
-                    src="/images/Saved.png"
+                    src="/images/Savedd.png"
                     className="w-6 h-6 opacity-70 hover:opacity-100"
                   />
                   <span className="text-gray-700 text-sm">

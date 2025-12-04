@@ -1,18 +1,20 @@
 import mongoose from "mongoose";
 
-const ReportSchema = new mongoose.Schema(
-  {
-    reporter: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    post: { type: mongoose.Schema.Types.ObjectId, ref: "Post", required: true },
-    reason: { type: String, required: true },
-    detail: { type: String },
-    status: {
-      type: String,
-      enum: ["pending", "reviewing", "resolved", "rejected"],
-      default: "pending",
-    },
-  },
-  { timestamps: true }
-);
+const ReportSchema = new mongoose.Schema({
+  type: { type: String, enum: ["post", "comment"], required: true },
+
+  postId: { type: mongoose.Schema.Types.ObjectId, ref: "Post" },
+  commentId: { type: mongoose.Schema.Types.ObjectId },
+
+  reporter: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
+  reason: { type: String, required: true },
+
+  status: { type: String, default: "pending" }, // pending / reviewed
+
+  createdAt: { type: Date, default: Date.now }
+
+  
+});
 
 export default mongoose.model("Report", ReportSchema);

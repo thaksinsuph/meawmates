@@ -5,7 +5,8 @@ import api from "../api";
 export default function ManagePet() {
   const [selectedSlot, setSelectedSlot] = useState(1);
   const [preview, setPreview] = useState(null);
-  const [allPets, setAllPets] = useState([{}, {}, {}, {}]); // UI cards
+  const [vaccinePreview, setVaccinePreview] = useState(null);
+  const [allPets, setAllPets] = useState([{}, {}, {}, {}]);
 
   const [form, setForm] = useState({
     name: "",
@@ -13,6 +14,7 @@ export default function ManagePet() {
     color: "",
     age: "",
     image: null,
+    vaccineImage: null, // ⭐ new
   });
 
   const [popup, setPopup] = useState({
@@ -23,7 +25,7 @@ export default function ManagePet() {
   });
 
   // ----------------------------
-  // 📌 โหลดแมว 4 ช่องทั้งหมด
+  // 📌 Load all pet slots (1–4)
   // ----------------------------
   const loadAllPets = async () => {
     const newPets = [];
@@ -39,7 +41,7 @@ export default function ManagePet() {
   };
 
   // ----------------------------
-  // 📌 โหลดแมวเฉพาะช่อง
+  // 📌 Load specific pet slot
   // ----------------------------
   const loadPet = async (slot) => {
     try {
@@ -53,8 +55,11 @@ export default function ManagePet() {
           color: pet.color || "",
           age: pet.age || "",
           image: pet.image || null,
+          vaccineImage: pet.vaccineImage || null, // ⭐ new
         });
+
         setPreview(pet.image || null);
+        setVaccinePreview(pet.vaccineImage || null); // ⭐ new
       } else {
         resetForm();
       }
@@ -63,7 +68,7 @@ export default function ManagePet() {
     }
   };
 
-  // รีเซ็ตฟอร์ม
+  // reset form
   const resetForm = () => {
     setForm({
       name: "",
@@ -71,8 +76,11 @@ export default function ManagePet() {
       color: "",
       age: "",
       image: null,
+      vaccineImage: null,
     });
+
     setPreview(null);
+    setVaccinePreview(null);
   };
 
   useEffect(() => {
@@ -85,7 +93,7 @@ export default function ManagePet() {
   }, []);
 
   // ----------------------------
-  // 📌 อัพโหลดรูป
+  // 📌 Upload cat image
   // ----------------------------
   const handleImage = (e) => {
     const file = e.target.files[0];
@@ -94,6 +102,21 @@ export default function ManagePet() {
       reader.onloadend = () => {
         setPreview(reader.result);
         setForm({ ...form, image: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // ----------------------------
+  // 📌 Upload Vaccine Image ⭐
+  // ----------------------------
+  const handleVaccineImage = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setVaccinePreview(reader.result);
+        setForm({ ...form, vaccineImage: reader.result });
       };
       reader.readAsDataURL(file);
     }
@@ -112,7 +135,7 @@ export default function ManagePet() {
   };
 
   // ----------------------------
-  // 📌 บันทึกแมว
+  // 📌 Save cat
   // ----------------------------
   const savePet = async () => {
     if (!form.name || !form.breed || !form.color || !form.age || !form.image) {
@@ -130,7 +153,7 @@ export default function ManagePet() {
   };
 
   // ----------------------------
-  // ❌ ลบแมวในช่อง
+  // ❌ Delete cat
   // ----------------------------
   const deletePet = async (slot) => {
     if (!confirm(`Want to delete channel information ${slot} Right?`)) return;
@@ -151,23 +174,22 @@ export default function ManagePet() {
       {/* Title */}
       <h1 className="text-4xl font-bold flex items-center gap-3">
         <img
-          src="/images/cat.png" 
+          src="/images/cat.png"
           alt="cat icon"
           className="w-10 h-10 object-contain"
         />
         Manage Your Cats
       </h1>
 
-      {/* ---------------------------
-          Cards 1–4 (ดูข้อมูล 4 ช่อง)
-      ---------------------------- */}
+      {/* --------------------------------
+          Slot Cards (1–4)
+      -------------------------------- */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-5xl">
         {allPets.map((pet, i) => (
           <div
             key={i}
-            className={`p-4 rounded-2xl shadow-md cursor-pointer border-2
-            ${selectedSlot === i + 1 ? "border-pink-500" : "border-gray-200"}
-          `}
+            className={`p-4 rounded-2xl shadow-md cursor-pointer border-2 
+            ${selectedSlot === i + 1 ? "border-pink-500" : "border-gray-200"}`}
             onClick={() => setSelectedSlot(i + 1)}
           >
             <div className="w-full h-32 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
@@ -196,9 +218,9 @@ export default function ManagePet() {
         ))}
       </div>
 
-      {/* ---------------------------
-          Form Edit Section
-      ---------------------------- */}
+      {/* --------------------------------
+          Edit Form Section
+      -------------------------------- */}
       <div className="w-full max-w-4xl bg-white rounded-3xl shadow-md p-10">
 
         <h2 className="text-2xl font-bold mb-6">
@@ -207,7 +229,7 @@ export default function ManagePet() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
 
-          {/* Form Left */}
+          {/* LEFT FORM */}
           <div>
             <label className="block text-sm mb-1">Name</label>
             <input
@@ -229,13 +251,14 @@ export default function ManagePet() {
                   <option key={b} value={b}>{b}</option>
                 ))}
               </select>
+
               {form.breed && (
                 <button
                   type="button"
                   onClick={() => openPopup(form.breed, BREEDS[form.breed])}
                   className="bg-gray-200 px-3 py-2 rounded-xl flex items-center justify-center"
                 >
-                <img src="/images/info.png" className="w-5 h-5" />
+                  <img src="/images/info.png" className="w-5 h-5" />
                 </button>
               )}
             </div>
@@ -252,13 +275,14 @@ export default function ManagePet() {
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
+
               {form.color && (
                 <button
                   type="button"
                   onClick={() => openPopup(form.color, CAT_COLORS[form.color])}
                   className="bg-gray-200 px-3 py-2 rounded-xl flex items-center justify-center"
                 >
-                <img src="/images/color.png" className="w-5 h-5" />
+                  <img src="/images/color.png" className="w-5 h-5" />
                 </button>
               )}
             </div>
@@ -279,7 +303,7 @@ export default function ManagePet() {
             </button>
           </div>
 
-          {/* Preview image */}
+          {/* RIGHT — IMAGE AREA */}
           <div className="flex flex-col items-center">
             <p className="font-medium mb-2">Cat Picture</p>
 
@@ -297,6 +321,41 @@ export default function ManagePet() {
               Select picture
               <input type="file" className="hidden" onChange={handleImage} />
             </label>
+
+            {/* ---------------------------
+                Vaccine Picture ⭐ NEW
+            ---------------------------- */}
+            <div className="flex flex-col items-center mt-10">
+              <p className="font-medium mb-2 flex items-center gap-2">
+                Vaccination Record
+              </p>
+
+              <div className="w-64 h-40 bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center">
+                {vaccinePreview ? (
+                  <img src={vaccinePreview} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-blue-400 text-sm">No vaccination record</div>
+                )}
+              </div>
+
+              <label className="mt-3 cursor-pointer bg-blue-100 px-4 py-2 rounded-xl hover:bg-blue-200 transition">
+                Upload Vaccine Image
+                <input type="file" className="hidden" onChange={handleVaccineImage} />
+              </label>
+
+              {vaccinePreview && (
+                <button
+                  className="mt-2 text-red-500 underline text-sm"
+                  onClick={() => {
+                    setVaccinePreview(null);
+                    setForm({ ...form, vaccineImage: null });
+                  }}
+                >
+                  Remove vaccine image
+                </button>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
@@ -313,7 +372,7 @@ export default function ManagePet() {
               onClick={() => setPopup({ open: false })}
               className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-xl w-full"
             >
-              Turn off
+              Close
             </button>
           </div>
         </div>

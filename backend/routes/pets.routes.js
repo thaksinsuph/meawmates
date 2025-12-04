@@ -23,24 +23,26 @@ router.post("/:slot", auth, async (req, res) => {
       return res.status(400).json({ message: "Slot must be between 1–4" });
     }
 
-    const { name, breed, color, age, image } = req.body;
+    const { name, breed, color, age, image, vaccineImage } = req.body; // ⭐ เพิ่ม vaccineImage
 
     // หา pet เดิมของ user คนนี้ใน slot นี้
     let pet = await Pet.findOne({ user: req.user._id, slot });
 
     if (pet) {
-      // update
+      // UPDATE
       pet.name = name;
       pet.breed = breed;
       pet.color = color;
       pet.age = age;
       pet.image = image;
+      pet.vaccineImage = vaccineImage;  // ⭐ อัปเดตฟิลด์วัคซีน
+
       await pet.save();
 
       return res.json({ message: "Updated", pet });
     }
 
-    // create ใหม่
+    // CREATE ใหม่
     pet = await Pet.create({
       user: req.user._id,
       slot,
@@ -49,12 +51,12 @@ router.post("/:slot", auth, async (req, res) => {
       color,
       age,
       image,
+      vaccineImage, // ⭐ บันทึกฟิลด์วัคซีน
     });
 
     return res.json({ message: "Created", pet });
   } catch (err) {
     console.error("Save pet error:", err);
-    // ถ้า unique index ซ้ำ จะเข้าเคสนี้
     return res.status(500).json({ message: "Cannot save pet" });
   }
 });
@@ -72,7 +74,6 @@ router.get("/:slot", auth, async (req, res) => {
 
     const pet = await Pet.findOne({ user: req.user._id, slot });
 
-    // frontend คาดหวัง: ถ้าไม่มีส่ง null
     return res.json(pet || null);
   } catch (err) {
     console.error("Get pet error:", err);

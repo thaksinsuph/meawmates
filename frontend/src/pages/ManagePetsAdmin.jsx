@@ -4,6 +4,7 @@ import api from "../api";
 export default function ManagePetsAdmin() {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState(null); // ⭐ Fullscreen preview
 
   const loadPets = async () => {
     try {
@@ -35,7 +36,7 @@ export default function ManagePetsAdmin() {
     <div>
       <h2 className="text-lg md:text-xl font-semibold text-purple-600 mb-4 flex items-center gap-2">
         <img src="/images/cat.png" className="w-6 h-6 object-contain" />
-         Manage Pets
+        Manage Pets
       </h2>
 
       {loading ? (
@@ -49,15 +50,39 @@ export default function ManagePetsAdmin() {
               key={p._id}
               className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3"
             >
+              {/* ⭐ Cat Image */}
               {p.image && (
                 <img
+                  onClick={() =>
+                    setPreviewImage(
+                      p.image.startsWith("data:")
+                        ? p.image
+                        : `http://localhost:4000${p.image.replace(/\\/g, "/")}`
+                    )
+                  }
                   src={
                     p.image.startsWith("data:")
                       ? p.image
                       : `http://localhost:4000${p.image.replace(/\\/g, "/")}`
                   }
-                  className="w-full h-80 object-cover rounded-xl"
+                  className="w-full h-80 object-cover rounded-xl cursor-pointer hover:opacity-90 transition"
                 />
+              )}
+
+              {/* ⭐ Vaccine Image */}
+              {p.vaccineImage && (
+                <div>
+                  <p className="text-xs text-gray-500 mt-2 mb-1 flex items-center gap-1">
+                    <img src="/images/vaccine.png" className="w-4 h-4" />
+                    Vaccine Record
+                  </p>
+
+                  <img
+                    onClick={() => setPreviewImage(p.vaccineImage)}
+                    src={p.vaccineImage}
+                    className="w-full h-48 object-cover rounded-xl border border-blue-200 cursor-pointer hover:opacity-90 transition"
+                  />
+                </div>
               )}
 
               <div>
@@ -89,6 +114,19 @@ export default function ManagePetsAdmin() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ⭐ Fullscreen Image Preview */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          onClick={() => setPreviewImage(null)} // คลิกที่ฉากหลังเพื่อปิด
+        >
+          <img
+            src={previewImage}
+            className="max-w-[90%] max-h-[90%] rounded-xl shadow-2xl object-contain"
+          />
         </div>
       )}
     </div>
