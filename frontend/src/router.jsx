@@ -19,7 +19,7 @@ import PostDetail from "./pages/PostDetail";
 import ViewProfile from "./pages/Viewprofile";
 import NotFound from "./pages/NotFound";
 
-// ⭐ Admin Components + Pages
+// Admin
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import ManageUsers from "./pages/ManageUsers";
@@ -35,20 +35,19 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-      { index: true, element: <Landing /> },
-
-      // ============================  
-      // 🔒 USER ROUTES (Protected)
       // ============================
-      {
-        path: "home",
-        element: (
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        ),
-      },
+      // 🌐 PUBLIC ROUTES (ไม่ต้องล็อกอิน)
+      // ============================
+      { index: true, element: <Landing /> },
+      { path: "home", element: <Home /> },
+      { path: "post/:id", element: <PostDetail /> },
 
+      { path: "login", element: <Login /> },
+      { path: "register", element: <Register /> },
+
+      // ============================
+      // 🔒 USER ROUTES (ต้องล็อกอิน)
+      // ============================
       {
         path: "manage-pet",
         element: (
@@ -112,11 +111,27 @@ export const router = createBrowserRouter([
         ),
       },
 
-      { path: "profile/:id", element: <ViewProfile /> },
+      {
+        path: "saved",
+        element: (
+          <ProtectedRoute>
+            <Saved />
+          </ProtectedRoute>
+        ),
+      },
 
-      // ==============================  
-      // ⭐ ADMIN ROUTES (PROTECTED)
-      // ==============================
+      {
+        path: "profile/:id",
+        element: (
+          <ProtectedRoute>
+            <ViewProfile />
+          </ProtectedRoute>
+        ),
+      },
+
+      // ============================
+      // ⭐ ADMIN ROUTES
+      // ============================
       {
         path: "admin",
         element: (
@@ -132,15 +147,7 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // ============================  
-      // 🌐 PUBLIC ROUTES
       // ============================
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "post/:id", element: <PostDetail /> },
-      { path: "saved", element: <Saved /> },
-
-      // ============================  
       // ❌ 404
       // ============================
       { path: "*", element: <NotFound /> },
