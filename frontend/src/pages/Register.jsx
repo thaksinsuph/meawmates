@@ -1,6 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import api from "../api"; // ⭐ ใช้ API ที่มี baseURL จาก ENV
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -33,7 +33,8 @@ export default function Register() {
     }
 
     try {
-      await axios.post("http://localhost:4000/api/auth/register", {
+      // ⭐ ใช้ api.post แทน localhost
+      await api.post("/api/auth/register", {
         name: form.name,
         email: form.email,
         password: form.password,
@@ -103,27 +104,13 @@ export default function Register() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-pink-500 transition"
             >
               {showPass ? (
-                /* Eye-off SVG */
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                // eye-off
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 3l18 18M9.9 9.9a3 3 0 014.2 4.2M6.6 6.6A10.8 10.8 0 001.8 12c1.2 3.8 5 7.2 10.2 7.2 2.1 0 4-.6 5.7-1.6" />
                 </svg>
               ) : (
-                /* Eye SVG */
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                // eye
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
@@ -149,27 +136,13 @@ export default function Register() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-pink-500 transition"
             >
               {showConfirmPass ? (
-                /* Eye-off SVG */
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                // eye-off
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 3l18 18M9.9 9.9a3 3 0 014.2 4.2M6.6 6.6A10.8 10.8 0 001.8 12c1.2 3.8 5 7.2 10.2 7.2 2.1 0 4-.6 5.7-1.6" />
                 </svg>
               ) : (
-                /* Eye SVG */
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                // eye
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
@@ -194,31 +167,26 @@ export default function Register() {
           <div className="flex-1 h-px bg-slate-200"></div>
         </div>
 
-        {/* Social Login */}
+        {/* SOCIAL LOGIN */}
         <div className="flex flex-col gap-3">
           <button
             onClick={() =>
-              (window.location.href = "http://localhost:4000/api/auth/google")
+              (window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`)
             }
             className="flex items-center justify-center gap-3 border rounded-xl py-2 hover:bg-gray-50 transition"
           >
             <img src="/images/google.png" className="w-5 h-5" />
-            <span className="text-sm font-medium text-slate-700">
-              Continue with Google
-            </span>
+            <span className="text-sm font-medium text-slate-700">Continue with Google</span>
           </button>
 
           <button
             onClick={() =>
-              (window.location.href =
-                "http://localhost:4000/api/auth/facebook")
+              (window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/facebook`)
             }
             className="flex items-center justify-center gap-3 border rounded-xl py-2 hover:bg-gray-50 transition"
           >
             <img src="/images/facebook.png" className="w-5 h-5" />
-            <span className="text-sm font-medium text-slate-700">
-              Continue with Facebook
-            </span>
+            <span className="text-sm font-medium text-slate-700">Continue with Facebook</span>
           </button>
         </div>
 
