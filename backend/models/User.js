@@ -37,32 +37,26 @@ const userSchema = new mongoose.Schema(
 
     email: { type: String, required: true, unique: true },
 
-    password: { type: String, required: true },
+    // ⭐ แก้ตรงนี้ ไม่ required แล้ว
+    password: { type: String, required: false, default: null },
 
-    avatar: { type: String, default: null },
-
-    /* ⭐ BIO */
+    avatar: { type: String, default: "/images/profile.png" },
     bio: { type: String, default: "" },
 
-    /* ⭐ ROLE */
     role: { type: String, default: "user" },
 
-    /* ⭐ BAN STATUS */
     banned: { type: Boolean, default: false },
 
-    /* ⭐ PETS */
     pets: {
       type: [petSchema],
       default: [],
     },
 
-    /* ⭐ SAVED POSTS */
     savedPosts: {
       type: [String],
       default: [],
     },
 
-    /* ⭐ FOLLOW SYSTEM */
     followers: [
       { type: mongoose.Schema.Types.ObjectId, ref: "User" }
     ],
@@ -70,7 +64,6 @@ const userSchema = new mongoose.Schema(
       { type: mongoose.Schema.Types.ObjectId, ref: "User" }
     ],
 
-    /* ⭐ NOTIFICATIONS (Embedded in user) */
     notifications: {
       type: [notificationSchema],
       default: [],
@@ -78,5 +71,6 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
 
 export default mongoose.model("User", userSchema);

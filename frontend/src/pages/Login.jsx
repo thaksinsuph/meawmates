@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { saveUser } from "../auth";
 import { useNavigate, Link } from "react-router-dom";
@@ -12,6 +12,27 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // ⭐ NEW: Detect Google Login Token
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    if (token) {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      saveUser({
+        token,
+        user: {
+          _id: payload.id,
+          email: payload.email,
+          role: payload.role,
+          name: payload.name || "Google User"
+        }
+      });
+
+      navigate("/");
+    }
+  }, []);
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);

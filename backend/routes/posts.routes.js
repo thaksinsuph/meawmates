@@ -54,26 +54,25 @@ router.get("/saved/:userId", auth, async (req, res) => {
 /* ======================================================
    2) GET ALL POSTS (แก้เวอร์ชันถูกต้อง)
 ====================================================== */
-router.get("/", auth, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const posts = await Post.find()
       .populate("author", "name avatar")
       .sort({ createdAt: -1 });
 
-    // ⭐ โหลด user เพื่อดูว่าเซฟโพสต์ไหนบ้าง
-    const user = await User.findById(req.user._id);
-    const savedList = user.savedPosts.map(id => id.toString());
+    // กรณีผู้ใช้ไม่ login → ไม่มี isSaved
+    let savedList = [];
+    if (req.user) {
+      const user = await User.findById(req.user._id);
+      savedList = user.savedPosts.map(id => id.toString());
+    }
 
     const formatted = await Promise.all(
       posts.map(async (p) => ({
         ...p._doc,
-
         image: fixPath(p.image),
+        isSaved: savedList.includes(p._id.toString()), // ถ้าไม่ login = false
 
-        // ⭐ POST นี้ถูก save หรือไม่
-        isSaved: savedList.includes(p._id.toString()),
-
-        // ⭐ จำนวน save ที่แท้จริง
         savedCount: await User.countDocuments({ savedPosts: p._id }),
 
         author: {
@@ -91,10 +90,12 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+
+
 /* ======================================================
    GET ONE POST (เพิ่ม userId ใน comments)
 ====================================================== */
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id).populate(
       "author",
@@ -103,9 +104,14 @@ router.get("/:id", auth, async (req, res) => {
 
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    const user = await User.findById(req.user._id);
-    const isSaved = user.savedPosts.map(id => id.toString()).includes(post._id.toString());
-    const savedCount = await User.countDocuments({ savedPosts: post._id });
+    let isSaved = false;
+    let savedCount = await User.countDocuments({ savedPosts: post._id });
+
+    // ถ้า login → ค่อยคำนวณ isSaved
+    if (req.user) {
+      const user = await User.findById(req.user._id);
+      isSaved = user.savedPosts.map(id => id.toString()).includes(post._id.toString());
+    }
 
     const formatted = {
       ...post._doc,
@@ -131,6 +137,7 @@ router.get("/:id", auth, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 
 

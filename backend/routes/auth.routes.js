@@ -33,7 +33,7 @@ router.post("/register", async (req, res) => {
       email,
       password: hashed,
       role: "user",
-      avatar: "",
+      avatar: "/images/profile.png",
       bio: "",
     });
 
@@ -91,14 +91,12 @@ router.post("/login", async (req, res) => {
 
 router.get(
   "/google",
-  passportGoogle.authenticate("google", { scope: ["email", "profile"] })
+  passportGoogle.authenticate("google", { scope: ["email", "profile"], session: false })
 );
 
 router.get(
   "/google/callback",
-  passportGoogle.authenticate("google", {
-    failureRedirect: "http://localhost:5173/login",
-  }),
+  passportGoogle.authenticate("google", { failureRedirect: "http://localhost:5173/login", session: false }),
   async (req, res) => {
     const user = req.user;
 
@@ -108,6 +106,7 @@ router.get(
       { expiresIn: "7d" }
     );
 
+    // ส่ง JWT กลับไป frontend
     res.redirect(`http://localhost:5173/login?token=${token}`);
   }
 );

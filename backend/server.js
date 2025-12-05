@@ -37,6 +37,9 @@ import chatRoutes from "./routes/chat.routes.js";
 import notiRoutes from "./routes/notifications.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 
+import jwt from "jsonwebtoken";
+import User from "./models/User.js";
+
 const app = express();
 
 /* ======================================================
@@ -56,7 +59,7 @@ app.use(
 app.use(express.json({ limit: "20mb", extended: true }));
 
 /* ======================================================
-      Session สำหรับ OAuth
+      Session สำหรับ OAuth (ต้องมาก่อน Passport + optionalAuth)
 ====================================================== */
 app.use(
   session({
@@ -68,6 +71,32 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+/* ======================================================
+      OPTIONAL AUTH (ต้องอยู่หลัง passport session)
+====================================================== */
+const optionalAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    req.user = null;
+    return next();
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id)
+      .select("_id name email role savedPosts avatar");
+  } catch (err) {
+    req.user = null;
+  }
+
+  next();
+};
+
+app.use(optionalAuth);
 
 /* ======================================================
       Static File Uploads
