@@ -5,16 +5,20 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 
-// OAuth
 import passportGoogle from "../auth/google.js";
 import passportFacebook from "../auth/facebook.js";
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
 
-// =========================================================================
-// REGISTER
-// =========================================================================
+const JWT_SECRET = process.env.JWT_SECRET;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
+// Debug
+console.log("🔍 [AUTH] FRONTEND_URL =", FRONTEND_URL);
+
+/* =====================================================================
+   REGISTER
+===================================================================== */
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -44,9 +48,9 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// =========================================================================
-// LOGIN
-// =========================================================================
+/* =====================================================================
+   LOGIN (Email + Password)
+===================================================================== */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -60,11 +64,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid password" });
 
     const token = jwt.sign(
-      {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-      },
+      { id: user._id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -85,45 +85,22 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// =========================================================================
-// GOOGLE LOGIN
-// =========================================================================
-
+/* =====================================================================
+   GOOGLE LOGIN
+===================================================================== */
 router.get(
   "/google",
-  passportGoogle.authenticate("google", { scope: ["email", "profile"], session: false })
+  passportGoogle.authenticate("google", {
+    scope: ["email", "profile"],
+    session: true,
+  })
 );
 
 router.get(
   "/google/callback",
-  passportGoogle.authenticate("google", { failureRedirect: "http://localhost:5173/login", session: false }),
-  async (req, res) => {
-    const user = req.user;
-
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    // ส่ง JWT กลับไป frontend
-    res.redirect(`http://localhost:5173/login?token=${token}`);
-  }
-);
-
-// =========================================================================
-// FACEBOOK LOGIN
-// =========================================================================
-
-router.get(
-  "/facebook",
-  passportFacebook.authenticate("facebook", { scope: ["email"] })
-);
-
-router.get(
-  "/facebook/callback",
-  passportFacebook.authenticate("facebook", {
-    failureRedirect: "http://localhost:5173/login",
+  passportGoogle.authenticate("google", {
+    failureRedirect: `${FRONTEND_URL}/login`,
+    session: true,
   }),
   async (req, res) => {
     const user = req.user;
@@ -134,7 +111,38 @@ router.get(
       { expiresIn: "7d" }
     );
 
-    res.redirect(`http://localhost:5173/login?token=${token}`);
+    const encoded = encodeURIComponent(token);
+
+    res.redirect(`${FRONTEND_URL}/login?token=${encoded}`);
+  }
+);
+
+/* =====================================================================
+   FACEBOOK LOGIN
+===================================================================== */
+
+router.get(
+  "/facebook",
+  passportFacebook.authenticate("facebook", { scope: ["email"] })
+);
+
+router.get(
+  "/facebook/callback",
+  passportFacebook.authenticate("facebook", {
+    failureRedirect: `${FRONTEND_URL}/login`,
+  }),
+  async (req, res) => {
+    const user = req.user;
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const encoded = encodeURIComponent(token);
+
+    res.redirect(`${FRONTEND_URL}/login?token=${encoded}`);
   }
 );
 
