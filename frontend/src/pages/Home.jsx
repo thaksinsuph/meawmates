@@ -131,18 +131,24 @@ export default function Home() {
   const backendURL = import.meta.env.VITE_API_URL.replace("/api", "");
 
   const imageURL = (img) => {
-    if (!img) return "https://placekitten.com/400/300";
-    if (img.startsWith("data:")) return img;
-    if (img.startsWith("http")) return img;
-    return `${backendURL}${img.startsWith("/") ? img : "/" + img}`;
-  };
+  if (!img) return "https://placekitten.com/400/300";
+  if (img.startsWith("data:")) return img;
+  if (img.startsWith("http")) return img;
+
+  return `${backendURL}/${img.replace(/^\//, "")}`;
+};
+
 
   const avatarURL = (av) => {
-    if (!av) return "/images/profile.png";
-    if (av.startsWith("data:")) return av;
-    if (av.startsWith("http")) return av;
-    return `${backendURL}${av.startsWith("/") ? av : "/" + av}`;
-  };
+  if (!av) return "/images/profile.png";
+
+  if (av.startsWith("data:")) return av;
+  if (av.startsWith("http")) return av;
+
+  // Ensure correct slash
+  return `${backendURL}/${av.replace(/^\//, "")}`;
+};
+
 
   const isLiked = (p) => p.likes?.includes(user?._id);
 

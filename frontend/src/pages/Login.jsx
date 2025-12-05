@@ -42,8 +42,7 @@ export default function Login() {
     setError("");
 
     try {
-      // ⛔ localhost (ผิด)
-      // await axios.post("http://localhost:4000/api/auth/login")
+      
 
       // ✅ ใช้ api.js (ถูก)
       const res = await api.post("/api/auth/login", {
