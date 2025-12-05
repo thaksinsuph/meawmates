@@ -12,14 +12,16 @@ import User from "./models/User.js";
 
 dotenv.config();
 
-// Allow multiple frontend URLs (Render + Netlify + Local)
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-const NETLIFY_URL = process.env.NETLIFY_URL || "https://meaw-mates.vercel.app";
+// ----- FRONTEND ORIGINS (Render + Vercel + Local) -----
+const FRONTEND_ORIGINS = [
+  "http://localhost:5173",
+  "https://meaw-mates.vercel.app",
+  /^https:\/\/meaw-mates-.*\.vercel\.app$/,   // ⭐ Any Vercel Preview build
+];
 
-console.log("🔍 FRONTEND_URL =", FRONTEND_URL);
-console.log("🔍 NETLIFY_URL =", NETLIFY_URL);
+console.log("🔍 Allowed Origins =", FRONTEND_ORIGINS);
 
-// Fix dirname
+// Fix dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -35,11 +37,23 @@ const app = express();
 app.set("trust proxy", 1);
 
 /* ======================================================
-      ⭐ CORS FIX (สำคัญที่สุด)
+      ⭐ CORS FIX (รองรับทุก Vercel Preview)
 ====================================================== */
 app.use(
   cors({
-    origin: [FRONTEND_URL, NETLIFY_URL, "http://localhost:5173"],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // mobile apps / curl
+
+      const allowed = FRONTEND_ORIGINS.some((rule) =>
+        rule instanceof RegExp ? rule.test(origin) : rule === origin
+      );
+
+      if (allowed) callback(null, true);
+      else {
+        console.log("❌ CORS Blocked:", origin);
+        callback(new Error("CORS Blocked"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   })
@@ -51,7 +65,7 @@ app.use(
 app.use(express.json({ limit: "20mb" }));
 
 /* ======================================================
-      ⭐ SESSION FIX (OAuth)
+      ⭐ SESSION FIX (OAuth Cookies on HTTPS)
 ====================================================== */
 app.use(
   session({
@@ -59,8 +73,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true,          // Render ใช้ HTTPS
-      sameSite: "none",      // ต้องใช้คู่กับ credentials
+      secure: true,          // must be true for HTTPS (Render)
+      sameSite: "none",      // required for cross-origin cookies
     },
   })
 );
