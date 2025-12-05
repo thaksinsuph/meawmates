@@ -139,15 +139,17 @@ export default function Home() {
 };
 
 
-  const avatarURL = (av) => {
-  if (!av) return "/images/profile.png";
+ const avatarURL = (av) => {
+  // Default avatar should come from Frontend
+  if (!av) return `${window.location.origin}/images/profile.png`;
 
   if (av.startsWith("data:")) return av;
   if (av.startsWith("http")) return av;
 
-  // Ensure correct slash
+  // Avatar uploaded by user → from backend
   return `${backendURL}/${av.replace(/^\//, "")}`;
 };
+
 
 
   const isLiked = (p) => p.likes?.includes(user?._id);
