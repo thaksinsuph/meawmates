@@ -16,7 +16,7 @@ import SwipeMatch from "./pages/SwipeMatch";
 import Messages from "./pages/Messages";
 import Saved from "./pages/Saved";
 import PostDetail from "./pages/PostDetail";
-import ViewProfile from "./pages/Viewprofile";
+import ViewProfile from "./pages/ViewProfile";
 import NotFound from "./pages/NotFound";
 
 // Admin
