@@ -24,11 +24,12 @@ export default function ManageReports() {
   }, []);
 
   const imageURL = (img) =>
-    !img
-      ? "https://placekitten.com/300/200"
-      : img.startsWith("data:")
-      ? img
-      : `http://localhost:4000${img.replace(/\\/g, "/")}`;
+  !img || typeof img !== "string"
+    ? "https://placekitten.com/400/300"
+    : img.startsWith("data:")
+    ? img
+    : `http://localhost:4000${img.replace(/\\/g, "/")}`;
+
 
   /* ------------------ DELETE POST ------------------ */
   const deletePost = async (postId, reportId) => {

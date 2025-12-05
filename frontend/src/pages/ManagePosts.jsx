@@ -38,12 +38,14 @@ export default function ManagePosts() {
       ? img
       : `http://localhost:4000${img.replace(/\\/g, "/")}`;
 
-  const avatarURL = (avatar) =>
-    !avatar
-      ? "/images/default-cat.png"
-      : avatar.startsWith("data:")
-      ? avatar
-      : `http://localhost:4000${avatar.replace(/\\/g, "/")}`;
+  const avatarURL = (avatar) => {
+  if (!avatar) return "/images/profile.png";           // default local
+  if (avatar.startsWith("/images/")) return avatar;    // local static image
+  if (avatar.startsWith("data:")) return avatar;       // base64
+  return avatar;                                       // google avatar OR backend path if any
+};
+
+
 
   return (
     <div>

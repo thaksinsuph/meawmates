@@ -135,12 +135,13 @@ export default function Home() {
       ? img
       : `http://localhost:4000${img.replace(/\\/g, "/")}`;
 
-  const avatarURL = (avatar) =>
-    !avatar
-      ? "https://i.pravatar.cc/40"
-      : avatar.startsWith("data:")
-      ? avatar
-      : `http://localhost:4000${avatar.replace(/\\/g, "/")}`;
+  const avatarURL = (avatar) => {
+  if (!avatar) return "/images/profile.png";           // default local
+  if (avatar.startsWith("/images/")) return avatar;    // local static image
+  if (avatar.startsWith("data:")) return avatar;       // base64
+  return avatar;                                       // google avatar OR backend path if any
+};
+
 
   const isLiked = (p) => p.likes?.includes(user?._id);
 

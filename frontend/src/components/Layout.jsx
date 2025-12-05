@@ -122,11 +122,21 @@ export default function Layout() {
   };
 
   const fixAvatar = (av) => {
-    if (!av) return "/images/default-avatar.png";
-    if (av.startsWith("http")) return av;
-    if (av.startsWith("data:")) return av;
-    return `http://localhost:4000${av.startsWith("/") ? av : "/" + av}`;
-  };
+  if (!av) return "/images/profile.png";            // default avatar (frontend)
+
+  // รูปที่มาจาก frontend (เริ่มด้วย /images/)
+  if (av.startsWith("/images/")) return av;
+
+  // base64 upload
+  if (av.startsWith("data:")) return av;
+
+  // google picture URL
+  if (av.startsWith("http")) return av;
+
+  // กรณีเป็น path จาก backend เช่น /uploads/a.jpg
+  return `http://localhost:4000${av.startsWith("/") ? av : "/" + av}`;
+};
+
 
   const avatarSrc = fixAvatar(user?.avatar);
 

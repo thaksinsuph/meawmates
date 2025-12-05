@@ -5,28 +5,26 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-
-// ⭐ OAuth Package
 import session from "express-session";
 import passport from "passport";
+import jwt from "jsonwebtoken";
+import User from "./models/User.js";
 
-// ⭐ โหลด .env ก่อน
 dotenv.config();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 console.log("🔍 FRONTEND_URL =", FRONTEND_URL);
-console.log("🔍 JWT_SECRET =", process.env.JWT_SECRET);
 
-// Fix dirname (ESM)
+// Fix dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ⭐ Import OAuth Strategies
+// OAuth Strategies
 import "./auth/google.js";
 import "./auth/facebook.js";
 
-// ⭐ Import Routes
+// Routes
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/users.routes.js";
 import postRoutes from "./routes/posts.routes.js";
@@ -37,17 +35,19 @@ import chatRoutes from "./routes/chat.routes.js";
 import notiRoutes from "./routes/notifications.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 
-import jwt from "jsonwebtoken";
-import User from "./models/User.js";
-
 const app = express();
 
 /* ======================================================
-      CORS (รองรับ Credential + OAuth)
+      ⭐ REQUIRED FOR RENDER (IMPORTANT)
+====================================================== */
+app.set("trust proxy", 1);
+
+/* ======================================================
+      CORS
 ====================================================== */
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: [FRONTEND_URL, "http://localhost:5173"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   })
@@ -56,16 +56,20 @@ app.use(
 /* ======================================================
       JSON Parser
 ====================================================== */
-app.use(express.json({ limit: "20mb", extended: true }));
+app.use(express.json({ limit: "20mb" }));
 
 /* ======================================================
-      Session สำหรับ OAuth (ต้องมาก่อน Passport + optionalAuth)
+      SESSION (OAuth)
 ====================================================== */
 app.use(
   session({
     secret: process.env.JWT_SECRET,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      secure: true, // ⭐ required on Render (HTTPS)
+      sameSite: "none", // ⭐ required for cross-site cookies
+    },
   })
 );
 
@@ -73,39 +77,35 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 /* ======================================================
-      OPTIONAL AUTH (ต้องอยู่หลัง passport session)
+      OPTIONAL JWT AUTH
 ====================================================== */
 const optionalAuth = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) {
     req.user = null;
     return next();
   }
 
-  const token = authHeader.split(" ")[1];
-
+  const token = header.split(" ")[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id)
-      .select("_id name email role savedPosts avatar");
-  } catch (err) {
+    req.user = await User.findById(decoded.id).select("_id name email role savedPosts avatar");
+  } catch {
     req.user = null;
   }
-
   next();
 };
 
 app.use(optionalAuth);
 
 /* ======================================================
-      Static File Uploads
+      Static Files
 ====================================================== */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/uploads/chat", express.static(path.join(__dirname, "uploads/chat")));
 
 /* ======================================================
-      MongoDB Connection
+      MongoDB
 ====================================================== */
 mongoose
   .connect(process.env.MONGO_URI)
@@ -113,7 +113,7 @@ mongoose
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 /* ======================================================
-      NORMAL API ROUTES
+      API ROUTES
 ====================================================== */
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -133,7 +133,7 @@ app.get("/", (req, res) => {
 });
 
 /* ======================================================
-      404 Not Found
+      404
 ====================================================== */
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found 🐾" });
@@ -144,5 +144,5 @@ app.use((req, res) => {
 ====================================================== */
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

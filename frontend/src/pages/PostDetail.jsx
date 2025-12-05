@@ -40,20 +40,20 @@ export default function PostDetail() {
 
   /* ------------------------------ URL HELPERS ------------------------------ */
   const imageURL = (img) =>
-    !img
-      ? "https://placekitten.com/400/300"
-      : img.startsWith("data:")
-      ? img
-      : `http://localhost:4000${img.replace(/\\/g, "/")}`;
+  !img || typeof img !== "string"
+    ? "https://placekitten.com/400/300"
+    : img.startsWith("data:")
+    ? img
+    : `http://localhost:4000${img.replace(/\\/g, "/")}`;
 
-  const avatarURL = (avatar) =>
-    !avatar
-      ? "/images/default-avatar.png"
-      : avatar.startsWith("data:")
-      ? avatar
-      : avatar.startsWith("http")
-      ? avatar
-      : `http://localhost:4000${avatar.replace(/\\/g, "/")}`;
+
+  const avatarURL = (avatar) => {
+  if (!avatar) return "/images/profile.png";           // default local
+  if (avatar.startsWith("/images/")) return avatar;    // local static image
+  if (avatar.startsWith("data:")) return avatar;       // base64
+  return avatar;                                       // google avatar OR backend path if any
+};
+
 
   /* ------------------------------ DELETE POST ------------------------------ */
   const deletePost = async () => {
