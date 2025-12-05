@@ -12,54 +12,46 @@ import User from "./models/User.js";
 
 dotenv.config();
 
+// Allow multiple frontend URLs (Render + Netlify + Local)
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const NETLIFY_URL = process.env.NETLIFY_URL || "https://phenomenal-sopapillas-d84803.netlify.app";
 
 console.log("🔍 FRONTEND_URL =", FRONTEND_URL);
+console.log("🔍 NETLIFY_URL =", NETLIFY_URL);
 
 // Fix dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// OAuth Strategies
+// OAuth
 import "./auth/google.js";
 import "./auth/facebook.js";
-
-// Routes
-import authRoutes from "./routes/auth.routes.js";
-import userRoutes from "./routes/users.routes.js";
-import postRoutes from "./routes/posts.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
-import petRoutes from "./routes/pets.routes.js";
-import matchingRoutes from "./routes/matching.routes.js";
-import chatRoutes from "./routes/chat.routes.js";
-import notiRoutes from "./routes/notifications.routes.js";
-import reportRoutes from "./routes/report.routes.js";
 
 const app = express();
 
 /* ======================================================
-      ⭐ REQUIRED FOR RENDER (IMPORTANT)
+      ⭐ REQUIRED FOR RENDER PROXY
 ====================================================== */
 app.set("trust proxy", 1);
 
 /* ======================================================
-      CORS
+      ⭐ CORS FIX (สำคัญที่สุด)
 ====================================================== */
 app.use(
   cors({
-    origin: [FRONTEND_URL, "http://localhost:5173"],
+    origin: [FRONTEND_URL, NETLIFY_URL, "http://localhost:5173"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   })
 );
 
 /* ======================================================
-      JSON Parser
+      JSON BODY
 ====================================================== */
 app.use(express.json({ limit: "20mb" }));
 
 /* ======================================================
-      SESSION (OAuth)
+      ⭐ SESSION FIX (OAuth)
 ====================================================== */
 app.use(
   session({
@@ -67,8 +59,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true, // ⭐ required on Render (HTTPS)
-      sameSite: "none", // ⭐ required for cross-site cookies
+      secure: true,          // Render ใช้ HTTPS
+      sameSite: "none",      // ต้องใช้คู่กับ credentials
     },
   })
 );
@@ -81,15 +73,18 @@ app.use(passport.session());
 ====================================================== */
 const optionalAuth = async (req, res, next) => {
   const header = req.headers.authorization;
+
   if (!header?.startsWith("Bearer ")) {
     req.user = null;
     return next();
   }
 
-  const token = header.split(" ")[1];
   try {
+    const token = header.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select("_id name email role savedPosts avatar");
+    req.user = await User.findById(decoded.id).select(
+      "_id name email role savedPosts avatar"
+    );
   } catch {
     req.user = null;
   }
@@ -110,11 +105,21 @@ app.use("/uploads/chat", express.static(path.join(__dirname, "uploads/chat")));
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+  .catch((err) => console.error("❌ MongoDB error:", err));
 
 /* ======================================================
-      API ROUTES
+      API Routes
 ====================================================== */
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/users.routes.js";
+import postRoutes from "./routes/posts.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+import petRoutes from "./routes/pets.routes.js";
+import matchingRoutes from "./routes/matching.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
+import notiRoutes from "./routes/notifications.routes.js";
+import reportRoutes from "./routes/report.routes.js";
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
@@ -126,14 +131,14 @@ app.use("/api/noti", notiRoutes);
 app.use("/api/reports", reportRoutes);
 
 /* ======================================================
-      Test Route
+      Root Test
 ====================================================== */
 app.get("/", (req, res) => {
-  res.send("🐾 MeowMates API is running successfully!");
+  res.send("🐾 MeowMates API is running on Render!");
 });
 
 /* ======================================================
-      404
+      404 Handler
 ====================================================== */
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found 🐾" });

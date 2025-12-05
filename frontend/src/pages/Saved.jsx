@@ -8,22 +8,23 @@ export default function Saved() {
   const [posts, setPosts] = useState([]);
   const user = getUser();
 
+  // ⭐ Backend root URL เช่น https://meawmates.onrender.com
+  const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
+
   useEffect(() => {
     if (user?._id) fetchSaved();
   }, [user]);
 
   const fetchSaved = async () => {
     try {
-      const res = await axios.get(
-        `http://localhost:4000/api/posts/saved/${user._id}`,
-        { headers: { Authorization: `Bearer ${getToken()}` } }
-      );
+      const res = await api.get(`/api/posts/saved/${user._id}`);
       setPosts(res.data);
     } catch (err) {
       console.error("❌ Fetch saved posts error:", err);
     }
   };
 
+  /* ----------------- TIME AGO ----------------- */
   const timeAgo = (dateString) => {
     const date = new Date(dateString);
     const diff = (Date.now() - date.getTime()) / 1000;
@@ -34,7 +35,7 @@ export default function Saved() {
     return `${Math.floor(diff / 86400)} days ago`;
   };
 
-  /* ❤️ Like */
+  /* ❤️ LIKE */
   const toggleLike = async (id) => {
     try {
       const res = await api.post(`/api/posts/${id}/like`);
@@ -60,14 +61,14 @@ export default function Saved() {
   /* 💾 Save / Unsave */
   const toggleSave = async (id) => {
     try {
-      const res = await api.post(`/api/posts/${id}/save`);
-      fetchSaved(); // อัปเดต savedCount และลบโพสต์ออกถ้า unsave แล้ว
+      await api.post(`/api/posts/${id}/save`);
+      fetchSaved(); // อัปเดต saved list ใหม่
     } catch (err) {
       console.error("Save error:", err);
     }
   };
 
-  /* 🚩 Report */
+  /* 🚩 REPORT */
   const reportPost = async (id) => {
     const reason = prompt("Reason for reporting this post?");
     if (!reason) return;
@@ -80,47 +81,47 @@ export default function Saved() {
     }
   };
 
-  const imageURL = (img) =>
-    !img
-      ? "https://placekitten.com/400/300"
-      : img.startsWith("data:")
-      ? img
-      : `http://localhost:4000${img.replace(/\\/g, "/")}`;
+  /* ----------------- FIX IMAGE URL ----------------- */
+  const imageURL = (img) => {
+    if (!img) return "https://placekitten.com/400/300";
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("http")) return img;
+    return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
+  };
 
-  const avatarURL = (avatar) => {
-  if (!avatar) return "/images/profile.png";           // default local
-  if (avatar.startsWith("/images/")) return avatar;    // local static image
-  if (avatar.startsWith("data:")) return avatar;       // base64
-  return avatar;                                       // google avatar OR backend path if any
-};
-
-
+  /* ----------------- FIX AVATAR URL ----------------- */
+  const avatarURL = (av) => {
+    if (!av) return "/images/profile.png";
+    if (av.startsWith("/images/")) return av;
+    if (av.startsWith("data:")) return av;
+    if (av.startsWith("http")) return av;
+    return `${backendBase}${av.startsWith("/") ? av : "/" + av}`;
+  };
 
   const isLiked = (p) => p.likes?.includes(user?._id);
 
   return (
     <div className="max-w-7xl mx-auto py-20 px-6">
+
       {/* Header */}
       <h1 className="text-4xl font-bold flex items-center gap-3 mb-6">
         <img src="/images/Savedd.png" className="w-10 h-10" />
         Saved Posts
       </h1>
 
-      {/* Empty State */}
+      {/* Empty */}
       {posts.length === 0 && (
-        <p className="text-gray-500 text-center mt-10">
-          ยังไม่มีโพสต์ที่คุณบันทึกไว้
-        </p>
+        <p className="text-gray-500 text-center mt-10">ยังไม่มีโพสต์ที่คุณบันทึกไว้</p>
       )}
 
-      {/* Posts Grid */}
+      {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {posts.map((p) => (
           <div
             key={p._id}
             className="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-3"
           >
-            {/* Post Image */}
+            {/* Image */}
             <Link to={`/post/${p._id}`}>
               <img
                 src={imageURL(p.image)}
@@ -134,24 +135,21 @@ export default function Saved() {
             </p>
 
             <div className="flex justify-between items-center">
-              {/* Avatar + Name */}
+
+              {/* AUTHOR */}
               <div className="flex items-center gap-2">
                 <img
-                  src={avatarURL(p.avatar)}
+                  src={avatarURL(p.author?.avatar)}
                   className="w-7 h-7 rounded-full border object-cover"
                 />
-                <div>
-                  <p className="font-medium text-gray-700 text-sm">{p.author}</p>
-                </div>
+                <p className="font-medium text-gray-700 text-sm">{p.author?.name}</p>
               </div>
 
-              {/* Action Buttons */}
+              {/* ACTIONS */}
               <div className="flex gap-4 text-sm items-center">
-                {/* ❤️ Like + number */}
-                <button
-                  onClick={() => toggleLike(p._id)}
-                  className="flex items-center gap-1"
-                >
+
+                {/* ❤️ Like */}
+                <button onClick={() => toggleLike(p._id)} className="flex items-center gap-1">
                   <img
                     src="/images/Like.png"
                     className={`w-6 h-6 ${
@@ -163,11 +161,8 @@ export default function Saved() {
                   </span>
                 </button>
 
-                {/* 💾 Save + number */}
-                <button
-                  onClick={() => toggleSave(p._id)}
-                  className="flex items-center gap-1"
-                >
+                {/* 💾 Save */}
+                <button onClick={() => toggleSave(p._id)} className="flex items-center gap-1">
                   <img
                     src="/images/Savedd.png"
                     className="w-6 h-6 opacity-70 hover:opacity-100"
@@ -184,6 +179,7 @@ export default function Saved() {
                     className="w-6 h-6 opacity-70 hover:opacity-100"
                   />
                 </button>
+
               </div>
             </div>
           </div>

@@ -8,22 +8,42 @@ export default function Matching() {
   const [pets, setPets] = useState([{}, {}, {}, {}]);
   const [selectedPet, setSelectedPet] = useState(null);
 
-  
+  // ⭐ ใช้ API URL ของ backend เพื่อสร้าง path รูป
+  const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
 
-  const isEmptyPet = (pet) => {
-    return !pet || (!pet.name && !pet.breed && !pet.color && !pet.age && !pet.image);
+  // ⭐ Normalize รูปสัตว์เลี้ยงให้ใช้ได้จริงตอน Deploy
+  const fixImage = (img) => {
+    if (!img) return null;
+
+    if (img.startsWith("data:")) return img;      // Base64
+    if (img.startsWith("http")) return img;       // Google หรือ external
+    if (img.startsWith("/images/")) return img;   // frontend static
+
+    // รูปที่ backend ส่งมา เช่น /uploads/xxxx.jpg
+    return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
   };
 
+  const isEmptyPet = (pet) =>
+    !pet || (!pet.name && !pet.breed && !pet.color && !pet.age && !pet.image);
+
+  /* ------------------ LOAD PETS (4 slots) ------------------ */
   const loadAllPets = async () => {
     const results = [];
+
     for (let i = 1; i <= 4; i++) {
       try {
         const res = await api.get(`/api/pets/${i}`);
-        results.push(res.data || {});
+
+        results.push({
+          ...res.data,
+          image: fixImage(res.data?.image),
+          vaccineImage: fixImage(res.data?.vaccineImage),
+        });
       } catch {
         results.push({});
       }
     }
+
     setPets(results);
   };
 
@@ -31,11 +51,14 @@ export default function Matching() {
     loadAllPets();
   }, []);
 
+  /* ------------------ SELECT SLOT ------------------ */
   const handleSelectSlot = (pet, index) => {
     if (isEmptyPet(pet)) return alert("No cat saved in this slot.");
+
     setSelectedPet({ ...pet, slot: index + 1 });
   };
 
+  /* ------------------ NEXT BUTTON ------------------ */
   const handleNext = () => {
     if (!selectedPet) return alert("Please select a cat.");
 
@@ -51,18 +74,20 @@ export default function Matching() {
     navigate("/matching/swipe");
   };
 
+  /* ============================================================
+      UI
+  ============================================================ */
   return (
     <div className="w-full flex flex-col items-center py-12 px-4 gap-12">
 
-      {/* Title */}
       <h1 className="text-4xl font-bold flex items-center gap-3 text-gray-800">
-        <img src="/images/love.png" alt="love icon" className="w-10 h-10" />
+        <img src="/images/love.png" className="w-10 h-10" />
         Match Your Cat
       </h1>
 
-      <p className="text-gray-600 text-lg">Select one cat to start pairing. </p>
+      <p className="text-gray-600 text-lg">Select one cat to start pairing.</p>
 
-      {/* Cards */}
+      {/* PET LIST */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-6xl">
         {pets.map((pet, index) => {
           const empty = isEmptyPet(pet);
@@ -77,24 +102,28 @@ export default function Matching() {
                 ${selectedPet?.slot === index + 1 ? "border-pink-500 shadow-xl" : "border-gray-200"}
                 ${empty ? "opacity-40 cursor-not-allowed hover:translate-y-0 hover:shadow-md" : "cursor-pointer"}
               `}
-              style={{ minHeight: "380px" }}   // ⭐ สูงกว่าเดิม
+              style={{ minHeight: "380px" }}
             >
-              {/* Cat Image */}
+
+              {/* CAT IMAGE */}
               <div className="w-full h-56 bg-gray-100 rounded-2xl overflow-hidden flex items-center justify-center shadow-inner">
                 {pet?.image ? (
-                  <img src={pet.image} className="w-full h-full object-cover" />
+                  <img
+                    src={fixImage(pet.image)}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="text-gray-400">No information</span>
                 )}
               </div>
 
-              {/* Slot Title */}
+              {/* SLOT TITLE */}
               <p className="mt-4 font-bold text-xl text-gray-800 flex items-center gap-2">
                 <img src="/images/paw-decor.png" className="w-5 h-5 opacity-80" />
                 Channel {index + 1}
               </p>
 
-              {/* Details */}
+              {/* DETAILS */}
               <div className="text-sm text-gray-600 leading-6 mt-2 space-y-1">
                 <p><strong>Name:</strong> {pet?.name || "—"}</p>
                 <p><strong>Breed:</strong> {pet?.breed || "—"}</p>
@@ -116,7 +145,7 @@ export default function Matching() {
           transition-all
         "
       >
-        Start Pairing 
+        Start Pairing
       </button>
     </div>
   );

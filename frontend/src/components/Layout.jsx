@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import api from "../api"; // ⭐ ใช้ API ที่อิง VITE_API_URL
 import { getUser, saveUser, logout, getToken } from "../auth";
 
 export default function Layout() {
@@ -15,14 +15,16 @@ export default function Layout() {
   const [unseenCount, setUnseenCount] = useState(0);
   const notiRef = useRef();
 
-  /* LOAD USER */
+  /* =====================================================
+        LOAD USER
+  ===================================================== */
   useEffect(() => {
     const fetchUser = async () => {
       const token = getToken();
       if (!token) return;
 
       try {
-        const res = await axios.get("http://localhost:4000/api/users/me", {
+        const res = await api.get("/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -36,16 +38,17 @@ export default function Layout() {
     fetchUser();
   }, [location]);
 
-  /* LOAD NOTIFICATIONS */
+  /* =====================================================
+        LOAD NOTIFICATIONS
+  ===================================================== */
   useEffect(() => {
     if (!user?._id) return;
 
     const loadNoti = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:4000/api/users/me/notifications",
-          { headers: { Authorization: `Bearer ${getToken()}` } }
-        );
+        const res = await api.get("/api/users/me/notifications", {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
 
         setNotifications(res.data || []);
         setUnseenCount(res.data.filter((n) => !n.read).length);
@@ -57,14 +60,16 @@ export default function Layout() {
     loadNoti();
   }, [user?._id]);
 
-  /* MARK SEEN */
+  /* =====================================================
+        MARK NOTIFICATIONS AS READ
+  ===================================================== */
   const toggleNoti = async () => {
     const newState = !notiOpen;
     setNotiOpen(newState);
 
     if (!notiOpen) {
-      await axios.post(
-        "http://localhost:4000/api/users/me/notifications/read",
+      await api.post(
+        "/api/users/me/notifications/read",
         {},
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
@@ -72,12 +77,14 @@ export default function Layout() {
     }
   };
 
-  /* CLEAR ALL NOTIFICATIONS */
+  /* =====================================================
+        CLEAR ALL NOTIFICATIONS
+  ===================================================== */
   const handleClearNoti = async (e) => {
     e.stopPropagation();
 
-    await axios.post(
-      "http://localhost:4000/api/users/me/notifications/clear",
+    await api.post(
+      "/api/users/me/notifications/clear",
       {},
       { headers: { Authorization: `Bearer ${getToken()}` } }
     );
@@ -86,7 +93,9 @@ export default function Layout() {
     setUnseenCount(0);
   };
 
-  /* CLOSE MENUS WHEN CLICK OUTSIDE */
+  /* =====================================================
+        CLICK OUTSIDE CLOSE DROPDOWNS
+  ===================================================== */
   useEffect(() => {
     const handleClick = (e) => {
       if (!profileRef.current?.contains(e.target)) setProfileOpen(false);
@@ -97,7 +106,9 @@ export default function Layout() {
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
-  /* AUTO LOGOUT */
+  /* =====================================================
+        AUTO LOGOUT IF TOKEN LOST
+  ===================================================== */
   useEffect(() => {
     const timer = setInterval(() => {
       if (!getUser()) {
@@ -109,34 +120,39 @@ export default function Layout() {
     return () => clearInterval(timer);
   }, []);
 
-  /* SYNC BETWEEN TABS */
+  /* =====================================================
+        SYNC USER BETWEEN TABS
+  ===================================================== */
   useEffect(() => {
     const syncUser = () => setUser(getUser());
     window.addEventListener("storage", syncUser);
     return () => window.removeEventListener("storage", syncUser);
   }, []);
 
+  /* =====================================================
+        LOGOUT
+  ===================================================== */
   const handleLogout = () => {
     logout();
     window.location.href = "/login";
   };
 
+  /* =====================================================
+        FIX AVATAR PATH
+  ===================================================== */
   const fixAvatar = (av) => {
-  if (!av) return "/images/profile.png";            // default avatar (frontend)
+    if (!av) return "/images/profile.png";
 
-  // รูปที่มาจาก frontend (เริ่มด้วย /images/)
-  if (av.startsWith("/images/")) return av;
+    // base64
+    if (av.startsWith("data:")) return av;
 
-  // base64 upload
-  if (av.startsWith("data:")) return av;
+    // google / facebook avatar
+    if (av.startsWith("http")) return av;
 
-  // google picture URL
-  if (av.startsWith("http")) return av;
-
-  // กรณีเป็น path จาก backend เช่น /uploads/a.jpg
-  return `http://localhost:4000${av.startsWith("/") ? av : "/" + av}`;
-};
-
+    // backend uploads → prefix with backend URL
+    const backend = import.meta.env.VITE_API_URL.replace("/api", "");
+    return `${backend}${av.startsWith("/") ? av : "/" + av}`;
+  };
 
   const avatarSrc = fixAvatar(user?.avatar);
 
@@ -151,19 +167,11 @@ export default function Layout() {
   };
 
   return (
-    <div
-      className="
-        min-h-screen flex flex-col relative
-        bg-[#fdf9ff]
-        
-      "
-    >
-
-      {/* 🌸 Soft Light Background Blobs */}
+    <div className="min-h-screen flex flex-col relative bg-[#fdf9ff]">
+      {/* Background blobs */}
       <div className="absolute top-[-15%] left-[-15%] w-[460px] h-[460px] bg-pink-300/30 rounded-full blur-[140px]"></div>
       <div className="absolute bottom-[-15%] right-[-10%] w-[520px] h-[520px] bg-indigo-300/30 rounded-full blur-[150px]"></div>
       <div className="absolute top-[45%] right-[20%] w-[300px] h-[300px] bg-purple-300/20 rounded-full blur-[170px]"></div>
-
 
       {/* NAVBAR */}
       <header className="border-b bg-white/80 backdrop-blur-md fixed top-0 left-0 w-full z-30 shadow-sm">
@@ -232,11 +240,7 @@ export default function Layout() {
                 {notiOpen && (
                   <div
                     className="absolute right-0 mt-3 w-80 rounded-xl border bg-white shadow-xl z-30 animate-fadeIn"
-                    style={{
-                      maxHeight: "420px",
-                      overflowY: "auto",
-                      overflowX: "hidden",
-                    }}
+                    style={{ maxHeight: "420px", overflowY: "auto", overflowX: "hidden" }}
                   >
                     <div className="sticky top-0 bg-white border-b px-4 py-2 flex items-center justify-between">
                       <span className="font-semibold text-gray-700">Notifications</span>
@@ -252,7 +256,9 @@ export default function Layout() {
                     </div>
 
                     {notifications.length === 0 ? (
-                      <p className="text-gray-400 text-center py-4 text-sm">No notifications</p>
+                      <p className="text-gray-400 text-center py-4 text-sm">
+                        No notifications
+                      </p>
                     ) : (
                       notifications.map((n, i) => (
                         <div
@@ -266,14 +272,8 @@ export default function Layout() {
                           />
 
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-800 truncate">
-                              {n?.fromUser?.name}
-                            </p>
-
-                            <p className="text-sm text-gray-700 truncate">
-                              {n.message}
-                            </p>
-
+                            <p className="font-semibold text-gray-800 truncate">{n?.fromUser?.name}</p>
+                            <p className="text-sm text-gray-700 truncate">{n.message}</p>
                             <p className="text-xs text-gray-400 mt-0.5">
                               {new Date(n.createdAt).toLocaleString()}
                             </p>

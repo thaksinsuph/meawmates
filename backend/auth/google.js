@@ -4,19 +4,18 @@ dotenv.config();
 
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/User.js";
 import crypto from "crypto";
+import User from "../models/User.js";
 
+// Google Credentials
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-// ⭐ Dynamic Callback URL (รองรับทั้ง Dev & Deploy)
-const CALLBACK_URL =
-  process.env.BACKEND_URL
-    ? `${process.env.BACKEND_URL}/api/auth/google/callback`
-    : "http://localhost:4000/api/auth/google/callback";
+// Dynamic Callback (Production + Dev)
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000";
 
-console.log("🔍 [GOOGLE] Using callback:", CALLBACK_URL);
+const CALLBACK_URL = `${BACKEND_URL}/api/auth/google/callback`;
+console.log("🔍 [GOOGLE] Callback URL =", CALLBACK_URL);
 
 passport.use(
   new GoogleStrategy(
@@ -24,11 +23,9 @@ passport.use(
       clientID: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
       callbackURL: CALLBACK_URL,
-      passReqToCallback: true, // optional แต่ดีมาก
     },
 
-    // ============ VERIFY FUNCTION ============
-    async (req, accessToken, refreshToken, profile, done) => {
+    async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails[0].value;
 
@@ -40,12 +37,11 @@ passport.use(
             email,
             avatar: profile.photos?.[0]?.value || "/images/profile.png",
             role: "user",
-            password: crypto.randomBytes(16).toString("hex")
+            password: crypto.randomBytes(16).toString("hex"),
           });
         }
 
         return done(null, user);
-
       } catch (err) {
         return done(err, null);
       }
@@ -53,11 +49,8 @@ passport.use(
   )
 );
 
-// ============ SESSION ============
-passport.serializeUser((user, done) => {
-  done(null, user._id);
-});
-
+// Sessions
+passport.serializeUser((user, done) => done(null, user._id));
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);

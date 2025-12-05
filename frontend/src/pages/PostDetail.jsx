@@ -9,9 +9,12 @@ export default function PostDetail() {
 
   const [post, setPost] = useState(null);
   const [comment, setComment] = useState("");
-  const [openMenu, setOpenMenu] = useState(false); // ⭐ เมนูสามจุด
+  const [openMenu, setOpenMenu] = useState(false);
 
   const user = getUser();
+
+  // ⭐ Backend root URL เช่น https://meawmates.onrender.com
+  const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
 
   /* ------------------------------ TIME AGO ------------------------------ */
   const timeAgo = (dateString) => {
@@ -39,21 +42,20 @@ export default function PostDetail() {
   }, [id]);
 
   /* ------------------------------ URL HELPERS ------------------------------ */
-  const imageURL = (img) =>
-  !img || typeof img !== "string"
-    ? "https://placekitten.com/400/300"
-    : img.startsWith("data:")
-    ? img
-    : `http://localhost:4000${img.replace(/\\/g, "/")}`;
+  const fixURL = (img) => {
+    if (!img || typeof img !== "string") return "https://placekitten.com/400/300";
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("http")) return img;
+    return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
+  };
 
-
-  const avatarURL = (avatar) => {
-  if (!avatar) return "/images/profile.png";           // default local
-  if (avatar.startsWith("/images/")) return avatar;    // local static image
-  if (avatar.startsWith("data:")) return avatar;       // base64
-  return avatar;                                       // google avatar OR backend path if any
-};
-
+  const avatarURL = (av) => {
+    if (!av) return "/images/profile.png";
+    if (av.startsWith("data:")) return av;
+    if (av.startsWith("http")) return av;
+    if (av.startsWith("/images/")) return av;
+    return fixURL(av);
+  };
 
   /* ------------------------------ DELETE POST ------------------------------ */
   const deletePost = async () => {
@@ -114,8 +116,6 @@ export default function PostDetail() {
     }
   };
 
-  /* ------------------------------ UI ------------------------------ */
-
   if (!post)
     return <div className="p-10 text-center text-lg">Loading...</div>;
 
@@ -123,11 +123,9 @@ export default function PostDetail() {
     <div className="max-w-3xl mx-auto py-20 px-4">
       <div className="bg-white rounded-2xl shadow-md p-6">
 
-
-        {/* AUTHOR AREA + MENU */}
+        {/* AUTHOR + MENU */}
         <div className="relative flex items-center justify-between mb-4">
-          
-          {/* LEFT: AUTHOR */}
+
           <div className="flex items-center gap-3">
             <Link to={`/profile/${post.author?._id}`}>
               <img
@@ -147,7 +145,6 @@ export default function PostDetail() {
             </div>
           </div>
 
-          {/* RIGHT: 3-DOT BUTTON */}
           <button
             onClick={() => setOpenMenu(!openMenu)}
             className="text-2xl text-gray-600 hover:text-gray-800 px-2"
@@ -155,67 +152,56 @@ export default function PostDetail() {
             ⋮
           </button>
 
-          {/* ⭐ FULL DROPDOWN MENU (เหมือนหน้า HOME) */}
+          {/* MENU */}
           {openMenu && (
-            <div className="absolute right-2 top-12 bg-white shadow-xl border border-gray-200 rounded-xl w-64 py-2 z-30 animate-fadeIn">
-
-              {/* SAVE / UNSAVE */}
+            <div className="absolute right-2 top-12 bg-white shadow-xl border rounded-xl w-64 py-2 z-30 animate-fadeIn">
+              
               <button
                 onClick={() => {
                   toggleSave();
                   setOpenMenu(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition rounded-lg"
+                className="w-full flex gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg"
               >
-                <img src="/images/save-menu.png" className="w-5 h-5 opacity-70" />
-                <span className="text-gray-800 text-sm">
-                  {post.isSaved ? "Remove from saved" : "Save post"}
-                </span>
+                <img src="/images/save-menu.png" className="w-5 h-5" />
+                <span>{post.isSaved ? "Remove from saved" : "Save post"}</span>
               </button>
 
-              {/* REPORT */}
               <button
                 onClick={() => {
                   const reason = prompt("Reason for reporting this post?");
                   if (reason) api.post(`/api/posts/${id}/report`, { reason });
                   setOpenMenu(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition rounded-lg"
+                className="w-full flex gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg"
               >
-                <img src="/images/report.png" className="w-5 h-5 opacity-70" />
-                <span className="text-gray-800 text-sm">Report post</span>
+                <img src="/images/report.png" className="w-5 h-5" />
+                <span>Report post</span>
               </button>
 
-              {/* DELETE ONLY IF OWNER */}
               {user?._id === post.author?._id && (
                 <button
-                  onClick={() => {
-                    deletePost();
-                    setOpenMenu(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-100 transition rounded-lg"
+                  onClick={deletePost}
+                  className="w-full flex gap-3 px-4 py-3 hover:bg-red-100 rounded-lg"
                 >
-                  <img src="/images/delete.png" className="w-5 h-5 opacity-70" />
-                  <span className="text-red-600 text-sm">Delete post</span>
+                  <img src="/images/delete.png" className="w-5 h-5" />
+                  <span className="text-red-600">Delete post</span>
                 </button>
               )}
             </div>
           )}
         </div>
 
-
         {/* IMAGE */}
         <div className="w-full max-h-[550px] overflow-hidden rounded-xl mb-4 flex justify-center bg-gray-100">
           <img
-            src={imageURL(post.image)}
+            src={fixURL(post.image)}
             className="max-h-[550px] w-auto object-contain"
           />
         </div>
 
-
         {/* CONTENT */}
         <p className="text-gray-700 mb-4">{post.content}</p>
-
 
         {/* LIKE + SAVE */}
         <div className="flex gap-10 mb-6 text-lg items-center">
@@ -232,12 +218,11 @@ export default function PostDetail() {
           <button onClick={toggleSave} className="flex items-center gap-2">
             <img
               src={post.isSaved ? "/images/Savedd.png" : "/images/Saved.png"}
-              className="w-7 h-7 transition-all"
+              className="w-7 h-7"
             />
             <span>{post.savedCount ?? 0}</span>
           </button>
         </div>
-
 
         {/* COMMENTS */}
         <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
@@ -271,7 +256,6 @@ export default function PostDetail() {
           <p className="text-gray-500">No comments yet.</p>
         )}
 
-
         {/* ADD COMMENT */}
         {user && (
           <div className="flex gap-2 mt-4">
@@ -293,7 +277,6 @@ export default function PostDetail() {
     </div>
   );
 }
-
 
 /* ------------------------------ COMMENT ITEM ------------------------------ */
 function CommentItem({ comment, currentUser, avatarURL, timeAgo, onDelete, onReport }) {
@@ -331,41 +314,36 @@ function CommentItem({ comment, currentUser, avatarURL, timeAgo, onDelete, onRep
       </div>
 
       {open && (
-  <div className="absolute right-3 top-9 bg-white shadow-xl border border-gray-200 
-                  rounded-xl w-56 py-2 z-30 animate-fadeIn">
+        <div className="absolute right-3 top-9 bg-white shadow-xl border rounded-xl w-56 py-2 z-30">
 
-    {/* REPORT COMMENT */}
-    <button
-      onClick={() => {
-        const reason = prompt("Why do you want to report this comment?");
-        if (!reason) return;
-        onReport(comment._id, reason);
-        setOpen(false);
-      }}
-      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 
-                 transition-all rounded-lg"
-    >
-      <img src="/images/report.png" className="w-5 h-5 opacity-70" />
-      <span className="text-gray-800 text-sm">Report comment</span>
-    </button>
+          <button
+            onClick={() => {
+              const reason = prompt("Why do you want to report this comment?");
+              if (!reason) return;
+              onReport(comment._id, reason);
+              setOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg"
+          >
+            <img src="/images/report.png" className="w-5 h-5" />
+            <span className="text-gray-800 text-sm">Report comment</span>
+          </button>
 
-    {/* DELETE COMMENT (Owner Only) */}
-    {currentUser?._id === comment.userId && (
-      <button
-        onClick={() => {
-          onDelete(comment._id);
-          setOpen(false);
-        }}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-100 
-                   transition-all rounded-lg"
-      >
-        <img src="/images/delete.png" className="w-5 h-5 opacity-70" />
-        <span className="text-red-600 text-sm">Delete comment</span>
-      </button>
-    )}
+          {currentUser?._id === comment.userId && (
+            <button
+              onClick={() => {
+                onDelete(comment._id);
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-100 rounded-lg"
+            >
+              <img src="/images/delete.png" className="w-5 h-5" />
+              <span className="text-red-600 text-sm">Delete comment</span>
+            </button>
+          )}
 
-  </div>
-)}
+        </div>
+      )}
 
     </div>
   );

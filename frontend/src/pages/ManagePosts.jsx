@@ -5,6 +5,25 @@ export default function ManagePosts() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ⭐ backend base URL (Render)
+  const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
+
+  // ⭐ Helper: fix image path
+  const fixURL = (img) => {
+    if (!img) return "https://placekitten.com/300/200";
+    if (img.startsWith("data:")) return img;     // base64
+    if (img.startsWith("http")) return img;      // google or web
+    return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
+  };
+
+  const avatarURL = (avatar) => {
+    if (!avatar) return "/images/profile.png";
+    if (avatar.startsWith("/images/")) return avatar;
+    if (avatar.startsWith("data:")) return avatar;
+    if (avatar.startsWith("http")) return avatar;
+    return fixURL(avatar);
+  };
+
   const loadPosts = async () => {
     try {
       const res = await api.get("/api/admin/posts");
@@ -31,27 +50,11 @@ export default function ManagePosts() {
     loadPosts();
   }, []);
 
-  const imageURL = (img) =>
-    !img
-      ? "https://placekitten.com/300/200"
-      : img.startsWith("data:")
-      ? img
-      : `http://localhost:4000${img.replace(/\\/g, "/")}`;
-
-  const avatarURL = (avatar) => {
-  if (!avatar) return "/images/profile.png";           // default local
-  if (avatar.startsWith("/images/")) return avatar;    // local static image
-  if (avatar.startsWith("data:")) return avatar;       // base64
-  return avatar;                                       // google avatar OR backend path if any
-};
-
-
-
   return (
     <div>
       <h2 className="text-lg md:text-xl font-semibold text-purple-600 mb-4 flex items-center gap-2">
         <img src="/images/edit.png" className="w-6 h-6 object-contain" />
-         Manage Posts
+        Manage Posts
       </h2>
 
       {loading ? (
@@ -65,20 +68,19 @@ export default function ManagePosts() {
               key={p._id}
               className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3"
             >
-              {/* รูปโพสต์ */}
+              {/* Post Image */}
               <img
-                src={imageURL(p.image)}
+                src={fixURL(p.image)}
                 className="w-full h-80 object-cover rounded-xl"
               />
 
-              {/* เนื้อหา */}
+              {/* Text */}
               <p className="text-sm text-gray-700 line-clamp-3">
                 {p.content || "(no content)"}
               </p>
 
-              {/* Author block */}
+              {/* Author */}
               <div className="flex items-center gap-3 mt-2">
-                {/* Avatar */}
                 <img
                   src={avatarURL(p.author?.avatar)}
                   className="w-10 h-10 rounded-full object-cover border shadow-sm bg-purple-100"
@@ -97,7 +99,7 @@ export default function ManagePosts() {
                 ❤️ {p.likes?.length || 0} likes
               </span>
 
-              {/* ปุ่มลบ */}
+              {/* Delete Button */}
               <div className="flex justify-end">
                 <button
                   onClick={() => deletePost(p._id)}

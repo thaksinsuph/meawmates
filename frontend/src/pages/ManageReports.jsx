@@ -7,6 +7,16 @@ export default function ManageReports() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // ⭐ Backend Root URL เช่น https://meawmates.onrender.com
+  const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
+
+  const fixURL = (img) => {
+    if (!img || typeof img !== "string") return "https://placekitten.com/400/300";
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("http")) return img;
+    return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
+  };
+
   /* ------------------ LOAD REPORTS ------------------ */
   const loadReports = async () => {
     try {
@@ -23,23 +33,14 @@ export default function ManageReports() {
     loadReports();
   }, []);
 
-  const imageURL = (img) =>
-  !img || typeof img !== "string"
-    ? "https://placekitten.com/400/300"
-    : img.startsWith("data:")
-    ? img
-    : `http://localhost:4000${img.replace(/\\/g, "/")}`;
-
-
   /* ------------------ DELETE POST ------------------ */
   const deletePost = async (postId, reportId) => {
     if (!confirm("Delete this reported post?")) return;
 
     try {
       await api.delete(`/api/admin/posts/${postId}`);
-      await api.delete(`/api/admin/reports/${reportId}`); // ลบรีพอร์ตออก
+      await api.delete(`/api/admin/reports/${reportId}`);
 
-      // ⭐ อัปเดต UI ทันที
       setReports((prev) => prev.filter((r) => r._id !== reportId));
     } catch (err) {
       console.error("Delete post error:", err);
@@ -53,9 +54,8 @@ export default function ManageReports() {
 
     try {
       await api.delete(`/api/posts/${postId}/comment/${commentId}`);
-      await api.delete(`/api/admin/reports/${reportId}`); // ลบรีพอร์ตออก
+      await api.delete(`/api/admin/reports/${reportId}`);
 
-      // ลบรีพอร์ตใน UI ทันที
       setReports((prev) => prev.filter((r) => r._id !== reportId));
     } catch (err) {
       console.error("Delete comment error:", err);
@@ -90,7 +90,7 @@ export default function ManageReports() {
               {r.type === "post" && r.postId && (
                 <>
                   <img
-                    src={imageURL(r.postId.image)}
+                    src={fixURL(r.postId.image)}
                     className="w-full h-60 object-cover rounded-xl"
                   />
                   <p className="text-sm text-gray-700 line-clamp-3">
@@ -121,8 +121,6 @@ export default function ManageReports() {
 
               {/* ACTION BUTTONS */}
               <div className="flex justify-between mt-3">
-
-                {/* DELETE */}
                 {r.type === "post" ? (
                   <button
                     onClick={() => deletePost(r.postId?._id, r._id)}
@@ -141,7 +139,6 @@ export default function ManageReports() {
                   </button>
                 )}
 
-                {/* VIEW */}
                 {r.type === "post" ? (
                   <button
                     onClick={() => navigate(`/post/${r.postId?._id}`)}

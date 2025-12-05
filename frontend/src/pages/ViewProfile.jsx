@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../api";
@@ -12,43 +11,42 @@ export default function ViewProfile() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Settings Modal
   const [showSettings, setShowSettings] = useState(false);
-
-  // Follow UI state
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Editable fields
   const [editName, setEditName] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
   const [editBio, setEditBio] = useState("");
 
-  // Followers modal
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [followList, setFollowList] = useState([]);
   const [followMode, setFollowMode] = useState("followers");
 
-  const avatarURL = (avatar) => {
-  if (!avatar) return "/images/profile.png";           // default local
-  if (avatar.startsWith("/images/")) return avatar;    // local static image
-  if (avatar.startsWith("data:")) return avatar;       // base64
-  return avatar;                                       // google avatar OR backend path if any
-};
-
-
-
-
-
-  const imageURL = (img) =>
-  !img || typeof img !== "string"
-    ? "https://placekitten.com/400/300"
-    : img.startsWith("data:")
-    ? img
-    : `http://localhost:4000${img.replace(/\\/g, "/")}`;
-
+  // ⭐ Backend URL root เช่น https://meawmates.onrender.com
+  const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
 
   /* ===================================================
-        FETCH PROFILE + POSTS
+      IMAGE HANDLERS
+  =================================================== */
+  const avatarURL = (avatar) => {
+    if (!avatar) return "/images/profile.png";
+    if (avatar.startsWith("/images/")) return avatar;
+    if (avatar.startsWith("data:")) return avatar;
+    if (avatar.startsWith("http")) return avatar;
+
+    // backend uploads เช่น /uploads/x.png
+    return `${backendBase}${avatar.startsWith("/") ? avatar : "/" + avatar}`;
+  };
+
+  const imageURL = (img) => {
+    if (!img) return "https://placekitten.com/400/300";
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("http")) return img;
+    return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
+  };
+
+  /* ===================================================
+      FETCH PROFILE + POSTS
   =================================================== */
   const fetchProfile = async () => {
     try {
@@ -58,13 +56,11 @@ export default function ViewProfile() {
       setProfile(resUser.data);
       setPosts(resPosts.data);
 
-      // check following state correctly
       if (currentUser?._id) {
-        setIsFollowing(
-          resUser.data.followers?.some(
-            (u) => u._id?.toString() === currentUser._id
-          )
+        const isFollow = resUser.data.followers?.some(
+          (u) => u._id?.toString() === currentUser._id.toString()
         );
+        setIsFollowing(isFollow);
       }
     } catch (err) {
       console.error("Profile load error:", err);
@@ -83,10 +79,8 @@ export default function ViewProfile() {
   if (!profile)
     return <div className="py-40 text-center text-red-500 text-xl">User not found.</div>;
 
-  const totalLikes = posts.reduce((sum, p) => sum + (p.likes?.length || 0), 0);
-
   /* ===================================================
-        FOLLOW / UNFOLLOW FUNCTION
+      FOLLOW / UNFOLLOW
   =================================================== */
   const toggleFollow = async () => {
     try {
@@ -94,10 +88,9 @@ export default function ViewProfile() {
         await api.post(`/api/users/${id}/follow`);
         setIsFollowing(true);
 
-        // update UI
         setProfile((prev) => ({
           ...prev,
-          followers: [...prev.followers, currentUser._id],
+          followers: [...prev.followers, { _id: currentUser._id }],
         }));
       } else {
         await api.post(`/api/users/${id}/unfollow`);
@@ -105,9 +98,7 @@ export default function ViewProfile() {
 
         setProfile((prev) => ({
           ...prev,
-          followers: prev.followers.filter(
-            (fid) => fid.toString() !== currentUser._id.toString()
-          ),
+          followers: prev.followers.filter((u) => u._id !== currentUser._id),
         }));
       }
     } catch (err) {
@@ -116,23 +107,35 @@ export default function ViewProfile() {
   };
 
   /* ===================================================
-        OPEN FOLLOW LIST
+      FOLLOWERS / FOLLOWING LIST
   =================================================== */
   const openFollowList = async (mode) => {
     setFollowMode(mode);
-
     try {
       const res = await api.get(`/api/users/${id}/${mode}`);
       setFollowList(res.data);
       setShowFollowModal(true);
     } catch (err) {
-      console.error("Load follow list error:", err);
+      console.error("Follow list error:", err);
     }
   };
 
   /* ===================================================
-        SAVE SETTINGS
+      SAVE SETTINGS
   =================================================== */
+  const convertToBase64 = (file, cb) => {
+    const r = new FileReader();
+    r.onloadend = () => cb(r.result);
+    r.readAsDataURL(file);
+  };
+
+  const openSettings = () => {
+    setEditName(profile.name);
+    setEditAvatar(profile.avatar);
+    setEditBio(profile.bio || "");
+    setShowSettings(true);
+  };
+
   const handleSaveSettings = async () => {
     try {
       await api.put("/api/users/me", {
@@ -149,21 +152,8 @@ export default function ViewProfile() {
     }
   };
 
-  const convertToBase64 = (file, callback) => {
-    const reader = new FileReader();
-    reader.onloadend = () => callback(reader.result);
-    reader.readAsDataURL(file);
-  };
-
-  const openSettings = () => {
-    setEditName(profile.name);
-    setEditAvatar(profile.avatar);
-    setEditBio(profile.bio || "");
-    setShowSettings(true);
-  };
-
   /* ===================================================
-        RENDER
+      RENDER UI
   =================================================== */
 
   return (
@@ -189,9 +179,8 @@ export default function ViewProfile() {
         {currentUser?._id !== profile._id && (
           <button
             onClick={toggleFollow}
-            className={`px-5 py-2 mt-2 rounded-xl font-semibold transition shadow 
-              ${isFollowing ? "bg-gray-300 text-gray-700 hover:bg-gray-400"
-                : "bg-pink-500 text-white hover:bg-pink-600"}`}
+            className={`px-5 py-2 mt-2 rounded-xl font-semibold transition shadow
+              ${isFollowing ? "bg-gray-300 text-gray-700" : "bg-pink-500 text-white"}`}
           >
             {isFollowing ? "Following" : "Follow"}
           </button>
@@ -202,34 +191,23 @@ export default function ViewProfile() {
         </p>
 
         <div className="flex justify-center gap-10 mt-6">
+          <ProfileStat num={posts.length} label="Posts" />
 
-          <div className="text-center">
-            <p className="text-xl font-bold">{posts.length}</p>
-            <p className="text-gray-500 text-sm">Posts</p>
-          </div>
-
-          <div
-            className="text-center cursor-pointer hover:opacity-70"
+          <ProfileStat
+            num={profile.followers?.length}
+            label="Followers"
             onClick={() => openFollowList("followers")}
-          >
-            <p className="text-xl font-bold">{profile.followers?.length || 0}</p>
-            <p className="text-gray-500 text-sm">Followers</p>
-          </div>
+          />
 
-          <div
-            className="text-center cursor-pointer hover:opacity-70"
+          <ProfileStat
+            num={profile.following?.length}
+            label="Following"
             onClick={() => openFollowList("following")}
-          >
-            <p className="text-xl font-bold">{profile.following?.length || 0}</p>
-            <p className="text-gray-500 text-sm">Following</p>
-          </div>
-
+          />
         </div>
       </div>
 
       {/* POSTS */}
-      <div className="border-t border-gray-200 my-10" />
-
       <h3 className="text-2xl font-semibold mb-6">Posts by {profile.name}</h3>
 
       {posts.length === 0 ? (
@@ -247,121 +225,160 @@ export default function ViewProfile() {
         </div>
       )}
 
-      {/* FOLLOW LIST MODAL */}
+      {/* FOLLOW MODAL */}
       {showFollowModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white w-80 p-5 rounded-2xl shadow-xl">
-            <h2 className="text-lg font-semibold mb-3 text-gray-700">
-              {followMode === "followers" ? "Followers" : "Following"}
-            </h2>
-
-            <div className="max-h-80 overflow-y-auto space-y-3">
-              {followList.map((u) => (
-                <Link
-                  key={u._id}
-                  to={`/profile/${u._id}`}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100"
-                  onClick={() => setShowFollowModal(false)}
-                >
-                  <img
-                    src={avatarURL(u.avatar)}
-                    className="w-10 h-10 rounded-full object-cover border"
-                  />
-                  <p className="font-medium">{u.name}</p>
-                </Link>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setShowFollowModal(false)}
-              className="mt-4 w-full py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <FollowModal
+          followList={followList}
+          followMode={followMode}
+          avatarURL={avatarURL}
+          setShowFollowModal={setShowFollowModal}
+        />
       )}
 
       {/* SETTINGS MODAL */}
       {showSettings && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white w-96 p-6 rounded-2xl shadow-xl relative">
-
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">
-              Edit Profile
-            </h2>
-
-            <label className="block text-sm font-semibold mb-2 text-gray-700">
-              Profile Picture
-            </label>
-
-            <div className="flex flex-col items-center mb-4">
-              <div className="relative">
-                <img
-                  src={editAvatar || "/images/default-avatar.png"}
-                  className="w-28 h-28 rounded-full object-cover border-4 border-pink-300 shadow"
-                />
-                <button
-                  onClick={() => document.getElementById("uploadAvatar").click()}
-                  className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow border hover:bg-pink-100"
-                >
-                  <img src="/images/pictures.png" className="w-5 h-5 opacity-80" />
-                </button>
-              </div>
-
-              <input
-                id="uploadAvatar"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) =>
-                  convertToBase64(e.target.files[0], (b64) => setEditAvatar(b64))
-                }
-              />
-
-              <button
-                onClick={() => document.getElementById("uploadAvatar").click()}
-                className="mt-3 px-4 py-1.5 bg-pink-500 text-white text-sm rounded-lg hover:bg-pink-600 shadow"
-              >
-                Change Photo
-              </button>
-            </div>
-
-            <label className="font-medium text-gray-700 mb-1">Name</label>
-            <input
-              type="text"
-              className="w-full border rounded-xl p-2 mb-4"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-            />
-
-            <label className="font-medium text-gray-700 mb-1">Bio</label>
-            <textarea
-              className="w-full border rounded-xl p-2 h-24"
-              value={editBio}
-              onChange={(e) => setEditBio(e.target.value)}
-            />
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleSaveSettings}
-                className="px-4 py-2 rounded-xl bg-pink-500 text-white hover:bg-pink-600"
-              >
-                Save Changes
-              </button>
-            </div>
-
-          </div>
-        </div>
+        <SettingsModal
+          editAvatar={editAvatar}
+          editName={editName}
+          editBio={editBio}
+          setEditAvatar={setEditAvatar}
+          setEditName={setEditName}
+          setEditBio={setEditBio}
+          convertToBase64={convertToBase64}
+          handleSaveSettings={handleSaveSettings}
+          setShowSettings={setShowSettings}
+        />
       )}
 
+    </div>
+  );
+}
+
+/* ==========================================
+    SMALL COMPONENTS
+========================================== */
+
+function ProfileStat({ num = 0, label, onClick }) {
+  return (
+    <div
+      className={`text-center ${onClick ? "cursor-pointer hover:opacity-70" : ""}`}
+      onClick={onClick}
+    >
+      <p className="text-xl font-bold">{num}</p>
+      <p className="text-gray-500 text-sm">{label}</p>
+    </div>
+  );
+}
+
+/* FOLLOW MODAL */
+function FollowModal({ followList, followMode, avatarURL, setShowFollowModal }) {
+  return (
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+      <div className="bg-white w-80 p-5 rounded-2xl shadow-xl">
+
+        <h2 className="text-lg font-semibold mb-3 text-gray-700">
+          {followMode === "followers" ? "Followers" : "Following"}
+        </h2>
+
+        <div className="max-h-80 overflow-y-auto space-y-3">
+          {followList.map((u) => (
+            <Link
+              key={u._id}
+              to={`/profile/${u._id}`}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100"
+              onClick={() => setShowFollowModal(false)}
+            >
+              <img src={avatarURL(u.avatar)} className="w-10 h-10 rounded-full object-cover border" />
+              <p className="font-medium">{u.name}</p>
+            </Link>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setShowFollowModal(false)}
+          className="mt-4 w-full py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* SETTINGS MODAL */
+function SettingsModal({
+  editAvatar,
+  editName,
+  editBio,
+  setEditAvatar,
+  setEditName,
+  setEditBio,
+  convertToBase64,
+  handleSaveSettings,
+  setShowSettings,
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+      <div className="bg-white w-96 p-6 rounded-2xl shadow-xl">
+
+        <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
+
+        <div className="flex flex-col items-center mb-4">
+          <img
+            src={editAvatar}
+            className="w-28 h-28 rounded-full object-cover border-4 border-pink-300 shadow"
+          />
+
+          <button
+            onClick={() => document.getElementById("uploadAvatar").click()}
+            className="mt-3 px-4 py-1.5 bg-pink-500 text-white rounded-lg shadow hover:bg-pink-600"
+          >
+            Change Photo
+          </button>
+
+          <input
+            id="uploadAvatar"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) =>
+              convertToBase64(e.target.files[0], (b64) => setEditAvatar(b64))
+            }
+          />
+        </div>
+
+        <label className="font-medium mb-1">Name</label>
+        <input
+          type="text"
+          className="w-full border rounded-xl p-2 mb-4"
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+        />
+
+        <label className="font-medium mb-1">Bio</label>
+        <textarea
+          className="w-full border rounded-xl p-2 h-24"
+          value={editBio}
+          onChange={(e) => setEditBio(e.target.value)}
+        />
+
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            onClick={() => setShowSettings(false)}
+            className="px-4 py-2 bg-gray-200 rounded-xl hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleSaveSettings}
+            className="px-4 py-2 bg-pink-500 text-white rounded-xl hover:bg-pink-600"
+          >
+            Save
+          </button>
+        </div>
+
+      </div>
     </div>
   );
 }

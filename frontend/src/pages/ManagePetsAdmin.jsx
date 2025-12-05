@@ -4,7 +4,17 @@ import api from "../api";
 export default function ManagePetsAdmin() {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [previewImage, setPreviewImage] = useState(null); // ⭐ Fullscreen preview
+  const [previewImage, setPreviewImage] = useState(null);
+
+  // ⭐ ใช้ backend URL จาก env
+  const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
+
+  const fixURL = (img) => {
+    if (!img) return "";
+    if (img.startsWith("data:")) return img;       // base64
+    if (img.startsWith("http")) return img;        // external url
+    return `${backendBase}${img.startsWith("/") ? img : "/" + img}`; // backend upload
+  };
 
   const loadPets = async () => {
     try {
@@ -53,18 +63,8 @@ export default function ManagePetsAdmin() {
               {/* ⭐ Cat Image */}
               {p.image && (
                 <img
-                  onClick={() =>
-                    setPreviewImage(
-                      p.image.startsWith("data:")
-                        ? p.image
-                        : `http://localhost:4000${p.image.replace(/\\/g, "/")}`
-                    )
-                  }
-                  src={
-                    p.image.startsWith("data:")
-                      ? p.image
-                      : `http://localhost:4000${p.image.replace(/\\/g, "/")}`
-                  }
+                  onClick={() => setPreviewImage(fixURL(p.image))}
+                  src={fixURL(p.image)}
                   className="w-full h-80 object-cover rounded-xl cursor-pointer hover:opacity-90 transition"
                 />
               )}
@@ -78,8 +78,8 @@ export default function ManagePetsAdmin() {
                   </p>
 
                   <img
-                    onClick={() => setPreviewImage(p.vaccineImage)}
-                    src={p.vaccineImage}
+                    onClick={() => setPreviewImage(fixURL(p.vaccineImage))}
+                    src={fixURL(p.vaccineImage)}
                     className="w-full h-48 object-cover rounded-xl border border-blue-200 cursor-pointer hover:opacity-90 transition"
                   />
                 </div>
@@ -117,11 +117,11 @@ export default function ManagePetsAdmin() {
         </div>
       )}
 
-      {/* ⭐ Fullscreen Image Preview */}
+      {/* ⭐ Fullscreen Preview */}
       {previewImage && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-          onClick={() => setPreviewImage(null)} // คลิกที่ฉากหลังเพื่อปิด
+          onClick={() => setPreviewImage(null)}
         >
           <img
             src={previewImage}

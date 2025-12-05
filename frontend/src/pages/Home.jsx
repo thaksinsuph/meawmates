@@ -8,7 +8,7 @@ export default function Home() {
   const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
   const [showPostBox, setShowPostBox] = useState(false);
-  const [openMenu, setOpenMenu] = useState(null); // ⭐ เมนู 3 จุด
+  const [openMenu, setOpenMenu] = useState(null);
 
   const user = getUser();
 
@@ -128,26 +128,26 @@ export default function Home() {
   };
 
   /* ------------------ URL HELPERS ------------------ */
-  const imageURL = (img) =>
-    !img
-      ? "https://placekitten.com/400/300"
-      : img.startsWith("data:")
-      ? img
-      : `http://localhost:4000${img.replace(/\\/g, "/")}`;
+  const backendURL = import.meta.env.VITE_API_URL.replace("/api", "");
 
-  const avatarURL = (avatar) => {
-  if (!avatar) return "/images/profile.png";           // default local
-  if (avatar.startsWith("/images/")) return avatar;    // local static image
-  if (avatar.startsWith("data:")) return avatar;       // base64
-  return avatar;                                       // google avatar OR backend path if any
-};
+  const imageURL = (img) => {
+    if (!img) return "https://placekitten.com/400/300";
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("http")) return img;
+    return `${backendURL}${img.startsWith("/") ? img : "/" + img}`;
+  };
 
+  const avatarURL = (av) => {
+    if (!av) return "/images/profile.png";
+    if (av.startsWith("data:")) return av;
+    if (av.startsWith("http")) return av;
+    return `${backendURL}${av.startsWith("/") ? av : "/" + av}`;
+  };
 
   const isLiked = (p) => p.likes?.includes(user?._id);
 
   return (
     <div className="max-w-7xl mx-auto py-20 px-6">
-      
       <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
         <img src="/images/paw-decor.png" className="w-7 h-7" />
         Meow Posts
@@ -224,8 +224,7 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {posts.map((p) => (
           <div key={p._id} className="relative bg-white rounded-2xl shadow-md hover:shadow-lg transition p-3">
-
-            {/* IMAGE */}
+            
             <Link to={`/post/${p._id}`}>
               <img
                 src={imageURL(p.image)}
@@ -233,11 +232,9 @@ export default function Home() {
               />
             </Link>
 
-            {/* CONTENT */}
             <p className="text-gray-800 text-sm mb-2">{p.content}</p>
 
             <div className="flex justify-between items-center">
-              {/* AUTHOR */}
               <div className="flex items-center gap-2">
                 <Link to={`/profile/${p.author?._id}`}>
                   <img
@@ -251,10 +248,8 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* ACTIONS */}
               <div className="flex gap-4 text-sm items-center">
 
-                {/* LIKE */}
                 <button onClick={() => toggleLike(p._id)} className="flex items-center gap-1">
                   <img
                     src="/images/Like.png"
@@ -263,15 +258,11 @@ export default function Home() {
                   <span>{p.likes?.length || 0}</span>
                 </button>
 
-                {/* Comment */}
                 <Link to={`/post/${p._id}`} className="flex items-center gap-1">
                   <img src="/images/comment-icon.png" className="w-6 h-6 opacity-70" /> 
                   <span>{p.comments?.length || 0}</span>
                 </Link>
 
-                
-
-                {/* SAVE */}
                 <button onClick={() => toggleSave(p._id)} className="flex items-center gap-1">
                   <img
                     src={p.isSaved ? "/images/Savedd.png" : "/images/Saved.png"}
@@ -280,7 +271,6 @@ export default function Home() {
                   <span>{p.savedCount || 0}</span>
                 </button>
 
-                {/* ⭐ MENU 3 DOTS */}
                 <button
                   onClick={() => setOpenMenu(openMenu === p._id ? null : p._id)}
                   className="text-2xl text-gray-500 hover:text-gray-700"
@@ -289,51 +279,46 @@ export default function Home() {
                 </button>
 
                 {openMenu === p._id && (
-  <div className="absolute right-3 top-10 bg-white shadow-xl border border-gray-200 rounded-xl w-64 py-2 z-30 animate-fadeIn">
+                  <div className="absolute right-3 top-10 bg-white shadow-xl border border-gray-200 rounded-xl w-64 py-2 z-30 animate-fadeIn">
+                    
+                    <button
+                      onClick={() => {
+                        toggleSave(p._id);
+                        setOpenMenu(null);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition-all rounded-lg"
+                    >
+                      <img src="/images/save-menu.png" className="w-5 h-5 opacity-70" />
+                      <span className="text-gray-800 text-sm">
+                        {p.isSaved ? "Remove from saved" : "Save post"}
+                      </span>
+                    </button>
 
-    {/* SAVE / UNSAVE */}
-    <button
-      onClick={() => {
-        toggleSave(p._id);
-        setOpenMenu(null);
-      }}
-      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition-all rounded-lg"
-    >
-      <img src="/images/save-menu.png" className="w-5 h-5 opacity-70" />
-      <span className="text-gray-800 text-sm">
-        {p.isSaved ? "Remove from saved" : "Save post"}
-      </span>
-    </button>
+                    <button
+                      onClick={() => {
+                        reportPost(p._id);
+                        setOpenMenu(null);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition-all rounded-lg"
+                    >
+                      <img src="/images/report.png" className="w-5 h-5 opacity-70" />
+                      <span className="text-gray-800 text-sm">Report post</span>
+                    </button>
 
-    {/* REPORT */}
-    <button
-      onClick={() => {
-        reportPost(p._id);
-        setOpenMenu(null);
-      }}
-      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 transition-all rounded-lg"
-    >
-      <img src="/images/report.png" className="w-5 h-5 opacity-70" />
-      <span className="text-gray-800 text-sm">Report post</span>
-    </button>
-
-    {/* DELETE (เจ้าของโพสต์เท่านั้น) */}
-    {user?._id === p.author?._id && (
-      <button
-        onClick={() => {
-          deletePost(p._id);
-          setOpenMenu(null);
-        }}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-100 transition-all rounded-lg"
-      >
-        <img src="/images/delete.png" className="w-5 h-5 opacity-70" />
-        <span className="text-red-600 text-sm">Delete post</span>
-      </button>
-    )}
-
-  </div>
-)}
-
+                    {user?._id === p.author?._id && (
+                      <button
+                        onClick={() => {
+                          deletePost(p._id);
+                          setOpenMenu(null);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-100 transition-all rounded-lg"
+                      >
+                        <img src="/images/delete.png" className="w-5 h-5 opacity-70" />
+                        <span className="text-red-600 text-sm">Delete post</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
