@@ -21,35 +21,53 @@ const fixPath = (p) => {
 };
 
 /* ======================================================
-   1) GET SAVED POSTS
+   1) GET SAVED POSTS — FIXED (MATCH HOME FORMAT 100%)
 ====================================================== */
 router.get("/saved/:userId", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId);
+    const user = await User.findById(req.params.userId)
+      .populate({
+        path: "savedPosts",
+        populate: { path: "author", select: "name avatar email" }
+      });
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const posts = await Post.find({ _id: { $in: user.savedPosts } })
-      .populate("author", "name avatar")
-      .sort({ createdAt: -1 });
+    const posts = user.savedPosts.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
 
     const formatted = await Promise.all(
       posts.map(async (p) => ({
         _id: p._id,
         content: p.content,
         image: fixPath(p.image),
-        likes: p.likes,
-        author: p.author?.name,
-        avatar: p.author?.avatar ? fixPath(p.author.avatar) : null,
-        savedCount: await User.countDocuments({ savedPosts: p._id }),
+
+        likes: p.likes || [],
+        comments: p.comments || [],
+
+        // ⭐ FIX → ส่งเป็น object แบบเดียวกับหน้า Home
+        author: {
+          _id: p.author?._id,
+          name: p.author?.name,
+          avatar: p.author?.avatar ? fixPath(p.author.avatar) : null
+        },
+
+        isSaved: true,
+
+        // ⭐ FIX → ให้ savedCount เหมือนหน้า Home
+        savedCount: await User.countDocuments({ savedPosts: p._id })
       }))
     );
 
     res.json(formatted);
+
   } catch (err) {
-    console.log(err);
+    console.error("SAVED POSTS ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 /* ======================================================
    2) GET ALL POSTS (แก้เวอร์ชันถูกต้อง)
