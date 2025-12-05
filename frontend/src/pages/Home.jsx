@@ -128,29 +128,31 @@ export default function Home() {
   };
 
   /* ------------------ URL HELPERS ------------------ */
+
+  // Backend base URL from .env
   const backendURL = import.meta.env.VITE_API_URL.replace("/api", "");
 
   const imageURL = (img) => {
-  if (!img) return "https://placekitten.com/400/300";
-  if (img.startsWith("data:")) return img;
-  if (img.startsWith("http")) return img;
+    if (!img) return "https://placekitten.com/400/300";
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("http")) return img;
+    return `${backendURL}/${img.replace(/^\//, "")}`;
+  };
 
-  return `${backendURL}/${img.replace(/^\//, "")}`;
-};
+  /** ⭐ FIXED VERSION (โหลด avatar ได้ทุกแบบ)
+   * - ถ้าเป็น local frontend → /images/profile.png (Netlify)
+   * - ถ้าเป็น Google URL → ใช้ตามนั้น
+   * - ถ้าเป็น base64 → ใช้ตามนั้น
+   * - ถ้าเป็น upload ใน backend → prefix backend URL
+   */
+  const avatarURL = (av) => {
+    if (!av) return "/images/profile.png";  // default on Netlify
 
+    if (av.startsWith("data:")) return av; // base64
+    if (av.startsWith("http")) return av; // Google or external
 
- const avatarURL = (av) => {
-  // Default avatar should come from Frontend
-  if (!av) return `${window.location.origin}/images/profile.png`;
-
-  if (av.startsWith("data:")) return av;
-  if (av.startsWith("http")) return av;
-
-  // Avatar uploaded by user → from backend
-  return `${backendURL}/${av.replace(/^\//, "")}`;
-};
-
-
+    return `${backendURL}/${av.replace(/^\//, "")}`; // uploaded file
+  };
 
   const isLiked = (p) => p.likes?.includes(user?._id);
 
