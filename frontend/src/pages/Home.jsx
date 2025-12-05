@@ -146,16 +146,13 @@ export default function Home() {
    * - ถ้าเป็น upload ใน backend → prefix backend URL
    */
   const avatarURL = (av) => {
-// ❌ เปลี่ยนจากบรรทัดนี้:
-//     if (!av) return "/images/profile.png";  // default on Netlify
+    // ⭐ แก้ตรงนี้: ให้กลับมาใช้รูปจาก folder public ของเรา
+    if (!av || av === "") return "/images/profile.png"; 
 
-// ✅ เป็นบรรทัดนี้ (ใช้ Placeholder ที่มั่นใจว่าโหลดได้ หรือเปลี่ยนเป็น URL เต็ม):
-    if (!av) return "https://via.placeholder.com/150/EEEEEE/808080?text=NO_AVATAR";  // หรือ URL เต็มของรูปคุณ
+    if (av.startsWith("data:")) return av; 
+    if (av.startsWith("http")) return av; 
 
-    if (av.startsWith("data:")) return av; // base64
-    if (av.startsWith("http")) return av; // Google or external
-
-    return `${backendURL}/${av.replace(/^\//, "")}`; // uploaded file
+    return `${backendURL}/${av.replace(/^\//, "")}`; 
   };
 
   const isLiked = (p) => p.likes?.includes(user?._id);

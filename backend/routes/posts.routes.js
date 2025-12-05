@@ -7,21 +7,22 @@ import Post from "../models/Post.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
 
-
 const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ⭐ Fix path (ไม่แตะ base64)
+// ⭐ Fix path (จัดการ Path รูปภาพ)
 const fixPath = (p) => {
   if (!p) return null;
   if (p.startsWith("data:")) return p;
-  return "/" + p.replace(/\\/g, "/").replace(/^\//, "");
+  if (p.startsWith("http")) return p; // เพิ่มรองรับ http เผื่อเป็นรูปจากภายนอก
+  // ลบเครื่องหมาย \ และ / ที่ซ้ำซ้อนออก
+  return "/" + p.replace(/\\/g, "/").replace(/^\/+/, "");
 };
 
 /* ======================================================
-   1) GET SAVED POSTS — FIXED (MATCH HOME FORMAT 100%)
+   1) GET SAVED POSTS — FIXED (แก้ปัญหา Unknown + จอดำ)
 ====================================================== */
 router.get("/saved/:userId", auth, async (req, res) => {
   try {
@@ -33,32 +34,35 @@ router.get("/saved/:userId", auth, async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const posts = user.savedPosts.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
+    // ⭐ FIX 1: กรองโพสต์ที่กลายเป็น null ทิ้งไป (ป้องกัน Error)
+    const validPosts = user.savedPosts.filter(p => p && p._id);
 
     const formatted = await Promise.all(
-      posts.map(async (p) => ({
-        _id: p._id,
-        content: p.content,
-        image: fixPath(p.image),
+      validPosts.map(async (p) => {
+        // ⭐ FIX 2: ถ้าคนโพสต์หายไป (null) ให้ใช้ข้อมูลสมมติแทน
+        const author = p.author || { _id: "unknown", name: "Unknown User", avatar: null };
 
-        likes: p.likes || [],
-        comments: p.comments || [],
+        return {
+          _id: p._id,
+          content: p.content,
+          image: fixPath(p.image),
+          likes: p.likes || [],
+          comments: p.comments || [],
+          
+          author: {
+            _id: author._id,
+            name: author.name,
+            avatar: author.avatar ? fixPath(author.avatar) : null
+          },
 
-        // ⭐ FIX → ส่งเป็น object แบบเดียวกับหน้า Home
-        author: {
-          _id: p.author?._id,
-          name: p.author?.name,
-          avatar: p.author?.avatar ? fixPath(p.author.avatar) : null
-        },
-
-        isSaved: true,
-
-        // ⭐ FIX → ให้ savedCount เหมือนหน้า Home
-        savedCount: await User.countDocuments({ savedPosts: p._id })
-      }))
+          isSaved: true,
+          savedCount: await User.countDocuments({ savedPosts: p._id })
+        };
+      })
     );
+    
+    // เรียงจากใหม่ไปเก่า
+    formatted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.json(formatted);
 
@@ -68,9 +72,8 @@ router.get("/saved/:userId", auth, async (req, res) => {
   }
 });
 
-
 /* ======================================================
-   2) GET ALL POSTS (แก้เวอร์ชันถูกต้อง)
+   2) GET ALL POSTS
 ====================================================== */
 router.get("/", async (req, res) => {
   try {
@@ -78,27 +81,32 @@ router.get("/", async (req, res) => {
       .populate("author", "name avatar")
       .sort({ createdAt: -1 });
 
-    // กรณีผู้ใช้ไม่ login → ไม่มี isSaved
     let savedList = [];
     if (req.user) {
+      // ถ้า user login ให้ไปดึงรายการ saved ของเขามาเทียบ
       const user = await User.findById(req.user._id);
-      savedList = user.savedPosts.map(id => id.toString());
+      if (user && user.savedPosts) {
+        savedList = user.savedPosts.map(id => id.toString());
+      }
     }
 
     const formatted = await Promise.all(
-      posts.map(async (p) => ({
-        ...p._doc,
-        image: fixPath(p.image),
-        isSaved: savedList.includes(p._id.toString()), // ถ้าไม่ login = false
-
-        savedCount: await User.countDocuments({ savedPosts: p._id }),
-
-        author: {
-          _id: p.author?._id,
-          name: p.author?.name,
-          avatar: p.author?.avatar ? fixPath(p.author.avatar) : null,
-        },
-      }))
+      posts.map(async (p) => {
+         // Handle กรณี author เป็น null (user โดนลบ)
+         const authorData = p.author || { _id: null, name: "Unknown User", avatar: null };
+         
+         return {
+          ...p._doc,
+          image: fixPath(p.image),
+          isSaved: savedList.includes(p._id.toString()),
+          savedCount: await User.countDocuments({ savedPosts: p._id }),
+          author: {
+            _id: authorData._id,
+            name: authorData.name || "Unknown User",
+            avatar: fixPath(authorData.avatar),
+          },
+        };
+      })
     );
 
     res.json(formatted);
@@ -109,9 +117,8 @@ router.get("/", async (req, res) => {
 });
 
 
-
 /* ======================================================
-   GET ONE POST (เพิ่ม userId ใน comments)
+   GET ONE POST
 ====================================================== */
 router.get("/:id", async (req, res) => {
   try {
@@ -125,11 +132,14 @@ router.get("/:id", async (req, res) => {
     let isSaved = false;
     let savedCount = await User.countDocuments({ savedPosts: post._id });
 
-    // ถ้า login → ค่อยคำนวณ isSaved
     if (req.user) {
       const user = await User.findById(req.user._id);
-      isSaved = user.savedPosts.map(id => id.toString()).includes(post._id.toString());
+      if (user) {
+         isSaved = user.savedPosts.map(id => id.toString()).includes(post._id.toString());
+      }
     }
+
+    const authorData = post.author || { _id: null, name: "Unknown User", avatar: null };
 
     const formatted = {
       ...post._doc,
@@ -137,14 +147,16 @@ router.get("/:id", async (req, res) => {
       isSaved,
       savedCount,
       author: {
-        ...post.author._doc,
-        avatar: fixPath(post.author.avatar),
+        ...authorData._doc, // กรณีเป็น null อาจไม่มี _doc ระวังตรงนี้ แต่ถ้า mock object ข้างบนแล้วจะไม่มี _doc
+        name: authorData.name,
+        _id: authorData._id,
+        avatar: fixPath(authorData.avatar),
       },
       comments: post.comments.map((c) => ({
         _id: c._id,
         content: c.content,
-        author: c.author,
-        avatar: c.avatar,
+        author: c.author, // ชื่อคนคอมเมนต์ (String)
+        avatar: fixPath(c.avatar),
         userId: c.userId,
         date: c.date
       }))
@@ -157,8 +169,6 @@ router.get("/:id", async (req, res) => {
 });
 
 
-
-
 /* ======================================================
    3.5) GET POSTS BY USER ID
 ====================================================== */
@@ -168,14 +178,18 @@ router.get("/user/:userId", async (req, res) => {
       .populate("author", "name avatar")
       .sort({ createdAt: -1 });
 
-    const formatted = posts.map((p) => ({
-      ...p._doc,
-      image: fixPath(p.image),
-      author: {
-        ...p.author._doc,
-        avatar: fixPath(p.author.avatar),
-      },
-    }));
+    const formatted = posts.map((p) => {
+      const authorData = p.author || { name: "Unknown", avatar: null };
+      return {
+        ...p._doc,
+        image: fixPath(p.image),
+        author: {
+            ...authorData._doc,
+            name: authorData.name,
+            avatar: fixPath(authorData.avatar),
+        },
+      };
+    });
 
     res.json(formatted);
   } catch (err) {
@@ -193,8 +207,15 @@ router.post("/", auth, async (req, res) => {
     let imagePath = "";
 
     if (image && image.startsWith("data:image")) {
+      // ⚠️ ระวัง: บน Render ไฟล์นี้จะหายไปเมื่อ Server Restart
       const filename = `/uploads/post_${Date.now()}.png`;
       const base64 = image.replace(/^data:image\/\w+;base64,/, "");
+      
+      // ตรวจสอบว่ามี folder uploads หรือไม่ ถ้าไม่มีให้สร้าง
+      const uploadDir = path.join(__dirname, "..", "uploads");
+      if (!fs.existsSync(uploadDir)){
+          fs.mkdirSync(uploadDir);
+      }
 
       fs.writeFileSync(
         path.join(__dirname, "..", filename),
@@ -214,17 +235,22 @@ router.post("/", auth, async (req, res) => {
 
     await post.save();
     const populated = await post.populate("author", "name avatar");
+    
+    // แปลง avatar ให้มี path ถูกต้องก่อนส่งกลับ
+    const result = populated.toObject();
+    if(result.author) {
+        result.author.avatar = fixPath(result.author.avatar);
+    }
+    result.image = fixPath(result.image);
 
-    populated.author.avatar = fixPath(populated.author.avatar);
-
-    res.status(201).json(populated);
+    res.status(201).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
 /* ======================================================
-   5) LIKE / UNLIKE + PREVENT DUP NOTIFICATION
+   5) LIKE / UNLIKE
 ====================================================== */
 router.post("/:id/like", auth, async (req, res) => {
   try {
@@ -235,39 +261,37 @@ router.post("/:id/like", auth, async (req, res) => {
     if (!post) return res.status(404).json({ message: "Post not found" });
 
     const me = await User.findById(userId);
-    const author = await User.findById(post.author._id);
+    // เช็คว่า author ยังมีตัวตนไหม
+    const author = post.author ? await User.findById(post.author._id) : null;
 
     const alreadyLiked = post.likes.includes(userId);
 
-    // UNLIKE
     if (alreadyLiked) {
       post.likes = post.likes.filter((id) => id.toString() !== userId.toString());
       await post.save();
       return res.json({ message: "Unliked", likes: post.likes.length });
     }
 
-    // LIKE
     post.likes.push(userId);
     await post.save();
 
-    // ⭐ Prevent duplicate LIKE notifications
-    const exists = author.notifications.some(
-      (n) =>
-        n.type === "like" &&
-        n.fromUser.toString() === userId.toString() &&
-        n.postId?.toString() === postId.toString()
-    );
+    // แจ้งเตือน (เฉพาะถ้า author ยังอยู่ และไม่ใช่ตัวเอง)
+    if (author && author._id.toString() !== userId.toString()) {
+        const exists = author.notifications.some(
+            (n) => n.type === "like" && n.fromUser.toString() === userId.toString() && n.postId?.toString() === postId.toString()
+        );
 
-    if (!exists && author._id.toString() !== userId.toString()) {
-      author.notifications.push({
-        type: "like",
-        fromUser: me._id,
-        message: `${me.name} liked your post `,
-        postId,
-        read: false,
-        createdAt: new Date(),
-      });
-      await author.save();
+        if (!exists) {
+            author.notifications.push({
+                type: "like",
+                fromUser: me._id,
+                message: `${me.name} liked your post`,
+                postId,
+                read: false,
+                createdAt: new Date(),
+            });
+            await author.save();
+        }
     }
 
     res.json({ message: "Liked", likes: post.likes.length });
@@ -278,7 +302,7 @@ router.post("/:id/like", auth, async (req, res) => {
 });
 
 /* ======================================================
-   6) COMMENT + PREVENT DUP COMMENT NOTIFICATION
+   6) COMMENT
 ====================================================== */
 router.post("/:id/comment", auth, async (req, res) => {
   try {
@@ -290,9 +314,8 @@ router.post("/:id/comment", auth, async (req, res) => {
     if (!post) return res.status(404).json({ message: "Post not found" });
 
     const me = await User.findById(req.user._id);
-    const author = await User.findById(post.author._id);
+    const author = post.author ? await User.findById(post.author._id) : null;
 
-    // เพิ่มคอมเมนต์
     post.comments.push({
       author: me.name,
       userId: me._id,
@@ -303,28 +326,31 @@ router.post("/:id/comment", auth, async (req, res) => {
 
     await post.save();
 
-    // ⭐ Prevent duplicate comment notifications
-    const exists = author.notifications.some(
-      (n) =>
-        n.type === "comment" &&
-        n.fromUser.toString() === me._id.toString() &&
-        n.postId?.toString() === post._id.toString() &&
-        n.message.includes(content)
-    );
+    if (author && author._id.toString() !== me._id.toString()) {
+        const exists = author.notifications.some(
+            (n) => n.type === "comment" && n.fromUser.toString() === me._id.toString() && n.postId?.toString() === post._id.toString() && n.message.includes(content)
+        );
 
-    if (!exists && author._id.toString() !== me._id.toString()) {
-      author.notifications.push({
-        type: "comment",
-        fromUser: me._id,
-        message: `${me.name} commented: "${content}" `,
-        postId: post._id,
-        read: false,
-        createdAt: new Date(),
-      });
-      await author.save();
+        if (!exists) {
+            author.notifications.push({
+                type: "comment",
+                fromUser: me._id,
+                message: `${me.name} commented: "${content}"`,
+                postId: post._id,
+                read: false,
+                createdAt: new Date(),
+            });
+            await author.save();
+        }
     }
 
-    res.json(post.comments);
+    // Fix path avatar ใน comment ก่อนส่งกลับ
+    const commentsWithFixedPath = post.comments.map(c => ({
+        ...c._doc,
+        avatar: fixPath(c.avatar)
+    }));
+
+    res.json(commentsWithFixedPath);
   } catch (err) {
     console.error("COMMENT ERROR:", err);
     res.status(500).json({ message: err.message });
@@ -339,6 +365,10 @@ router.post("/:id/save", auth, async (req, res) => {
     const user = await User.findById(req.user._id);
     const pid = req.params.id.toString();
 
+    // เช็คก่อนว่า Post นี้มีอยู่จริงไหม
+    const postExists = await Post.findById(pid);
+    if (!postExists) return res.status(404).json({ message: "Post not found" });
+
     const list = user.savedPosts.map((x) => x.toString());
     const saved = !list.includes(pid);
 
@@ -347,10 +377,8 @@ router.post("/:id/save", auth, async (req, res) => {
 
     await user.save();
 
-    // ⭐ นับจำนวนคนที่ save post นี้
     const savedCount = await User.countDocuments({ savedPosts: pid });
 
-    // ⭐ ส่งกลับไปให้ frontend
     res.json({ 
       saved,
       savedCount 
@@ -361,9 +389,8 @@ router.post("/:id/save", auth, async (req, res) => {
   }
 });
 
-
 /* ======================================================
-   REPORT POST → ส่งถึง Admin
+   REPORT POST
 ====================================================== */
 router.post("/:id/report", auth, async (req, res) => {
   try {
@@ -385,7 +412,6 @@ router.post("/:id/report", auth, async (req, res) => {
   }
 });
 
-
 /* ======================================================
    8) DELETE COMMENT
 ====================================================== */
@@ -399,7 +425,6 @@ router.delete("/:postId/comment/:commentId", auth, async (req, res) => {
     const comment = post.comments.id(commentId);
     if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-    // ⭐ Allow admin OR comment owner
     if (
       String(comment.userId) !== String(req.user._id) &&
       req.user.role !== "admin"
@@ -416,9 +441,8 @@ router.delete("/:postId/comment/:commentId", auth, async (req, res) => {
   }
 });
 
-
 /* ======================================================
-   REPORT COMMENT → ส่งถึง Admin
+   REPORT COMMENT
 ====================================================== */
 router.post("/:postId/comment/:commentId/report", auth, async (req, res) => {
   try {
@@ -435,7 +459,7 @@ router.post("/:postId/comment/:commentId/report", auth, async (req, res) => {
       type: "comment",
       postId,
       commentId,
-      commentText: comment.content,   // ⭐ สำคัญมาก ต้องมี
+      commentText: comment.content, 
       reporter: req.user._id,
       reason,
       status: "pending"
@@ -447,8 +471,6 @@ router.post("/:postId/comment/:commentId/report", auth, async (req, res) => {
   }
 });
 
-
-
 /* ======================================================
    10) DELETE POST
 ====================================================== */
@@ -459,9 +481,16 @@ router.delete("/:id", auth, async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // ❗ ลบได้เฉพาะคนที่เป็นเจ้าของโพสต์เท่านั้น
     if (post.author.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not allowed" });
+    }
+
+    // ลบรูปภาพจาก Server (ถ้ามี)
+    if (post.image && !post.image.startsWith("data:") && !post.image.startsWith("http")) {
+       const filePath = path.join(__dirname, "..", post.image);
+       if (fs.existsSync(filePath)) {
+           fs.unlinkSync(filePath);
+       }
     }
 
     await post.deleteOne();
@@ -472,6 +501,5 @@ router.delete("/:id", auth, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
 
 export default router;

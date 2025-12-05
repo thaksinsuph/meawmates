@@ -6,8 +6,6 @@ import { Link } from "react-router-dom";
 export default function Saved() {
   const [posts, setPosts] = useState([]);
   const user = getUser();
-
-  // จัดการ URL Backend
   const backendBase = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
   useEffect(() => {
@@ -47,7 +45,7 @@ export default function Saved() {
   const toggleSave = async (id) => {
     try {
       await api.post(`/api/posts/${id}/save`);
-      fetchSaved(); // โหลดข้อมูลใหม่ทันที
+      fetchSaved(); 
     } catch (err) {
       console.error("Save error:", err);
     }
@@ -64,7 +62,7 @@ export default function Saved() {
     }
   };
 
-  /* ----------------- FIX URL FUNCTIONS ----------------- */
+  /* --- FIX URL & FALLBACK --- */
   const imageURL = (img) => {
     if (!img) return "https://placekitten.com/400/300"; 
     if (img.startsWith("data:") || img.startsWith("http")) return img;
@@ -93,13 +91,12 @@ export default function Saved() {
         </div>
       )}
 
-      {/* Grid Layout แบบเดิม */}
+      {/* Grid Layout แบบเดิมเป๊ะ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {posts.map((p) => (
-          // Card Style แบบเดิม (ลบ border-pink และ effect ยืดหดออก)
           <div key={p._id} className="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-3">
             
-            {/* Post Image */}
+            {/* Post Image: เพิ่ม onError กันภาพแตก */}
             <Link to={`/post/${p._id}`}>
               <img
                 src={imageURL(p.image)}
@@ -107,35 +104,37 @@ export default function Saved() {
                 alt="Post content"
                 onError={(e) => {
                     e.target.onerror = null; 
-                    e.target.src = "https://placekitten.com/400/300";
+                    e.target.src = "https://placekitten.com/400/300"; // รูปสำรอง (แมว)
                 }}
               />
             </Link>
 
             {/* Post Content */}
-            <p className="text-gray-800 text-sm mb-2">
+            <p className="text-gray-800 text-sm mb-2 h-10 overflow-hidden text-ellipsis line-clamp-2">
               {p.content || "(No message)"}
             </p>
 
-            {/* Footer: User Info & Actions */}
+            {/* Footer */}
             <div className="flex justify-between items-center">
               
-              {/* ✅ ส่วนที่ขอเพิ่ม: รูปโปรไฟล์ + ชื่อ User */}
+              {/* User Info */}
               <div className="flex items-center gap-2">
                 <img
                   src={avatarURL(p.author?.avatar)}
                   className="w-7 h-7 rounded-full border object-cover"
                   alt="Author"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/150/CCCCCC/808080?text=User";
+                  }}
                 />
-                <p className="font-medium text-gray-700 text-sm">
+                <p className="font-medium text-gray-700 text-sm max-w-[100px] truncate">
                     {p.author?.name || "Unknown"}
                 </p>
               </div>
 
-              {/* Action Buttons (Like, Save, Report) */}
+              {/* Actions */}
               <div className="flex gap-4 text-sm items-center">
-                
-                {/* Like */}
                 <button onClick={() => toggleLike(p._id)} className="flex items-center gap-1">
                   <img
                     src="/images/Like.png"
@@ -145,18 +144,13 @@ export default function Saved() {
                   <span className="text-gray-700 text-sm">{p.likes?.length || 0}</span>
                 </button>
 
-                {/* Save (กดแล้วลบออก) */}
                 <button onClick={() => toggleSave(p._id)} className="flex items-center gap-1" title="Unsave">
                   <img src="/images/Savedd.png" className="w-6 h-6 hover:opacity-80 transition" alt="Saved" />
-                  {/* ถ้าอยากโชว์เลขจำนวนคน Save ด้วยให้ uncomment บรรทัดล่าง */}
-                  {/* <span className="text-gray-700 text-sm">{p.savedCount || 0}</span> */}
                 </button>
 
-                {/* Report */}
                 <button onClick={() => reportPost(p._id)} title="Report">
                    <img src="/images/report.png" className="w-6 h-6 opacity-40 hover:opacity-100" alt="Report" />
                 </button>
-
               </div>
             </div>
           </div>
