@@ -83,14 +83,15 @@ export default function ManagePet() {
     setVaccinePreview(null);
   };
 
-  useEffect(() => {
-    loadPet(selectedSlot);
-    loadAllPets();
-  }, [selectedSlot]);
+  // โหลดแมวของทั้ง 4 ช่องครั้งแรก
+useEffect(() => {
+  loadAllPets();
+}, []);
 
-  useEffect(() => {
-    loadAllPets();
-  }, []);
+// โหลดข้อมูลเฉพาะช่องที่เลือกใหม่
+useEffect(() => {
+  loadPet(selectedSlot);
+}, [selectedSlot]);
 
   // ----------------------------
   // 📌 Upload cat image

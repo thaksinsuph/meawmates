@@ -8,16 +8,7 @@ export default function Matching() {
   const [pets, setPets] = useState([{}, {}, {}, {}]);
   const [selectedPet, setSelectedPet] = useState(null);
 
-  // ถ้าไม่มีแมว → บังคับไป manage-pet
-  useEffect(() => {
-    const checkPets = async () => {
-      try {
-        const res = await api.get("/api/pets/me");
-        if (!res.data || res.data.length === 0) navigate("/manage-pet");
-      } catch {}
-    };
-    checkPets();
-  }, []);
+  
 
   const isEmptyPet = (pet) => {
     return !pet || (!pet.name && !pet.breed && !pet.color && !pet.age && !pet.image);

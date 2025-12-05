@@ -185,118 +185,156 @@ export default function SwipeMatch() {
   // ---------------------------------------------------------
 
   return (
-    <div className="w-full flex flex-col items-center py-10 px-4 gap-8">
+  <div className="min-h-screen w-full flex flex-col items-center 
+      py-10 px-4 gap-10 
+      bg-gradient-to-b from-pink-50 to-purple-50">
 
-      <h1 className="text-4xl font-bold flex items-center gap-3">
-        <img src="/images/love.png" className="w-10 h-10" />
-        Cat Matching 
-      </h1>
+    {/* TITLE */}
+    <h1 className="text-4xl md:text-5xl font-extrabold flex items-center gap-3 text-gray-800 drop-shadow-sm">
+      <img src="/images/love.png" className="w-12 h-12" />
+      Find Your Perfect Cat Match
+    </h1>
 
-      {currentTarget ? (
-        <div
-          className={`relative bg-white p-4 rounded-3xl shadow-xl 
-          w-full max-w-sm md:max-w-md aspect-[3/4] 
-          text-center transition-transform duration-200
-            ${isLiking ? "translate-x-6 rotate-2" : ""}
-            ${isDisliking ? "-translate-x-6 -rotate-2" : ""}
-          `}
-        >
-          <div className="absolute top-3 right-3 bg-pink-500 text-white px-4 py-1 rounded-full text-sm font-bold">
-            {calculateMatchScore(myCat, currentTarget)}% match
-          </div>
+    {/* TARGET CAT CARD */}
+    {currentTarget ? (
+      <div
+        className={`relative backdrop-blur-xl bg-white/70 p-6 
+        rounded-3xl shadow-2xl border border-white/30
+        w-full max-w-xs md:max-w-md aspect-[3/4]
+        transition-all duration-300 ease-out 
+        hover:shadow-pink-200 hover:-translate-y-1
+        ${isLiking ? "translate-x-6 rotate-3 scale-[1.03]" : ""}
+        ${isDisliking ? "-translate-x-6 -rotate-3 scale-[1.03]" : ""}`}
+      >
 
-          {isLiking && (
-            <div className="absolute top-6 left-4 border-4 border-green-400 text-green-500 font-extrabold text-2xl px-3 py-1 rounded-lg rotate-[-15deg]">
-              LIKE
-            </div>
-          )}
-          {isDisliking && (
-            <div className="absolute top-6 right-4 border-4 border-red-400 text-red-500 font-extrabold text-2xl px-3 py-1 rounded-lg rotate-[15deg]">
-              NOPE
-            </div>
-          )}
+        {/* SCORE MATCH – ตัวหนังสือแทน icon */}
+        <div className="absolute top-4 left-4 flex items-center gap-2 
+          bg-white/80 backdrop-blur-md px-4 py-1 rounded-full shadow-md border">
+          <span className="font-semibold text-gray-700 tracking-wide">
+            Score Match
+          </span>
+          <span className="font-extrabold text-pink-600">
+            {calculateMatchScore(myCat, currentTarget)}%
+          </span>
+        </div>
 
+        {/* LIKE / NOPE Indicators (รูปแทนคำ) */}
+        {isLiking && (
           <img
-            src={currentTarget.image}
-            className="w-full aspect-[5/5] object-cover rounded-2xl mb-4"
+            src="/images/Likematch.png"
+            className="absolute top-6 left-4 w-32 opacity-90 rotate-[-15deg]"
           />
+        )}
 
-          <p className="text-2xl font-bold mb-1">{currentTarget.name}</p>
-          <p className="text-sm text-gray-600 mb-4">
+        {isDisliking && (
+          <img
+            src="/images/dislike.png"
+            className="absolute top-6 right-4 w-32 opacity-90 rotate-[15deg]"
+          />
+        )}
+
+        {/* CAT IMAGE */}
+        <img
+          src={currentTarget.image}
+          className="w-full aspect-square object-cover rounded-2xl shadow-md"
+        />
+
+        {/* CAT INFO */}
+        <div className="mt-4 text-center">
+          <p className="text-3xl font-bold text-gray-800 drop-shadow-sm">
+            {currentTarget.name}
+          </p>
+          <p className="text-gray-600 text-sm mt-1">
             {currentTarget.breed} • {currentTarget.color} • {currentTarget.age} yrs
           </p>
+        </div>
 
-          <div className="flex gap-6 mt-4 justify-center">
-            <button
-              onClick={() => handleSwipe("left")}
-              className="w-16 h-16 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-2xl shadow-md"
-            >
-              ❌
-            </button>
+        {/* ACTION BUTTONS */}
+        <div className="flex gap-10 mt-6 justify-center">
 
-            <button
-              onClick={() => handleSwipe("right")}
-              className="w-16 h-16 rounded-full bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-2xl text-white shadow-md"
-            >
-              ❤️
-            </button>
-          </div>
+          {/* DISLIKE */}
+<button
+  onClick={() => handleSwipe("left")}
+  className="w-20 h-20 rounded-full bg-white/80 backdrop-blur-sm 
+    hover:bg-red-100 border border-gray-300 flex items-center justify-center 
+    shadow-lg transition-all"
+>
+  <img src="/images/dislike.png" className="w-12 h-12 object-contain" />
+</button>
+
+{/* LIKE */}
+<button
+  onClick={() => handleSwipe("right")}
+  className="w-20 h-20 rounded-full bg-white/80 backdrop-blur-sm 
+    hover:bg-blue-100 border border-gray-300 flex items-center justify-center 
+    shadow-lg transition-all"
+>
+  <img src="/images/Likematch.png" className="w-12 h-12 object-contain" />
+</button>
+
 
         </div>
-      ) : (
-        <div className="text-center mt-10">
-          <h2 className="text-xl text-gray-700 mb-4">No more cats to show!</h2>
+
+      </div>
+    ) : (
+      <div className="text-center mt-10">
+        <h2 className="text-2xl text-gray-700 font-semibold mb-3">
+          No more cats to show 😿
+        </h2>
+        <button
+          onClick={() => navigate("/matching")}
+          className="bg-pink-500 text-white px-6 py-3 rounded-2xl shadow-md 
+            hover:bg-pink-600 hover:shadow-pink-300 transition"
+        >
+          Choose Another Cat
+        </button>
+      </div>
+    )}
+
+    {/* MATCH MODAL */}
+    {matchModal.open && (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-white/30 text-center animate-fadeIn">
+
+          <h2 className="text-4xl font-extrabold text-pink-500 mb-2 drop-shadow-sm">
+            🎉 It's a Meow Match!
+          </h2>
+
+          <p className="text-gray-700 mb-4 text-lg">
+            Your score: <span className="font-bold">{matchModal.score}%</span>
+          </p>
+
+          <img
+            src={matchModal.cat?.image}
+            className="w-full h-64 object-cover rounded-2xl shadow-lg mb-4"
+          />
+
+          <p className="text-xl font-semibold mb-1">
+            {matchModal.cat?.name}
+          </p>
+
+          {/* Continue */}
           <button
-            onClick={() => navigate("/matching")}
-            className="bg-pink-500 text-white px-6 py-3 rounded-xl"
+            onClick={() => setMatchModal({ open: false })}
+            className="bg-pink-500 text-white py-3 rounded-xl w-full mt-4 shadow-md hover:bg-pink-600"
           >
-            Back to select another cat
+            Continue Swiping
           </button>
+
+          {/* Chat */}
+          <button
+            onClick={() => navigate(`/messages/${matchModal.ownerId}`)}
+            className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-3 shadow-md hover:bg-indigo-600"
+          >
+            Go to Chat 💬
+          </button>
+
         </div>
-      )}
+      </div>
+    )}
 
-      {/* ------------------ MATCH MODAL ------------------ */}
-      {matchModal.open && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center">
-            
-            <h2 className="text-3xl font-extrabold text-pink-500 mb-2">
-              It’s a Meow Match!
-            </h2>
+  </div>
+);
 
-            <p className="text-gray-700 mb-4">
-              Compatibility score: <span className="font-bold">{matchModal.score}%</span>
-            </p>
 
-            <img
-              src={matchModal.cat?.image}
-              className="w-full h-64 object-cover rounded-2xl mb-4"
-            />
-
-            <p className="text-lg font-semibold mb-1">{matchModal.cat?.name}</p>
-
-            {/* Continue Swiping */}
-            <button
-              onClick={() => setMatchModal({ open: false, cat: null, score: 0 })}
-              className="bg-pink-500 text-white py-2 rounded-xl w-full mb-3"
-            >
-              Continue swiping
-            </button>
-
-            {/* ⭐ NEW: Go To Chat */}
-            <button
-              onClick={() =>
-                navigate(`/messages/${matchModal.ownerId}`)
-              }
-              className="bg-indigo-500 text-white py-2 rounded-xl w-full"
-            >
-              Go to Chat 💬
-            </button>
-
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
 }
