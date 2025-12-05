@@ -14,7 +14,7 @@ dotenv.config();
 
 // Allow multiple frontend URLs (Render + Netlify + Local)
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-const NETLIFY_URL = process.env.NETLIFY_URL || "https://phenomenal-sopapillas-d84803.netlify.app";
+const NETLIFY_URL = process.env.NETLIFY_URL || "https://meaw-mates.vercel.app";
 
 console.log("🔍 FRONTEND_URL =", FRONTEND_URL);
 console.log("🔍 NETLIFY_URL =", NETLIFY_URL);

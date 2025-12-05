@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // ⭐️ ALWAYS use your deployed Frontend URL
 const FRONTEND_URL =
   process.env.FRONTEND_URL ||
-  "https://phenomenal-sopapillas-d84803.netlify.app";
+  "https://meaw-mates.vercel.app";
 
 console.log("🔍 [AUTH] FRONTEND_URL =", FRONTEND_URL);
 
