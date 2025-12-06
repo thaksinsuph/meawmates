@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import auth from "../auth.js";
+import upload from "../utils/cloudinary.js"; // 👈 1. เพิ่ม import ตัวจัดการ upload (จาก utils)
 
 const router = express.Router();
 
@@ -17,6 +18,44 @@ router.get("/me", auth, async (req, res) => {
   } catch (err) {
     console.error("GET /me error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* 📌 UPLOAD AVATAR (เพิ่มใหม่ ⭐) 
+   - ใช้สำหรับอัปโหลดรูปขึ้น Cloudinary โดยเฉพาะ
+   - ปลอดภัย ไม่กระทบ logic เดิม
+*/
+router.post("/upload-avatar", auth, upload.single("avatar"), async (req, res) => {
+  try {
+    // เช็คว่ามีการส่งไฟล์มาจริงไหม
+    if (!req.file) {
+      return res.status(400).json({ message: "กรุณาเลือกไฟล์รูปภาพ" });
+    }
+
+    // Cloudinary อัปโหลดเสร็จแล้ว จะส่ง URL มาให้ใน req.file.path
+    const imageUrl = req.file.path;
+
+    // อัปเดต URL ลง Database ทันที
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { avatar: imageUrl },
+      { new: true } // option นี้เพื่อให้ return ค่า user ตัวใหม่กลับไป
+    );
+
+    res.json({
+      message: "อัปโหลดรูปสำเร็จ",
+      url: imageUrl,
+      user: {
+        _id: user._id,
+        name: user.name,
+        avatar: user.avatar,
+        bio: user.bio
+      }
+    });
+
+  } catch (err) {
+    console.error("UPLOAD ERROR:", err);
+    res.status(500).json({ message: "Upload failed", error: err.message });
   }
 });
 
@@ -70,7 +109,7 @@ router.post("/me/notifications/clear", auth, async (req, res) => {
   }
 });
 
-/* 📌 UPDATE MY PROFILE */
+/* 📌 UPDATE MY PROFILE (อันเดิม) */
 router.put("/me", auth, async (req, res) => {
   try {
     const { name, avatar, currentPassword, newPassword, bio } = req.body;
@@ -79,7 +118,8 @@ router.put("/me", auth, async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (name !== undefined) user.name = name;
-    if (avatar !== undefined) user.avatar = avatar;
+    // กรณี Frontend ส่ง URL มาเป็น String (ไม่ได้ใช้วิธี upload file) ก็ยังทำงานได้
+    if (avatar !== undefined) user.avatar = avatar; 
     if (bio !== undefined) user.bio = bio;
 
     if (newPassword) {
