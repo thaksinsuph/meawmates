@@ -15,8 +15,12 @@ dotenv.config();
 // ----- FRONTEND ORIGINS (Render + Vercel + Local) -----
 const FRONTEND_ORIGINS = [
   "http://localhost:5173",
-  "https://meaw-mates.vercel.app",
-  /^https:\/\/meaw-mates-.*\.vercel\.app$/,   // ⭐ Any Vercel Preview build
+  "https://meaw-mates.vercel.app", // เผื่ออันเก่า
+  "https://meawmates.vercel.app",    // ⭐ เพิ่มอันนี้ (ชื่อจริงไม่มีขีด)
+  
+  // Regex: รองรับ Preview URL ทั้งแบบมีขีดและไม่มีขีด
+  /^https:\/\/meaw-mates-.*\.vercel\.app$/, 
+  /^https:\/\/meawmates-.*\.vercel\.app$/,  // ⭐ เพิ่มบรรทัดนี้ (สำคัญมาก!)
 ];
 
 console.log("🔍 Allowed Origins =", FRONTEND_ORIGINS);
