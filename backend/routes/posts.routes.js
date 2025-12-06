@@ -358,25 +358,37 @@ router.post("/:id/comment", auth, async (req, res) => {
 });
 
 /* ======================================================
-   7) SAVE / UNSAVE
+   7) SAVE / UNSAVE (FIXED: กันพังกรณี User เก่าไม่มี array)
 ====================================================== */
 router.post("/:id/save", auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const pid = req.params.id.toString();
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // เช็คก่อนว่า Post นี้มีอยู่จริงไหม
+    const pid = req.params.id;
+
+    // เช็คว่า Post นี้มีอยู่จริงไหม
     const postExists = await Post.findById(pid);
     if (!postExists) return res.status(404).json({ message: "Post not found" });
 
+    // ⭐ FIX: ถ้า User เก่าไม่มี savedPosts ให้สร้าง array ว่างๆ รอไว้เลย กัน Error
+    if (!user.savedPosts) {
+        user.savedPosts = [];
+    }
+
+    // แปลง ID เป็น String เพื่อเทียบ
     const list = user.savedPosts.map((x) => x.toString());
     const saved = !list.includes(pid);
 
-    if (saved) user.savedPosts.push(pid);
-    else user.savedPosts = user.savedPosts.filter((x) => x.toString() !== pid);
+    if (saved) {
+        user.savedPosts.push(pid);
+    } else {
+        user.savedPosts = user.savedPosts.filter((x) => x.toString() !== pid);
+    }
 
     await user.save();
 
+    // นับจำนวนคนที่ save post นี้
     const savedCount = await User.countDocuments({ savedPosts: pid });
 
     res.json({ 
@@ -385,10 +397,10 @@ router.post("/:id/save", auth, async (req, res) => {
     });
 
   } catch (err) {
+    console.error("SAVE ERROR:", err); // ให้ Server ปริ้น Error ออกมาดูใน Logs
     res.status(500).json({ message: err.message });
   }
 });
-
 /* ======================================================
    REPORT POST
 ====================================================== */
