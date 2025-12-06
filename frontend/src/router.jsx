@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 // Admin
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
+import ManageUsers from "./pages/ManageUsers";
 import ManagePetsAdmin from "./pages/ManagePetsAdmin";
 import ManagePosts from "./pages/ManagePosts";
 import ManageReports from "./pages/ManageReports";
@@ -142,7 +143,7 @@ export const router = createBrowserRouter([
         ),
         children: [
           { index: true, element: <AdminDashboard /> },
-          
+          { path: "users", element: <ManageUsers /> },
           { path: "pets", element: <ManagePetsAdmin /> },
           { path: "posts", element: <ManagePosts /> },
           { path: "reports", element: <ManageReports /> },
