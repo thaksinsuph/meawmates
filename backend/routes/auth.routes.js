@@ -92,7 +92,7 @@ router.get(
   "/google",
   passportGoogle.authenticate("google", {
     scope: ["email", "profile"],
-    session: true,
+    session: false, // 👈 แก้เป็น false (เพราะเราใช้ JWT)
   })
 );
 
@@ -100,10 +100,11 @@ router.get(
   "/google/callback",
   passportGoogle.authenticate("google", {
     failureRedirect: `${FRONTEND_URL}/login`,
-    session: true,
+    session: false, // 👈 แก้เป็น false
   }),
   async (req, res) => {
-    const user = req.user;
+    // req.user จะยังมีค่าอยู่ เพราะ Passport ส่งมาให้จาก Strategy
+    const user = req.user; 
 
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
