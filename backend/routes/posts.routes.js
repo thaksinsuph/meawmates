@@ -22,49 +22,31 @@ const fixPath = (p) => {
 };
 
 /* ======================================================
-   1) GET SAVED POSTS — FIXED (แก้ปัญหา Unknown + จอดำ)
+   GET SAVED POSTS (FIXED: Deep Populate Author)
 ====================================================== */
 router.get("/saved/:userId", auth, async (req, res) => {
   try {
+    // ⭐ จุดสำคัญ: ต้อง populate 2 ชั้น
+    // ชั้นที่ 1: path: "savedPosts" (ดึงข้อมูลโพสต์จาก ID)
+    // ชั้นที่ 2: populate: { path: "author" ... } (ดึงข้อมูลคนโพสต์จาก ID ในโพสต์นั้นอีกที)
     const user = await User.findById(req.params.userId)
       .populate({
         path: "savedPosts",
-        populate: { path: "author", select: "name avatar email" }
+        populate: { 
+          path: "author", 
+          select: "name avatar email" // เลือกมาเฉพาะข้อมูลที่ต้องใช้
+        }
       });
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // ⭐ FIX 1: กรองโพสต์ที่กลายเป็น null ทิ้งไป (ป้องกัน Error)
+    // ⭐ กรองโพสต์ที่อาจจะถูกลบไปแล้วทิ้ง (กัน Error หน้าขาว)
     const validPosts = user.savedPosts.filter(p => p && p._id);
 
-    const formatted = await Promise.all(
-      validPosts.map(async (p) => {
-        // ⭐ FIX 2: ถ้าคนโพสต์หายไป (null) ให้ใช้ข้อมูลสมมติแทน
-        const author = p.author || { _id: "unknown", name: "Unknown User", avatar: null };
-
-        return {
-          _id: p._id,
-          content: p.content,
-          image: fixPath(p.image),
-          likes: p.likes || [],
-          comments: p.comments || [],
-          
-          author: {
-            _id: author._id,
-            name: author.name,
-            avatar: author.avatar ? fixPath(author.avatar) : null
-          },
-
-          isSaved: true,
-          savedCount: await User.countDocuments({ savedPosts: p._id })
-        };
-      })
-    );
-    
     // เรียงจากใหม่ไปเก่า
-    formatted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    validPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    res.json(formatted);
+    res.json(validPosts);
 
   } catch (err) {
     console.error("SAVED POSTS ERROR:", err);
