@@ -23,6 +23,7 @@ passport.use(
       clientID: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
       callbackURL: CALLBACK_URL,
+      proxy: true, // <--- ⭐ เติมบรรทัดนี้ครับ สำคัญมากสำหรับ Render!
     },
 
     async (accessToken, refreshToken, profile, done) => {
