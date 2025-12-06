@@ -146,14 +146,18 @@ export default function Home() {
    * - ถ้าเป็น upload ใน backend → prefix backend URL
    */
   const avatarURL = (av) => {
-    // ⭐ แก้ตรงนี้: ให้กลับมาใช้รูปจาก folder public ของเรา
-    if (!av || av === "") return "/images/profile.png"; 
+    // 1. ถ้าไม่มีข้อมูล หรือเป็นสตริงว่าง ให้ใช้รูป Default ในเครื่องเรา
+    if (!av || av === "") return "/images/profile.png"; 
 
-    if (av.startsWith("data:")) return av; 
-    if (av.startsWith("http")) return av; 
+    // 2. ถ้าเป็นรูปในเครื่องเราอยู่แล้ว (เช่น ตอน dev หรือ fallback) ไม่ต้องเติม backend
+    if (av === "/images/profile.png" || av.startsWith("/images/")) return av;
 
-    return `${backendURL}/${av.replace(/^\//, "")}`; 
-  };
+    // 3. ถ้าเป็น base64 หรือ http (รูปจาก Google/Facebook) ใช้ได้เลย
+    if (av.startsWith("data:") || av.startsWith("http")) return av; 
+
+    // 4. ถ้าเป็นรูปอัปโหลด (เช่น uploads/xxx.png) ให้เติม Backend URL
+    return `${backendURL}/${av.replace(/^\//, "")}`; 
+  };
 
   const isLiked = (p) => p.likes?.includes(user?._id);
 

@@ -138,18 +138,22 @@ export default function Layout() {
   };
 
   /* =====================================================
-        FIX AVATAR PATH
-  ===================================================== */
+        FIX AVATAR PATH (แก้ไขให้ถูกต้อง)
+   ===================================================== */
   const fixAvatar = (av) => {
-    if (!av) return "/images/profile.png";
+    // 1. ถ้าไม่มีข้อมูล ให้ใช้รูป Default
+    if (!av || av === "") return "/images/profile.png";
 
-    // base64
+    // 2. ⭐ เพิ่มเช็คตรงนี้: ถ้าเป็นรูป local ไม่ต้องเติม backend prefix
+    if (av === "/images/profile.png" || av.startsWith("/images/")) return av;
+
+    // 3. base64
     if (av.startsWith("data:")) return av;
 
-    // google / facebook avatar
+    // 4. google / facebook avatar
     if (av.startsWith("http")) return av;
 
-    // backend uploads → prefix with backend URL
+    // 5. backend uploads → prefix with backend URL
     const backend = import.meta.env.VITE_API_URL.replace("/api", "");
     return `${backend}${av.startsWith("/") ? av : "/" + av}`;
   };

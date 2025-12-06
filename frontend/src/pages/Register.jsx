@@ -33,7 +33,7 @@ export default function Register() {
     }
 
     try {
-      // ⭐ ใช้ api.post แทน localhost
+      
       await api.post("/api/auth/register", {
         name: form.name,
         email: form.email,
