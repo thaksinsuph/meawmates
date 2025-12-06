@@ -6,6 +6,7 @@ import auth from "../auth.js";
 import Post from "../models/Post.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
+import upload from "../utils/cloudinary.js";
 
 const router = express.Router();
 
@@ -22,31 +23,49 @@ const fixPath = (p) => {
 };
 
 /* ======================================================
-   GET SAVED POSTS (FIXED: Deep Populate Author)
+   1) GET SAVED POSTS — FIXED (แก้ปัญหา Unknown + จอดำ)
 ====================================================== */
 router.get("/saved/:userId", auth, async (req, res) => {
   try {
-    // ⭐ จุดสำคัญ: ต้อง populate 2 ชั้น
-    // ชั้นที่ 1: path: "savedPosts" (ดึงข้อมูลโพสต์จาก ID)
-    // ชั้นที่ 2: populate: { path: "author" ... } (ดึงข้อมูลคนโพสต์จาก ID ในโพสต์นั้นอีกที)
     const user = await User.findById(req.params.userId)
       .populate({
         path: "savedPosts",
-        populate: { 
-          path: "author", 
-          select: "name avatar email" // เลือกมาเฉพาะข้อมูลที่ต้องใช้
-        }
+        populate: { path: "author", select: "name avatar email" }
       });
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // ⭐ กรองโพสต์ที่อาจจะถูกลบไปแล้วทิ้ง (กัน Error หน้าขาว)
+    // ⭐ FIX 1: กรองโพสต์ที่กลายเป็น null ทิ้งไป (ป้องกัน Error)
     const validPosts = user.savedPosts.filter(p => p && p._id);
 
-    // เรียงจากใหม่ไปเก่า
-    validPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const formatted = await Promise.all(
+      validPosts.map(async (p) => {
+        // ⭐ FIX 2: ถ้าคนโพสต์หายไป (null) ให้ใช้ข้อมูลสมมติแทน
+        const author = p.author || { _id: "unknown", name: "Unknown User", avatar: null };
 
-    res.json(validPosts);
+        return {
+          _id: p._id,
+          content: p.content,
+          image: fixPath(p.image),
+          likes: p.likes || [],
+          comments: p.comments || [],
+          
+          author: {
+            _id: author._id,
+            name: author.name,
+            avatar: author.avatar ? fixPath(author.avatar) : null
+          },
+
+          isSaved: true,
+          savedCount: await User.countDocuments({ savedPosts: p._id })
+        };
+      })
+    );
+    
+    // เรียงจากใหม่ไปเก่า
+    formatted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json(formatted);
 
   } catch (err) {
     console.error("SAVED POSTS ERROR:", err);
@@ -181,52 +200,46 @@ router.get("/user/:userId", async (req, res) => {
 });
 
 /* ======================================================
-   4) CREATE POST
+   4) CREATE POST (Cloudinary Version ⭐)
 ====================================================== */
-router.post("/", auth, async (req, res) => {
+// 2. ใช้ middleware upload.single('image') รับไฟล์
+router.post("/", auth, upload.single("image"), async (req, res) => {
   try {
-    const { content, image } = req.body;
-    let imagePath = "";
+    const { content } = req.body;
+    let imageUrl = "";
 
-    if (image && image.startsWith("data:image")) {
-      // ⚠️ ระวัง: บน Render ไฟล์นี้จะหายไปเมื่อ Server Restart
-      const filename = `/uploads/post_${Date.now()}.png`;
-      const base64 = image.replace(/^data:image\/\w+;base64,/, "");
-      
-      // ตรวจสอบว่ามี folder uploads หรือไม่ ถ้าไม่มีให้สร้าง
-      const uploadDir = path.join(__dirname, "..", "uploads");
-      if (!fs.existsSync(uploadDir)){
-          fs.mkdirSync(uploadDir);
-      }
-
-      fs.writeFileSync(
-        path.join(__dirname, "..", filename),
-        Buffer.from(base64, "base64")
-      );
-
-      imagePath = filename;
+    // 3. ตรวจสอบไฟล์จาก Cloudinary
+    if (req.file) {
+      imageUrl = req.file.path; // URL จาก Cloudinary
+    } else if (req.body.image) {
+      // กรณีส่งมาเป็น URL (เช่นจากเว็บอื่น) หรือ Base64 (ถ้ายังหลงเหลืออยู่)
+      imageUrl = req.body.image; 
     }
 
     const post = new Post({
       author: req.user._id,
       content,
-      image: imagePath,
+      image: imageUrl, // เก็บ URL ได้เลย
       likes: [],
       comments: [],
     });
 
     await post.save();
+    
+    // Populate ข้อมูลผู้เขียนเพื่อส่งกลับไปแสดงผลทันที
     const populated = await post.populate("author", "name avatar");
     
-    // แปลง avatar ให้มี path ถูกต้องก่อนส่งกลับ
+    // แปลง avatar ให้มี path ถูกต้อง (เผื่อผู้เขียนยังใช้รูปเก่าแบบ local)
     const result = populated.toObject();
-    if(result.author) {
-        result.author.avatar = fixPath(result.author.avatar);
+    if(result.author && result.author.avatar) {
+        // reuse fixPath logic หรือปล่อยไว้ก็ได้เพราะ frontend มี getImageUrl แล้ว
+        // แต่เพื่อความชัวร์ จะใส่ fixPath ไว้ก็ได้ครับ
     }
-    result.image = fixPath(result.image);
 
     res.status(201).json(result);
+
   } catch (err) {
+    console.error("Create Post Error:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -340,37 +353,25 @@ router.post("/:id/comment", auth, async (req, res) => {
 });
 
 /* ======================================================
-   7) SAVE / UNSAVE (FIXED: กันพังกรณี User เก่าไม่มี array)
+   7) SAVE / UNSAVE
 ====================================================== */
 router.post("/:id/save", auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const pid = req.params.id.toString();
 
-    const pid = req.params.id;
-
-    // เช็คว่า Post นี้มีอยู่จริงไหม
+    // เช็คก่อนว่า Post นี้มีอยู่จริงไหม
     const postExists = await Post.findById(pid);
     if (!postExists) return res.status(404).json({ message: "Post not found" });
 
-    // ⭐ FIX: ถ้า User เก่าไม่มี savedPosts ให้สร้าง array ว่างๆ รอไว้เลย กัน Error
-    if (!user.savedPosts) {
-        user.savedPosts = [];
-    }
-
-    // แปลง ID เป็น String เพื่อเทียบ
     const list = user.savedPosts.map((x) => x.toString());
     const saved = !list.includes(pid);
 
-    if (saved) {
-        user.savedPosts.push(pid);
-    } else {
-        user.savedPosts = user.savedPosts.filter((x) => x.toString() !== pid);
-    }
+    if (saved) user.savedPosts.push(pid);
+    else user.savedPosts = user.savedPosts.filter((x) => x.toString() !== pid);
 
     await user.save();
 
-    // นับจำนวนคนที่ save post นี้
     const savedCount = await User.countDocuments({ savedPosts: pid });
 
     res.json({ 
@@ -379,10 +380,10 @@ router.post("/:id/save", auth, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("SAVE ERROR:", err); // ให้ Server ปริ้น Error ออกมาดูใน Logs
     res.status(500).json({ message: err.message });
   }
 });
+
 /* ======================================================
    REPORT POST
 ====================================================== */

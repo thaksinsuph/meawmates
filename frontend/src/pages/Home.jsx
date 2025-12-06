@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import api from "../api.js";
 import { getUser } from "../auth";
 import { Link } from "react-router-dom";
+// 👇 1. Import Helper
+import { getImageUrl } from "../utils/imageHelper";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState("");
-  const [image, setImage] = useState(null);
+  
+  // 👇 2. เพิ่ม State เก็บไฟล์จริง
+  const [image, setImage] = useState(null); // สำหรับ Preview (Base64)
+  const [imageFile, setImageFile] = useState(null); // สำหรับ Upload (File Object)
+
   const [showPostBox, setShowPostBox] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
 
@@ -40,25 +46,39 @@ export default function Home() {
   const handleImage = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // 👇 เก็บไฟล์จริงลง State
+      setImageFile(file);
+
+      // สร้าง Preview
       const reader = new FileReader();
       reader.onloadend = () => setImage(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
-  /* ------------------ CREATE POST ------------------ */
+  /* ------------------ CREATE POST (แก้ไข ⭐) ------------------ */
   const handlePost = async () => {
-    if (!content && !image)
+    if (!content && !imageFile) // เช็ค imageFile แทน
       return alert("Please write something or select an image before posting.");
 
     try {
-      await api.post("/api/posts", { content, image });
+      // 👇 เปลี่ยนเป็น FormData เพื่อส่งไฟล์ขึ้น Cloudinary
+      const formData = new FormData();
+      formData.append("content", content);
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      await api.post("/api/posts", formData);
+
+      // Reset Form
       setContent("");
       setImage(null);
+      setImageFile(null);
       setShowPostBox(false);
       fetchPosts();
     } catch (err) {
-      alert("❌ Failed to create post: " + err.message);
+      alert("❌ Failed to create post: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -127,38 +147,6 @@ export default function Home() {
     }
   };
 
-  /* ------------------ URL HELPERS ------------------ */
-
-  // Backend base URL from .env
-  const backendURL = import.meta.env.VITE_API_URL.replace("/api", "");
-
-  const imageURL = (img) => {
-    if (!img) return "https://placekitten.com/400/300";
-    if (img.startsWith("data:")) return img;
-    if (img.startsWith("http")) return img;
-    return `${backendURL}/${img.replace(/^\//, "")}`;
-  };
-
-  /** ⭐ FIXED VERSION (โหลด avatar ได้ทุกแบบ)
-   * - ถ้าเป็น local frontend → /images/profile.png (Netlify)
-   * - ถ้าเป็น Google URL → ใช้ตามนั้น
-   * - ถ้าเป็น base64 → ใช้ตามนั้น
-   * - ถ้าเป็น upload ใน backend → prefix backend URL
-   */
-  const avatarURL = (av) => {
-    // 1. ถ้าไม่มีข้อมูล หรือเป็นสตริงว่าง ให้ใช้รูป Default ในเครื่องเรา
-    if (!av || av === "") return "/images/profile.png"; 
-
-    // 2. ถ้าเป็นรูปในเครื่องเราอยู่แล้ว (เช่น ตอน dev หรือ fallback) ไม่ต้องเติม backend
-    if (av === "/images/profile.png" || av.startsWith("/images/")) return av;
-
-    // 3. ถ้าเป็น base64 หรือ http (รูปจาก Google/Facebook) ใช้ได้เลย
-    if (av.startsWith("data:") || av.startsWith("http")) return av; 
-
-    // 4. ถ้าเป็นรูปอัปโหลด (เช่น uploads/xxx.png) ให้เติม Backend URL
-    return `${backendURL}/${av.replace(/^\//, "")}`; 
-  };
-
   const isLiked = (p) => p.likes?.includes(user?._id);
 
   return (
@@ -183,7 +171,7 @@ export default function Home() {
             <div>
               <div className="flex gap-3">
                 <img
-                  src={avatarURL(user.avatar)}
+                  src={getImageUrl(user.avatar)} // ⭐ ใช้ Helper
                   className="w-10 h-10 rounded-full border object-cover"
                 />
 
@@ -216,6 +204,7 @@ export default function Home() {
                       setShowPostBox(false);
                       setContent("");
                       setImage(null);
+                      setImageFile(null);
                     }}
                     className="px-4 py-2 rounded-xl border text-gray-600 hover:bg-gray-100"
                   >
@@ -242,23 +231,24 @@ export default function Home() {
             
             <Link to={`/post/${p._id}`}>
               <img
-                src={imageURL(p.image)}
+                src={getImageUrl(p.image)} // ⭐ ใช้ Helper
                 className="w-full h-64 object-cover rounded-xl mb-3"
+                onError={(e) => { e.target.src = "/images/placeholder.png" }}
               />
             </Link>
 
-            <p className="text-gray-800 text-sm mb-2">{p.content}</p>
+            <p className="text-gray-800 text-sm mb-2 line-clamp-2">{p.content}</p>
 
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Link to={`/profile/${p.author?._id}`}>
                   <img
-                    src={avatarURL(p.author?.avatar)}
+                    src={getImageUrl(p.author?.avatar)} // ⭐ ใช้ Helper
                     className="w-7 h-7 rounded-full border object-cover cursor-pointer hover:scale-110 transition"
                   />
                 </Link>
                 <div>
-                  <p className="font-medium text-gray-700 text-sm">{p.author?.name}</p>
+                  <p className="font-medium text-gray-700 text-sm truncate w-20">{p.author?.name}</p>
                   <p className="text-xs text-gray-500">{timeAgo(p.createdAt)}</p>
                 </div>
               </div>

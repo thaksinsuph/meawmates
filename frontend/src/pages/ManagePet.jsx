@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BREEDS, CAT_COLORS } from "../petData";
+import { BREEDS, CAT_COLORS } from "../petData"; // ตรวจสอบ path ให้ถูก
 import api from "../api";
 
 export default function ManagePet() {
@@ -13,8 +13,11 @@ export default function ManagePet() {
     breed: "",
     color: "",
     age: "",
-    image: null,
-    vaccineImage: null, // ⭐ new
+    image: null,      // เก็บ URL เดิม (ถ้ามี)
+    vaccineImage: null, // เก็บ URL เดิม (ถ้ามี)
+    // 👇 เพิ่ม 2 ตัวนี้มาเก็บไฟล์ที่จะอัปโหลด
+    imageFile: null,  
+    vaccineImageFile: null 
   });
 
   const [popup, setPopup] = useState({
@@ -55,11 +58,13 @@ export default function ManagePet() {
           color: pet.color || "",
           age: pet.age || "",
           image: pet.image || null,
-          vaccineImage: pet.vaccineImage || null, // ⭐ new
+          vaccineImage: pet.vaccineImage || null,
+          imageFile: null,      // Reset file ใหม่
+          vaccineImageFile: null // Reset file ใหม่
         });
 
         setPreview(pet.image || null);
-        setVaccinePreview(pet.vaccineImage || null); // ⭐ new
+        setVaccinePreview(pet.vaccineImage || null);
       } else {
         resetForm();
       }
@@ -77,55 +82,58 @@ export default function ManagePet() {
       age: "",
       image: null,
       vaccineImage: null,
+      imageFile: null,
+      vaccineImageFile: null
     });
 
     setPreview(null);
     setVaccinePreview(null);
   };
 
-  // โหลดแมวของทั้ง 4 ช่องครั้งแรก
-useEffect(() => {
-  loadAllPets();
-}, []);
+  useEffect(() => {
+    loadAllPets();
+  }, []);
 
-// โหลดข้อมูลเฉพาะช่องที่เลือกใหม่
-useEffect(() => {
-  loadPet(selectedSlot);
-}, [selectedSlot]);
+  useEffect(() => {
+    loadPet(selectedSlot);
+  }, [selectedSlot]);
 
   // ----------------------------
-  // 📌 Upload cat image
+  // 📌 Upload cat image (แก้ไข ⭐)
   // ----------------------------
   const handleImage = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // 1. เก็บไฟล์จริงลง state เพื่อเตรียมส่ง
+      setForm((prev) => ({ ...prev, imageFile: file }));
+      
+      // 2. สร้าง Preview (เหมือนเดิม)
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result);
-        setForm({ ...form, image: reader.result });
       };
       reader.readAsDataURL(file);
     }
   };
 
   // ----------------------------
-  // 📌 Upload Vaccine Image ⭐
+  // 📌 Upload Vaccine Image (แก้ไข ⭐)
   // ----------------------------
   const handleVaccineImage = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // 1. เก็บไฟล์จริงลง state เพื่อเตรียมส่ง
+      setForm((prev) => ({ ...prev, vaccineImageFile: file }));
+
+      // 2. สร้าง Preview (เหมือนเดิม)
       const reader = new FileReader();
       reader.onloadend = () => {
         setVaccinePreview(reader.result);
-        setForm({ ...form, vaccineImage: reader.result });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // ----------------------------
-  // 📌 Popup info
-  // ----------------------------
   const openPopup = (title, data) => {
     setPopup({
       open: true,
@@ -136,20 +144,53 @@ useEffect(() => {
   };
 
   // ----------------------------
-  // 📌 Save cat
+  // 📌 Save cat (เปลี่ยนเป็น FormData ⭐)
   // ----------------------------
   const savePet = async () => {
-    if (!form.name || !form.breed || !form.color || !form.age || !form.image) {
-      return alert("กรุณากรอกข้อมูลให้ครบ");
+    // Validation
+    if (!form.name || !form.breed || !form.color || !form.age) {
+      return alert("กรุณากรอกข้อมูลให้ครบ (ชื่อ, พันธุ์, สี, อายุ)");
+    }
+
+    // ต้องมีรูปอย่างน้อย 1 อย่าง (รูปใหม่ หรือ รูปเดิม)
+    if (!form.imageFile && !form.image) {
+       return alert("กรุณาใส่รูปน้องแมวด้วย");
     }
 
     try {
-      await api.post(`/api/pets/${selectedSlot}`, form);
-      alert(`Record cat information in the field ${selectedSlot} succeed`);
+      // ⭐ ใช้ FormData แทน JSON
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("breed", form.breed);
+      formData.append("color", form.color);
+      formData.append("age", form.age);
+
+      // ถ้ามีรูปเดิม ส่งไปเป็น text (URL)
+      if (form.image) formData.append("image", form.image);
+      if (form.vaccineImage) formData.append("vaccineImage", form.vaccineImage);
+
+      // ถ้ามีไฟล์ใหม่ แนบไฟล์ไป (ชื่อ field 'image' ต้องตรงกับ backend)
+      if (form.imageFile) {
+        formData.append("image", form.imageFile);
+      }
+      
+      // ถ้ามีไฟล์วัคซีนใหม่ แนบไฟล์ไป (ชื่อ field 'vaccineImage' ต้องตรงกับ backend)
+      if (form.vaccineImageFile) {
+        formData.append("vaccineImage", form.vaccineImageFile);
+      }
+
+      // axios จะจัดการ content-type multipart ให้เองเมื่อส่ง formData
+      await api.post(`/api/pets/${selectedSlot}`, formData);
+      
+      alert(`บันทึกข้อมูลช่องที่ ${selectedSlot} สำเร็จ!`);
       loadAllPets();
+      
+      // Clear file ใน state ทิ้งหลัง save เสร็จ
+      setForm(prev => ({ ...prev, imageFile: null, vaccineImageFile: null }));
+
     } catch (err) {
       console.error(err);
-      alert("An error occurred while saving the data.");
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 
@@ -157,15 +198,15 @@ useEffect(() => {
   // ❌ Delete cat
   // ----------------------------
   const deletePet = async (slot) => {
-    if (!confirm(`Want to delete channel information ${slot} Right?`)) return;
+    if (!confirm(`ต้องการลบข้อมูลช่องที่ ${slot} ใช่หรือไม่?`)) return;
 
     try {
       await api.delete(`/api/pets/${slot}`);
       if (slot === selectedSlot) resetForm();
       loadAllPets();
-      alert("Successfully deleted");
+      alert("ลบข้อมูลสำเร็จ");
     } catch {
-      alert("Failed to delete");
+      alert("ลบข้อมูลไม่สำเร็จ");
     }
   };
 
@@ -197,7 +238,7 @@ useEffect(() => {
               {pet?.image ? (
                 <img src={pet.image} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-gray-400">No pictures</span>
+                <span className="text-gray-400">ว่าง</span>
               )}
             </div>
 
@@ -320,11 +361,11 @@ useEffect(() => {
 
             <label className="mt-4 cursor-pointer bg-gray-100 px-4 py-2 rounded-xl">
               Select picture
-              <input type="file" className="hidden" onChange={handleImage} />
+              <input type="file" className="hidden" onChange={handleImage} accept="image/*" />
             </label>
 
             {/* ---------------------------
-                Vaccine Picture ⭐ NEW
+                Vaccine Picture
             ---------------------------- */}
             <div className="flex flex-col items-center mt-10">
               <p className="font-medium mb-2 flex items-center gap-2">
@@ -341,7 +382,7 @@ useEffect(() => {
 
               <label className="mt-3 cursor-pointer bg-blue-100 px-4 py-2 rounded-xl hover:bg-blue-200 transition">
                 Upload Vaccine Image
-                <input type="file" className="hidden" onChange={handleVaccineImage} />
+                <input type="file" className="hidden" onChange={handleVaccineImage} accept="image/*" />
               </label>
 
               {vaccinePreview && (
@@ -349,7 +390,7 @@ useEffect(() => {
                   className="mt-2 text-red-500 underline text-sm"
                   onClick={() => {
                     setVaccinePreview(null);
-                    setForm({ ...form, vaccineImage: null });
+                    setForm({ ...form, vaccineImage: null, vaccineImageFile: null });
                   }}
                 >
                   Remove vaccine image
@@ -363,7 +404,7 @@ useEffect(() => {
 
       {/* Popup */}
       {popup.open && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-2xl max-w-md shadow-lg">
             <h2 className="text-xl font-bold mb-3">{popup.title}</h2>
             <img src={popup.img} className="w-full h-64 object-cover rounded-xl mb-3" />

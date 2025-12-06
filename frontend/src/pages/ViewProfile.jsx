@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../api";
 import { getUser } from "../auth";
+// 👇 1. Import Component อัปโหลดรูป
+import AvatarUpload from "../components/AvatarUpload";
 
 export default function ViewProfile() {
   const { id } = useParams();
@@ -22,7 +24,7 @@ export default function ViewProfile() {
   const [followList, setFollowList] = useState([]);
   const [followMode, setFollowMode] = useState("followers");
 
-  // ⭐ Backend URL root เช่น https://meawmates.onrender.com
+  // ⭐ Backend URL root
   const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
 
   /* ===================================================
@@ -30,11 +32,11 @@ export default function ViewProfile() {
   =================================================== */
   const avatarURL = (avatar) => {
     if (!avatar) return "/images/profile.png";
-    if (avatar.startsWith("/images/")) return avatar;
-    if (avatar.startsWith("data:")) return avatar;
-    if (avatar.startsWith("http")) return avatar;
+    if (avatar.startsWith("/images/")) return avatar; // Local images
+    if (avatar.startsWith("data:")) return avatar;    // Base64 (Legacy)
+    if (avatar.startsWith("http")) return avatar;     // Cloudinary / External
 
-    // backend uploads เช่น /uploads/x.png
+    // Local uploads (เผื่อมีของเก่า)
     return `${backendBase}${avatar.startsWith("/") ? avatar : "/" + avatar}`;
   };
 
@@ -123,29 +125,24 @@ export default function ViewProfile() {
   /* ===================================================
       SAVE SETTINGS
   =================================================== */
-  const convertToBase64 = (file, cb) => {
-    const r = new FileReader();
-    r.onloadend = () => cb(r.result);
-    r.readAsDataURL(file);
-  };
-
   const openSettings = () => {
     setEditName(profile.name);
-    setEditAvatar(profile.avatar);
+    setEditAvatar(profile.avatar); // เอา URL ปัจจุบันไปใส่ใน state
     setEditBio(profile.bio || "");
     setShowSettings(true);
   };
 
   const handleSaveSettings = async () => {
     try {
+      // ส่ง URL รูปภาพ (ที่ได้จาก Cloudinary) ไปบันทึกพร้อมชื่อและ bio
       await api.put("/api/users/me", {
         name: editName,
-        avatar: editAvatar,
+        avatar: editAvatar, // ตรงนี้จะเป็น URL แล้ว ไม่ใช่ Base64
         bio: editBio,
       });
 
       setShowSettings(false);
-      fetchProfile();
+      fetchProfile(); // โหลดข้อมูลใหม่มาโชว์
     } catch (err) {
       console.error("Update error:", err);
       alert("Failed to save changes.");
@@ -244,7 +241,6 @@ export default function ViewProfile() {
           setEditAvatar={setEditAvatar}
           setEditName={setEditName}
           setEditBio={setEditBio}
-          convertToBase64={convertToBase64}
           handleSaveSettings={handleSaveSettings}
           setShowSettings={setShowSettings}
         />
@@ -305,7 +301,7 @@ function FollowModal({ followList, followMode, avatarURL, setShowFollowModal }) 
   );
 }
 
-/* SETTINGS MODAL */
+/* ⭐ SETTINGS MODAL (แก้ส่วนนี้เยอะสุด) */
 function SettingsModal({
   editAvatar,
   editName,
@@ -313,7 +309,6 @@ function SettingsModal({
   setEditAvatar,
   setEditName,
   setEditBio,
-  convertToBase64,
   handleSaveSettings,
   setShowSettings,
 }) {
@@ -321,60 +316,49 @@ function SettingsModal({
     <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
       <div className="bg-white w-96 p-6 rounded-2xl shadow-xl">
 
-        <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
+        <h2 className="text-xl font-semibold mb-4 text-center">Edit Profile</h2>
 
-        <div className="flex flex-col items-center mb-4">
-          <img
-            src={editAvatar}
-            className="w-28 h-28 rounded-full object-cover border-4 border-pink-300 shadow"
-          />
-
-          <button
-            onClick={() => document.getElementById("uploadAvatar").click()}
-            className="mt-3 px-4 py-1.5 bg-pink-500 text-white rounded-lg shadow hover:bg-pink-600"
-          >
-            Change Photo
-          </button>
-
-          <input
-            id="uploadAvatar"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) =>
-              convertToBase64(e.target.files[0], (b64) => setEditAvatar(b64))
-            }
+        {/* ❌ ลบ img/input เดิมออก */}
+        {/* ✅ ใส่ AvatarUpload ตัวใหม่เข้าไป */}
+        <div className="flex justify-center mb-6">
+          <AvatarUpload
+            currentAvatar={editAvatar}
+            onUploadSuccess={(url) => {
+              // พออัปโหลดขึ้น Cloud เสร็จ ให้เอา URL มาใส่ใน state รอไว้
+              // เวลา user กดปุ่ม Save ด้านล่าง มันจะเอา URL นี้ไป update พร้อมชื่อ
+              setEditAvatar(url);
+            }}
           />
         </div>
 
-        <label className="font-medium mb-1">Name</label>
+        <label className="font-medium mb-1 block text-sm text-gray-600">Name</label>
         <input
           type="text"
-          className="w-full border rounded-xl p-2 mb-4"
+          className="w-full border rounded-xl p-2 mb-4 focus:ring-2 focus:ring-pink-300 outline-none"
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
         />
 
-        <label className="font-medium mb-1">Bio</label>
+        <label className="font-medium mb-1 block text-sm text-gray-600">Bio</label>
         <textarea
-          className="w-full border rounded-xl p-2 h-24"
+          className="w-full border rounded-xl p-2 h-24 focus:ring-2 focus:ring-pink-300 outline-none resize-none"
           value={editBio}
           onChange={(e) => setEditBio(e.target.value)}
         />
 
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-end gap-3 mt-4">
           <button
             onClick={() => setShowSettings(false)}
-            className="px-4 py-2 bg-gray-200 rounded-xl hover:bg-gray-300"
+            className="px-4 py-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition text-sm font-medium"
           >
             Cancel
           </button>
 
           <button
             onClick={handleSaveSettings}
-            className="px-4 py-2 bg-pink-500 text-white rounded-xl hover:bg-pink-600"
+            className="px-4 py-2 bg-pink-500 text-white rounded-xl hover:bg-pink-600 transition text-sm font-medium shadow-md"
           >
-            Save
+            Save Changes
           </button>
         </div>
 
