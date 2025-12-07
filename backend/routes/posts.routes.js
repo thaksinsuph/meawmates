@@ -70,7 +70,7 @@ router.get("/saved/:userId", auth, async (req, res) => {
     console.error("SAVED POSTS ERROR:", err);
     res.status(500).json({ message: err.message });
   }
-});
+});      
 
 /* ======================================================
    2) GET ALL POSTS

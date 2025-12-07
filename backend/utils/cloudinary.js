@@ -19,7 +19,7 @@ const storage = new CloudinaryStorage({
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
   },
 });
-
+   
 // ⭐ ใช้ตัวนี้ตัวเดียวพอครับ (ที่มี limits)
 const upload = multer({ 
   storage: storage,
