@@ -9,7 +9,7 @@ export default function Saved() {
   const backendBase = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
   useEffect(() => {
-    if (user?._id) fetchSaved();
+    fetchSaved();
   }, [user]);
 
   const fetchSaved = async () => {
