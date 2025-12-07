@@ -194,7 +194,7 @@ router.delete("/:userId", auth, async (req, res) => {
 });
 
 /* ================================
-   7) GET UNSEEN MESSAGE COUNT
+   7) GET UNSEEN MESSAGE COUNT (สำหรับ Layout Navbar)
 ================================ */
 router.get("/unseen-count", auth, async (req, res) => {
     try {
