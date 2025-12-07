@@ -7,6 +7,7 @@ import Post from "../models/Post.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
 import upload from "../utils/cloudinary.js";
+import { v2 as cloudinary } from 'cloudinary'; // ⭐ ต้อง import ตัวนี้เพิ่มเพื่อใช้ฟังก์ชัน uploader
 
 const router = express.Router();
 
@@ -199,42 +200,51 @@ router.get("/user/:userId", async (req, res) => {
 });
 
 /* ======================================================
-   4) CREATE POST (Cloudinary Version ⭐)
+   4) CREATE POST (Support File AND Base64)
 ====================================================== */
-// 2. ใช้ middleware upload.single('image') รับไฟล์
 router.post("/", auth, upload.single("image"), async (req, res) => {
   try {
     const { content } = req.body;
     let imageUrl = "";
 
-    // 3. ตรวจสอบไฟล์จาก Cloudinary
+    // ✅ กรณีที่ 1: ส่งมาเป็นไฟล์ (FormData)
     if (req.file) {
-      imageUrl = req.file.path; // URL จาก Cloudinary
-    } else if (req.body.image) {
-      // กรณีส่งมาเป็น URL (เช่นจากเว็บอื่น) หรือ Base64 (ถ้ายังหลงเหลืออยู่)
-      imageUrl = req.body.image; 
+      imageUrl = req.file.path;
+    } 
+    // ✅ กรณีที่ 2: ส่งมาเป็น Base64 (JSON) -> เราต้องสั่งอัปโหลดเอง
+    else if (req.body.image && req.body.image.startsWith("data:image")) {
+       try {
+         const uploadRes = await cloudinary.uploader.upload(req.body.image, {
+            folder: "meow-mates-avatars"
+         });
+         imageUrl = uploadRes.secure_url;
+       } catch (uploadErr) {
+         return res.status(400).json({ message: "Invalid image data" });
+       }
+    }
+    // ✅ กรณีที่ 3: เป็น URL ธรรมดา (เช่นโพสต์ซ้ำ)
+    else if (req.body.image) {
+       imageUrl = req.body.image;
     }
 
     const post = new Post({
       author: req.user._id,
       content,
-      image: imageUrl, // เก็บ URL ได้เลย
+      image: imageUrl,
       likes: [],
       comments: [],
     });
 
     await post.save();
     
-    // Populate ข้อมูลผู้เขียนเพื่อส่งกลับไปแสดงผลทันที
+    // Populate และส่งกลับ
     const populated = await post.populate("author", "name avatar");
-    
-    // แปลง avatar ให้มี path ถูกต้อง (เผื่อผู้เขียนยังใช้รูปเก่าแบบ local)
     const result = populated.toObject();
+    
+    // (Optional) Fix path avatar ถ้าจำเป็น
     if(result.author && result.author.avatar) {
         result.author.avatar = fixPath(result.author.avatar);
     }
-    // ไม่ต้อง fixPath รูป post เพราะ Cloudinary ให้ URL เต็มมาแล้ว
-    // result.image = fixPath(result.image); 
 
     res.status(201).json(result);
 
@@ -243,7 +253,6 @@ router.post("/", auth, upload.single("image"), async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
 /* ======================================================
    5) LIKE / UNLIKE
 ====================================================== */

@@ -66,7 +66,8 @@ app.use(
 /* ======================================================
       JSON BODY
 ====================================================== */
-app.use(express.json({ limit: "20mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 /* ======================================================
       ⭐ SESSION FIX (OAuth Cookies on HTTPS)
