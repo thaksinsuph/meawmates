@@ -1,32 +1,12 @@
 import express from "express";
 import auth from "../auth.js";
-import multer from "multer";
 import Message from "../models/Message.js";
+import uploadCloud from "../utils/cloudinary.js";
 
 const router = express.Router();
-const BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
-const getFullImageUrl = (messageObj) => {
-    // ตรวจสอบว่าเป็นรูปภาพ, มี Path, และยังไม่ได้เป็น URL เต็ม
-    if (messageObj && messageObj.type === 'image' && messageObj.image) {
-        if (messageObj.image.startsWith('/uploads')) {
-            return BASE_URL + messageObj.image;
-        }
-    }
-    return messageObj.image; // คืนค่าเดิมถ้าไม่ใช่รูปภาพ หรือเป็น URL เต็มแล้ว
-};
 
 
-/* ================================
-   Multer สำหรับเก็บรูปแชท
-================================ */
-const storage = multer.diskStorage({
-  destination: "uploads/chat",
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
 
-const upload = multer({ storage });
 
 /* ================================
    7) GET UNSEEN MESSAGE COUNT (สำหรับ Layout Navbar)
@@ -90,7 +70,7 @@ router.get("/:id", auth, async (req, res) => {
     const userB = req.params.id;
     const targetUserB = userB.toString(); 
 
-    // 1. อัปเดตสถานะการอ่าน (Seen) (โค้ดเดิม)
+    // 1. อัปเดตสถานะการอ่าน (Seen)
     await Message.updateMany(
       { to: userA, from: targetUserB, seen: false },
       { $set: { seen: true, seenAt: new Date() } }
@@ -104,19 +84,12 @@ router.get("/:id", auth, async (req, res) => {
       ],
     }).sort({ pinnedAt: -1, createdAt: 1 }); 
 
-    // 🎯 แก้ไขตรงนี้: แปลง Path สัมพัทธ์เป็น Full URL ก่อนส่ง Response
-    const processedMsgs = msgs.map(msg => {
-        const msgObj = msg.toObject(); // แปลง Mongoose Document เป็น Plain Object
-        
-        // ใช้ Helper Function เพื่อสร้าง Full URL
-        msgObj.image = getFullImageUrl(msgObj);
-        
-        return msgObj;
-    });
-
-    res.json(processedMsgs); // ส่งข้อความที่ประมวลผลแล้ว
+    // 🎯 เนื่องจากเราลบ Logic การแปลง URL ออกจากไฟล์นี้แล้ว 
+    // หากคุณได้แก้ไข Message.js ให้ใช้ Virtual Property แล้ว โค้ดนี้จะใช้ได้ทันที
+    
+    res.json(msgs); 
   } catch (err) {
-// ... โค้ดเดิม
+    console.error("Load chat error:", err);
     res.status(500).json({ message: "Load chat error" });
   }
 });
@@ -152,8 +125,10 @@ router.post("/text", auth, async (req, res) => {
 /* ================================
    3) ส่งรูปจริง (image upload)
 ================================ */
-router.post("/image", auth, upload.single("file"), async (req, res) => {
+// ✅ 4. ใช้ uploadCloud (Cloudinary Multer Instance) แทน upload เดิม
+router.post("/image", auth, uploadCloud.single("file"), async (req, res) => {
   try {
+    // Multer Cloudinary ได้จัดการอัปโหลดไปยัง Cloudinary แล้ว
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
@@ -164,27 +139,21 @@ router.post("/image", auth, upload.single("file"), async (req, res) => {
       return res.status(400).json({ message: "Invalid 'to' user" });
     }
 
-    const url = "/uploads/chat/" + req.file.filename;
+    // ✅ 5. ดึง Full URL จาก req.file.path (Cloudinary URL)
+    const fullImageUrl = req.file.path; 
 
-    // ⭐ 1. สร้างและบันทึกข้อความ (บันทึก Path สัมพัทธ์ลง DB)
+    // ⭐ 1. สร้างและบันทึกข้อความ (บันทึก Full URL ของ Cloudinary ลง DB)
     const msg = await Message.create({
       from: req.user._id,
       to,
-      image: url,
+      image: fullImageUrl, // ⭐ บันทึก Full URL แทน Path สัมพัทธ์
       type: "image",
       seen: false,
     });
 
-    // ⭐ 2. แปลงเป็น Full URL สำหรับ Response ทันที (Frontend)
-    const responseMsg = msg.toObject(); // แปลง Mongoose Document เป็น Plain Object
-    responseMsg.image = getFullImageUrl(responseMsg);
-
-    // 💡 หาก Backend มี Socket.IO: ควรส่ง io.to().emit('message:new', responseMsg); ที่นี่
-
-    res.json(responseMsg); // ส่งข้อความที่ประมวลผลแล้ว
+    res.json(msg); 
   } catch (err) {
-// ... โค้ดเดิม
-    console.error("Send image error", err);
+    console.error("Send image error", err);
     res.status(500).json({ message: "Send image error" });
   }
 });

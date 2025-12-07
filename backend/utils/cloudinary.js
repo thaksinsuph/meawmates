@@ -7,28 +7,26 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'meow-mates-avatars',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-  },
+  cloudinary: cloudinary,
+  params: {
+    // 💡 แนะนำ: อาจเปลี่ยนชื่อโฟลเดอร์เป็น 'meow-mates-chat' เพื่อให้ชัดเจน
+    folder: 'meow-mates-avatars', 
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  },
 });
-   
-// ⭐ ใช้ตัวนี้ตัวเดียวพอครับ (ที่มี limits)
+   
+// สร้าง Multer instance ที่ใช้ CloudinaryStorage และกำหนดขนาดไฟล์สูงสุด 25MB
 const upload = multer({ 
-  storage: storage,
-  limits: {
-    fieldSize: 25 * 1024 * 1024 // แก้ปัญหา Field value too long
-  }
+  storage: storage,
+  limits: {
+    fieldSize: 25 * 1024 * 1024 // 25 MB
+  }
 });
-
-// ❌ ลบบรรทัดนี้ทิ้งไปเลยครับ (มันซ้ำ)
-// const upload = multer({ storage: storage });
 
 export default upload;
