@@ -193,4 +193,26 @@ router.delete("/:userId", auth, async (req, res) => {
   }
 });
 
+/* ================================
+   7) GET UNSEEN MESSAGE COUNT
+================================ */
+router.get("/unseen-count", auth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // นับจำนวนข้อความทั้งหมดที่ส่งมาถึงเรา (to: userId) และยังไม่ถูกอ่าน (seen: false)
+        const count = await Message.countDocuments({
+            to: userId,
+            seen: false,
+        });
+
+        res.json({ count }); // ส่ง { "count": N } กลับไป
+    } catch (err) {
+        console.error("Unseen count error:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+// ... (Export router)
+
 export default router;

@@ -201,46 +201,46 @@ router.get("/matches", auth, async (req, res) => {
     
     // ⭐⭐ NEW: Map เพื่อหา Last Message และ Unread Status
     const resultWithLastMessage = await Promise.all(
-    Object.values(grouped).map(async (group) => {
-        const ownerId = group.user; 
-        
-        // ⭐ 1. ดึงข้อความล่าสุดระหว่างเรากับคู่ Match
-        const lastMessage = await Message.findOne({
-            $or: [
-                { from: req.user._id, to: ownerId },
-                { from: ownerId, to: req.user._id },
-            ]
-        })
-        .sort({ createdAt: -1 })
-        .select('text image from to seen createdAt'); 
-        
-        // ⭐ 2. ตรวจสอบสถานะ Notification Dot
-        let hasNewMessage = false;
-        let lastMessageContent = null;
-        
-        if (lastMessage) {
-            const isFromOtherUser = lastMessage.from.toString() === ownerId;
-            const isUnseen = lastMessage.seen === false;
+        Object.values(grouped).map(async (group) => {
+            const ownerId = group.user; 
             
-            hasNewMessage = isFromOtherUser && isUnseen;
-            lastMessageContent = lastMessage.text || "[Image]";
-        }
+            const lastMessage = await Message.findOne({
+                $or: [
+                    { from: req.user._id, to: ownerId },
+                    { from: ownerId, to: req.user._id },
+                ]
+            })
+            .sort({ createdAt: -1 })
+            .select('text image from to seen createdAt');
+            
+            let hasNewMessage = false;
+            let lastMessageContent = "Chat now";
+            let lastActivity = group.lastMatchedAt; // ใช้ Match Time เป็นค่าเริ่มต้น
 
-        // ⭐ 3. เพิ่ม field ที่จำเป็นลงใน group
-        return {
-            ...group,
-            lastMessage: lastMessage,
-            lastMessageContent: lastMessageContent, // ⭐ NEW: เนื้อหาข้อความล่าสุด
-            hasNewMessage: hasNewMessage, 
-            lastActivity: lastMessage ? lastMessage.createdAt : group.lastMatchedAt // ⭐ NEW: ใช้สำหรับเรียง
-        };
-    })
-);
+            if (lastMessage) {
+                const isFromOtherUser = lastMessage.from.toString() === ownerId;
+                const isUnseen = lastMessage.seen === false;
+                
+                hasNewMessage = isFromOtherUser && isUnseen;
+                lastMessageContent = lastMessage.text || "[Image]";
+                lastActivity = lastMessage.createdAt; // อัปเดต Activity Time
+            }
 
-// ⭐⭐ 4. เรียงลำดับแชทตาม Activity ล่าสุด
-resultWithLastMessage.sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+            return {
+                ...group,
+                lastMessage: lastMessage,
+                lastMessageContent: lastMessageContent, 
+                hasNewMessage: hasNewMessage, // ⭐ Frontend ใช้ field นี้
+                lastActivity: lastActivity, // ⭐ Frontend ใช้ field นี้ในการเรียง
+            };
+        })
+    );
 
-res.json(resultWithLastMessage);
+    // ⭐ เรียงลำดับแชทตาม Activity ล่าสุด
+    resultWithLastMessage.sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+
+    res.json(resultWithLastMessage); 
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Cannot load matches" });
