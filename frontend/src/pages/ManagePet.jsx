@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // ⭐ เพิ่ม: สำหรับปุ่ม Back
 import { BREEDS, CAT_COLORS } from "../petData"; // ตรวจสอบ path ให้ถูก
 import api from "../api";
 
 export default function ManagePet() {
+  const navigate = useNavigate(); // ⭐ 1. เรียกใช้ useNavigate
   const [selectedSlot, setSelectedSlot] = useState(1);
   const [preview, setPreview] = useState(null);
   const [vaccinePreview, setVaccinePreview] = useState(null);
@@ -14,10 +16,10 @@ export default function ManagePet() {
     color: "",
     age: "",
     gender: "",
-    image: null,      // เก็บ URL เดิม (ถ้ามี)
+    image: null,      // เก็บ URL เดิม (ถ้ามี)
     vaccineImage: null, // เก็บ URL เดิม (ถ้ามี)
     // 👇 เพิ่ม 2 ตัวนี้มาเก็บไฟล์ที่จะอัปโหลด
-    imageFile: null,  
+    imageFile: null,  
     vaccineImageFile: null 
   });
 
@@ -58,10 +60,10 @@ export default function ManagePet() {
           breed: pet.breed || "",
           color: pet.color || "",
           age: pet.age || "",
-          gender: pet.gender || "", // ⭐ แก้ไขตรงนี้: ดึงค่า gender ที่โหลดมา
+          gender: pet.gender || "", // ✅ แก้ไข: ดึงค่า gender ที่โหลดมา
           image: pet.image || null,
           vaccineImage: pet.vaccineImage || null,
-          imageFile: null,      // Reset file ใหม่
+          imageFile: null,      // Reset file ใหม่
           vaccineImageFile: null // Reset file ใหม่
         });
 
@@ -82,7 +84,7 @@ export default function ManagePet() {
       breed: "",
       color: "",
       age: "",
-      gender:  "",
+      gender: "", // ✅ แก้ไข: reset เป็นค่าว่าง
       image: null,
       vaccineImage: null,
       imageFile: null,
@@ -102,7 +104,7 @@ export default function ManagePet() {
   }, [selectedSlot]);
 
   // ----------------------------
-  // 📌 Upload cat image (แก้ไข ⭐)
+  // 📌 Upload cat image
   // ----------------------------
   const handleImage = (e) => {
     const file = e.target.files[0];
@@ -110,7 +112,7 @@ export default function ManagePet() {
       // 1. เก็บไฟล์จริงลง state เพื่อเตรียมส่ง
       setForm((prev) => ({ ...prev, imageFile: file }));
       
-      // 2. สร้าง Preview (เหมือนเดิม)
+      // 2. สร้าง Preview 
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result);
@@ -120,7 +122,7 @@ export default function ManagePet() {
   };
 
   // ----------------------------
-  // 📌 Upload Vaccine Image (แก้ไข ⭐)
+  // 📌 Upload Vaccine Image
   // ----------------------------
   const handleVaccineImage = (e) => {
     const file = e.target.files[0];
@@ -128,7 +130,7 @@ export default function ManagePet() {
       // 1. เก็บไฟล์จริงลง state เพื่อเตรียมส่ง
       setForm((prev) => ({ ...prev, vaccineImageFile: file }));
 
-      // 2. สร้าง Preview (เหมือนเดิม)
+      // 2. สร้าง Preview 
       const reader = new FileReader();
       reader.onloadend = () => {
         setVaccinePreview(reader.result);
@@ -147,12 +149,15 @@ export default function ManagePet() {
   };
 
   // ----------------------------
-  // 📌 Save cat (เปลี่ยนเป็น FormData ⭐)
+  // 📌 Save cat 
   // ----------------------------
   const savePet = async () => {
     // Validation
     if (!form.name || !form.breed || !form.color || !form.age) {
       return alert("กรุณากรอกข้อมูลให้ครบ (ชื่อ, พันธุ์, สี, อายุ)");
+    }
+    if (!form.gender) {
+        return alert("กรุณาเลือกเพศของน้องแมว"); // เพิ่ม validation เพศ
     }
 
     // ต้องมีรูปอย่างน้อย 1 อย่าง (รูปใหม่ หรือ รูปเดิม)
@@ -167,7 +172,7 @@ export default function ManagePet() {
       formData.append("breed", form.breed);
       formData.append("color", form.color);
       formData.append("age", form.age);
-      formData.append("gender", form.gender); // ⭐ เพิ่มบรรทัดนี้
+      formData.append("gender", form.gender); // ✅ แก้ไข: เพิ่ม Gender ใน FormData
 
       // ถ้ามีรูปเดิม ส่งไปเป็น text (URL)
       if (form.image) formData.append("image", form.image);
@@ -213,10 +218,36 @@ export default function ManagePet() {
       alert("ลบข้อมูลไม่สำเร็จ");
     }
   };
+  
+  // ----------------------------
+  // ⭐ NEW: Back Button Handler
+  // ----------------------------
+  const handleBack = () => {
+    navigate("/matching"); 
+  };
 
   return (
     <div className="w-full flex flex-col items-center py-12 px-4 gap-12">
       
+      {/* ------------------ NEW: BACK BUTTON ------------------ */}
+      <div className="w-full flex justify-start max-w-6xl">
+        <button
+          onClick={handleBack}
+          className="
+            px-6 py-2 rounded-full text-sm font-semibold text-gray-700 border-2 border-gray-300
+            hover:bg-gray-100 transition-colors flex items-center gap-2
+          "
+        >
+          <img 
+            src="/images/back.png" // **ใช้รูปเท้าแมว (หรือเปลี่ยนเป็นรูปอื่นที่คุณต้องการ)**
+            alt="Back Icon"
+            className="w-4 h-4 transform rotate-180" // หมุน 180 องศาเพื่อให้ดูชี้ไปทางซ้าย (ถ้าใช้รูปเท้าแมว)
+          />
+          Back to Pairing Selection
+        </button>
+      </div>
+      {/* ------------------------------------------------------ */}
+
       {/* Title */}
       <h1 className="text-4xl font-bold flex items-center gap-3">
         <img
