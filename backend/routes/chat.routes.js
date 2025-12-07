@@ -23,40 +23,68 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 /* ================================
+   7) GET UNSEEN MESSAGE COUNT (สำหรับ Layout Navbar)
+================================ */
+router.get("/unseen-count", auth, async (req, res) => {
+    try {
+        const userId = req.user._id; 
+        
+        if (!userId) {
+             console.error("User ID missing in unseen-count request.");
+             return res.status(401).json({ message: "User not authenticated." });
+        }
+
+        // ⭐ การแก้ไข/ตรวจสอบ: แปลง userId เป็น string ก่อนใช้ในการ Query (บางครั้งช่วย Mongoose ได้)
+        const targetId = userId.toString(); 
+
+        const count = await Message.countDocuments({
+            // ใช้ targetId ที่เป็น String หรือใช้ ObjectId() เพื่อความปลอดภัย
+            to: targetId, 
+            seen: false,
+        });
+
+        res.json({ count }); 
+    } catch (err) {
+        // ⭐ พิมพ์ Error เต็ม ๆ เพื่อ Debug
+        console.error("CRITICAL DB ERROR IN /unseen-count:", err); 
+        // ถ้าเป็น CastError หรือ Type Error ให้ส่ง 400 Bad Request แทน 500
+        if (err.name === 'CastError' || err.name === 'TypeError') {
+            return res.status(400).json({ message: "Invalid ID format in query." });
+        }
+        res.status(500).json({ message: "Server error during count." });
+    }
+});
+
+/* ================================
    1) โหลดข้อความระหว่าง Owner 2 คน
       - อัปเดตสถานะ 'Seen'
 ================================ */
 router.get("/:id", auth, async (req, res) => {
   try {
-    const userA = req.user?._id;
-    const userB = req.params?.id;
+    const userA = req.user._id;
+    const userB = req.params.id; // นี่คือ ID ของคู่ Match
 
-    console.log("🔍 LOAD CHAT:", { me: userA, other: userB });
-
-    // 👉 กันค่าผิดพลาด
-    if (!userA || !userB || userB === "undefined") {
-      console.warn("❌ Invalid userId in chat request.");
-      return res.status(400).json({ message: "Invalid userId" });
-    }
+    // ⭐ การจัดการ Error: การแปลงค่า ID 
+    const targetUserB = userB.toString(); 
 
     // ⭐ 1. อัปเดตสถานะการอ่าน (Seen)
-    // ตั้งค่าข้อความทั้งหมดที่ส่งมาถึงเรา (to: userA) และยังไม่ได้อ่าน (seen: false) ให้เป็นอ่านแล้ว
     await Message.updateMany(
-      { to: userA, from: userB, seen: false },
+      { to: userA, from: targetUserB, seen: false }, // ใช้ targetUserB
       { $set: { seen: true, seenAt: new Date() } }
     );
 
     // 2. ดึงข้อความ
     const msgs = await Message.find({
       $or: [
-        { from: userA, to: userB },
-        { from: userB, to: userA },
+        { from: userA, to: targetUserB },
+        { from: targetUserB, to: userA },
       ],
     }).sort({ pinnedAt: -1, createdAt: 1 }); 
 
     res.json(msgs);
   } catch (err) {
-    console.error("Load chat error", err);
+    console.error("Load chat error:", err);
+    // เพิ่มการจัดการ CastError/TypeError ที่นี่ด้วย
     res.status(500).json({ message: "Load chat error" });
   }
 });
@@ -193,30 +221,6 @@ router.delete("/:userId", auth, async (req, res) => {
   }
 });
 
-/* ================================
-   7) GET UNSEEN MESSAGE COUNT (สำหรับ Layout Navbar)
-================================ */
-router.get("/unseen-count", auth, async (req, res) => {
-    try {
-        const userId = req.user._id; // ตรวจสอบว่า req.user._id มีค่าจริง
 
-        // ถ้า req.user ไม่มีค่า (ไม่น่าจะเกิดขึ้นถ้า auth ทำงาน) ให้กันไว้
-        if (!userId) {
-             console.error("User ID missing in unseen-count request.");
-             return res.status(401).json({ message: "User not authenticated." });
-        }
-
-        const count = await Message.countDocuments({
-            to: userId,
-            seen: false,
-        });
-
-        res.json({ count }); 
-    } catch (err) {
-        // ⭐ เพิ่ม console.error เพื่อให้เห็น Error เต็ม ๆ ใน Server Log
-        console.error("Unseen count database error:", err); 
-        res.status(500).json({ message: "Server error during count." });
-    }
-});
 
 export default router;
