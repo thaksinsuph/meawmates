@@ -2,10 +2,9 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 // ⭐ สมมติว่าคุณมี Socket Client ที่เชื่อมต่ออยู่
-// import { socket } from '../socket'; // <-- ต้องนำเข้า Socket Instance จริง ๆ
-// เนื่องจากเราไม่มีไฟล์จริง ผมจะใช้ placeholder แต่โค้ด Logic จะถูกเขียนด้วย socket.on/socket.emit
+// import { socket } from '../socket'; 
 
-// Placeholder สำหรับ Socket (ในการใช้งานจริงต้อง Import Socket Instance จริง)
+// Placeholder for Socket (ในการใช้งานจริงต้อง Import Socket Instance จริง)
 const socket = {
     emit: (event, data) => console.log(`[SOCKET] EMIT: ${event}`, data),
     on: (event, handler) => { /* Mocking socket listener */ }, 
@@ -72,15 +71,11 @@ export default function Messages() {
   ================================= */
   const loadMatches = async () => {
     try {
+      // API นี้ต้องถูกแก้ไขใน Backend ให้ส่ง lastMessage และ lastActivity กลับมา
       const res = await api.get("/api/matching/matches");
       
       const updatedMatches = res.data.map(m => {
-          // ⭐ Logic ตรวจสอบ Notification: 
-          // สมมติว่า Backend ส่ง 'lastMessage' มาด้วย
-          const isFromOtherUser = m.lastMessage && m.lastMessage.from !== user._id;
-          const isUnread = m.lastMessage && !m.lastMessage.read;
-          
-          m.hasNewMessage = isFromOtherUser && isUnread; 
+          // Logic การตรวจสอบ notification จะเกิดขึ้นใน Backend แล้ว (m.hasNewMessage)
           return m;
       });
 
@@ -89,6 +84,9 @@ export default function Messages() {
       console.error(err);
     }
   };
+
+  /* ... loadChat, toggleLike, toggleSave, sendText, sendImage functions ... */
+  // (ใช้ Logic ของ toggleSave/sendText/sendImage ที่แก้ไขล่าสุด)
 
   /* ================================
      LOAD CHAT
@@ -108,7 +106,7 @@ export default function Messages() {
 
       setSelected(found);
       
-      // ⭐ เมื่อเปิดแชทแล้ว: โหลด Matches ใหม่เพื่อลบ Notification Dot
+      // เมื่อเปิดแชทแล้ว: โหลด Matches ใหม่เพื่อลบ Notification Dot
       loadMatches(); 
       
     } catch (err) {
@@ -261,10 +259,16 @@ export default function Messages() {
   /* ================================
      SORT CHATS
   ================================= */
-  const sortedChats = [
-    ...matches.filter((m) => pinnedChats.includes(m.user._id || m.user)),
-    ...matches.filter((m) => !pinnedChats.includes(m.user._id || m.user)),
-  ];
+  const sortedChats = matches
+    .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity)) // ⭐ เรียงตาม Activity ล่าสุด
+    .map(m => {
+        // จัดการ Pin Chat โดยนำ Chats ที่ถูก Pin มาไว้ด้านบนสุด
+        if (pinnedChats.includes(m.user._id || m.user)) {
+            return { ...m, isPinned: true };
+        }
+        return m;
+    })
+    .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)); // ⭐ เรียง Pin ไว้บนสุด
 
   /* ================================
      UI
@@ -283,13 +287,9 @@ export default function Messages() {
 
           <div className="flex-1 overflow-y-auto px-3 pb-3">
             {sortedChats.map((cat) => {
-              const ownerId =
-              cat.user?._id ||
-              cat.user ||
-              cat.owner?._id;
-              
-              // ⭐ NEW: Check Notification Status
-              const hasNewNoti = cat.hasNewMessage; // ใช้ field ที่เราเพิ่มเข้าไปใน loadMatches
+              const ownerId = cat.user?._id || cat.user || cat.owner?._id;
+              const isUnread = cat.hasNewMessage; 
+              const lastMsgText = cat.lastMessageContent || "Chat now"; // ข้อความล่าสุด
 
               if (!ownerId || typeof ownerId !== "string" || ownerId.length !== 24) {
                 console.warn("❌ Invalid ownerId:", ownerId);
@@ -303,17 +303,16 @@ export default function Messages() {
                   onContextMenu={(e) => openChatMenu(e, cat)}
                   className={`flex items-center justify-between p-3 mb-2 cursor-pointer rounded-2xl transition-all
                     ${
-                      selected &&
-                      (selected.user._id || selected.user) === ownerId
+                      selected && (selected.user._id || selected.user) === ownerId
                         ? "bg-white shadow border border-pink-200"
                         : "hover:bg-white/70"
                     }
                     ${
-                      pinnedChats.includes(ownerId)
-                        ? "border border-pink-400"
+                      cat.isPinned
+                        ? "border border-pink-400" // สไตล์สำหรับ Pin
                         : ""
                     }
-                    ${ hasNewNoti ? "bg-pink-100 font-bold" : "" } // ⭐ NEW: Highlight ถ้ามีข้อความใหม่
+                    ${ isUnread ? "bg-pink-100 font-bold" : "" } // ⭐ Highlight ถ้ามีข้อความใหม่
                   `}
                 >
                   <div className="flex items-center gap-3">
@@ -322,21 +321,22 @@ export default function Messages() {
                       className="w-11 h-11 rounded-full object-cover shadow-sm"
                     />
                     <div>
-                      <p className="font-medium text-sm">
+                      <p className={`font-medium text-sm ${isUnread ? "text-pink-600" : ""}`}>
                         {cat.cats[0]?.name}
                       </p>
-                      <p className="text-xs text-gray-600 w-[150px] truncate">
-                        Chat now
+                      {/* ⭐ แสดงข้อความล่าสุด/ตัวหนาถ้ายังไม่ได้อ่าน */}
+                      <p className={`text-xs w-[150px] truncate ${isUnread ? "text-slate-800 font-semibold" : "text-gray-600"}`}>
+                          {lastMsgText} 
                       </p>
                     </div>
                   </div>
 
                   {/* ⭐ NEW: Notification Dot / Pin Icon ⭐ */}
                   <div className="flex items-center gap-1">
-                      {hasNewNoti && (
+                      {isUnread && (
                           <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse mr-1"></span>
                       )}
-                      {pinnedChats.includes(ownerId) && (
+                      {cat.isPinned && (
                           <span className="text-pink-500 text-xs">📌</span>
                       )}
                   </div>
