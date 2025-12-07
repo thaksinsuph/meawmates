@@ -96,6 +96,7 @@ export default function PostDetail() {
 
   /* ------------------------------ SAVE (แก้ไขแล้ว) ------------------------------ */
   const toggleSave = async () => {
+    console.log("Attempting to save post:", id); // ⭐ เพิ่มบรรทัดนี้
     try {
       // 1. เรียก API เพื่อสลับสถานะการบันทึก
       const res = await api.post(`/api/posts/${id}/save`);

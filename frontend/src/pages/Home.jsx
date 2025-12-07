@@ -107,6 +107,7 @@ export default function Home() {
 
   /* ------------------ SAVE ------------------ */
   const toggleSave = async (id) => {
+    console.log("Attempting to save post:", id); // ⭐ เพิ่มบรรทัดนี้
     try {
       const res = await api.post(`/api/posts/${id}/save`);
       setPosts((prev) =>
