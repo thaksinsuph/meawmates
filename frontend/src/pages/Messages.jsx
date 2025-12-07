@@ -1,64 +1,56 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
-// ⭐ สมมติว่าคุณมี Socket Client ที่เชื่อมต่ออยู่
-// import { socket } from '../socket'; 
+// ⭐ 1. UNCOMMENT: นำเข้า Socket Client ที่เชื่อมต่ออยู่จริง
+import { socket } from '../socket'; 
 
-// Placeholder for Socket (ในการใช้งานจริงต้อง Import Socket Instance จริง)
-const socket = {
-    emit: (event, data) => console.log(`[SOCKET] EMIT: ${event}`, data),
-    on: (event, handler) => { /* Mocking socket listener */ }, 
-    off: (event, handler) => { /* Mocking socket off */ },
-    connect: () => console.log("Socket connected mock"),
-    connected: false,
-    id: "mock_socket_id"
-}; 
+// 2. REMOVE: ลบ Placeholder/Mock Socket ออกไป
 // -------------------------------------------------------------
 
 export default function Messages() {
-  const navigate = useNavigate();
-  const { id } = useParams();
+  const navigate = useNavigate();
+  const { id } = useParams();
 
-  const [matches, setMatches] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [file, setFile] = useState(null);
-  const [pinnedChats, setPinnedChats] = useState([]);
-  const chatEndRef = useRef(null);
+  const [matches, setMatches] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [file, setFile] = useState(null);
+  const [pinnedChats, setPinnedChats] = useState([]);
+  const chatEndRef = useRef(null);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user"));
 
   /* ================================
      CONTEXT MENU & UI LOGIC
   ================================= */
   const [msgMenu, setMsgMenu] = useState({
-    show: false,
-    x: 0, y: 0, msg: null,
-  });
+    show: false,
+    x: 0, y: 0, msg: null,
+  });
 
-  const openMsgMenu = (e, msg) => {
-    e.preventDefault();
-    setMsgMenu({ show: true, x: e.clientX, y: e.clientY, msg });
-  };
-  const closeMsgMenu = () => setMsgMenu({ show: false, x: 0, y: 0, msg: null });
+  const openMsgMenu = (e, msg) => {
+    e.preventDefault();
+    setMsgMenu({ show: true, x: e.clientX, y: e.clientY, msg });
+  };
+  const closeMsgMenu = () => setMsgMenu({ show: false, x: 0, y: 0, msg: null });
 
-  const [chatMenu, setChatMenu] = useState({
-    show: false,
-    x: 0, y: 0, chat: null,
-  });
+  const [chatMenu, setChatMenu] = useState({
+    show: false,
+    x: 0, y: 0, chat: null,
+  });
 
-  const openChatMenu = (e, chat) => {
-    e.preventDefault();
-    setChatMenu({ show: true, x: e.clientX, y: e.clientY, chat });
-  };
-  const closeChatMenu = () => setChatMenu({ show: false, x: 0, y: 0, chat: null });
+  const openChatMenu = (e, chat) => {
+    e.preventDefault();
+    setChatMenu({ show: true, x: e.clientX, y: e.clientY, chat });
+  };
+  const closeChatMenu = () => setChatMenu({ show: false, x: 0, y: 0, chat: null });
 
-  useEffect(() => {
-    const closeMenus = () => { closeMsgMenu(); closeChatMenu(); };
-    document.addEventListener("click", closeMenus);
-    return () => document.removeEventListener("click", closeMenus);
-  }, []);
+  useEffect(() => {
+    const closeMenus = () => { closeMsgMenu(); closeChatMenu(); };
+    document.addEventListener("click", closeMenus);
+    return () => document.removeEventListener("click", closeMenus);
+  }, []);
 
   /* PIN/DELETE CHAT/MESSAGE LOGIC (unchanged) */
   const togglePinChat = () => { /* ... (Logic เดิม) */ };
@@ -70,20 +62,20 @@ export default function Messages() {
      LOAD MATCH LIST & NOTIFICATION
   ================================= */
   const loadMatches = async () => {
-    try {
-      // API นี้ต้องถูกแก้ไขใน Backend ให้ส่ง lastMessage และ lastActivity กลับมา
-      const res = await api.get("/api/matching/matches");
-      
-      const updatedMatches = res.data.map(m => {
-          // Logic การตรวจสอบ notification จะเกิดขึ้นใน Backend แล้ว (m.hasNewMessage)
-          return m;
-      });
+    try {
+      // API นี้ต้องถูกแก้ไขใน Backend ให้ส่ง lastMessage และ lastActivity กลับมา
+      const res = await api.get("/api/matching/matches");
+      
+      const updatedMatches = res.data.map(m => {
+          // Logic การตรวจสอบ notification จะเกิดขึ้นใน Backend แล้ว (m.hasNewMessage)
+          return m;
+      });
 
-      setMatches(updatedMatches || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      setMatches(updatedMatches || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   /* ... loadChat, toggleLike, toggleSave, sendText, sendImage functions ... */
   // (ใช้ Logic ของ toggleSave/sendText/sendImage ที่แก้ไขล่าสุด)
@@ -92,224 +84,211 @@ export default function Messages() {
      LOAD CHAT
   ================================= */
   const loadChat = async (otherId) => {
-    if (!otherId || otherId === "undefined") {
-      console.warn("❌ Invalid chat ID:", otherId);
-      return;
-    }
-    try {
-      const res = await api.get(`/api/chat/${otherId}`);
-      setMessages(res.data);
+    if (!otherId || otherId === "undefined") {
+      console.warn("❌ Invalid chat ID:", otherId);
+      return;
+    }
+    try {
+      const res = await api.get(`/api/chat/${otherId}`);
+      setMessages(res.data);
 
-      const found = matches.find(
-        (m) => (m.user._id || m.user).toString() === otherId.toString()
-      );
+      const found = matches.find(
+        (m) => (m.user._id || m.user).toString() === otherId.toString()
+      );
 
-      setSelected(found);
-      
-      // เมื่อเปิดแชทแล้ว: โหลด Matches ใหม่เพื่อลบ Notification Dot
-      loadMatches(); 
-      
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      setSelected(found);
+      
+      // เมื่อเปิดแชทแล้ว: โหลด Matches ใหม่เพื่อลบ Notification Dot
+      loadMatches(); 
+      
+    } catch (err) {
+      console.error(err);
+    }
+  };
   /* ================================
    MARK ALL AS READ ON PAGE LOAD (NEW LOGIC)
 ================================= */
 useEffect(() => {
-    if (!user?._id) return;
+    if (!user?._id) return;
 
-    const markAllSeen = async () => {
-        try {
-            // ⭐ 1. เรียก API เพื่อทำเครื่องหมายข้อความทั้งหมดว่าอ่านแล้ว
-            // API นี้ถูกสร้างใน chat.routes.js (router.post("/mark-all-seen", ...))
-            await api.post('/api/chat/mark-all-seen');
+    const markAllSeen = async () => {
+        try {
+            // ⭐ 1. เรียก API เพื่อทำเครื่องหมายข้อความทั้งหมดว่าอ่านแล้ว
+            // API นี้ถูกสร้างใน chat.routes.js (router.post("/mark-all-seen", ...))
+            await api.post('/api/chat/mark-all-seen');
 
-            // ⭐ 2. โหลด Matches ใหม่ เพื่ออัปเดต Sidebar และ Navbar Count
-            // การเรียก loadMatches() จะทำให้ Layout.jsx (ที่ใช้ Polling)
-            // เห็นว่าจำนวน unseen count เป็น 0 ในรอบ Polling ถัดไป
-            loadMatches(); 
+            // ⭐ 2. โหลด Matches ใหม่ เพื่ออัปเดต Sidebar และ Navbar Count
+            loadMatches(); 
 
-            // Note: ไม่จำเป็นต้องอัปเดต messages state ที่นี่ เพราะ loadChat() 
-            // จะอัปเดต messages และ loadMatches() จะถูกเรียกเมื่อเปลี่ยนแชท
+        } catch (err) {
+            console.error("Failed to mark all messages as seen:", err);
+        }
+    };
 
-        } catch (err) {
-            console.error("Failed to mark all messages as seen:", err);
-        }
-    };
-
-    // เราจะเรียก markAllSeen ทันทีที่เข้าสู่หน้า Messages (โดยไม่มี ID ใน URL)
-    // หรือเมื่อโหลดหน้าเสร็จ (ในกรณีที่ไม่ใช่แชทเฉพาะ)
-    if (!id) {
-        markAllSeen();
-    }
-    
-    // ถ้ามีการเปลี่ยน ID, loadChat() จะเรียก loadMatches() ให้เอง
-    
-}, [user?._id, id]); // รันเมื่อผู้ใช้เปลี่ยน หรือเมื่อมีการเข้าสู่หน้า (id เป็น null)
+    // เราจะเรียก markAllSeen ทันทีที่เข้าสู่หน้า Messages (โดยไม่มี ID ใน URL)
+    if (!id) {
+        markAllSeen();
+    }
+    
+    // ถ้ามีการเปลี่ยน ID, loadChat() จะเรียก loadMatches() ให้เอง
+    
+}, [user?._id, id]);
 
   /* ================================
      SOCKET.IO CONNECTION AND LISTENERS
   ================================= */
   useEffect(() => {
-    if (!user?._id) return;
-    
-    // ⭐ 1. เชื่อมต่อ Socket และ Join Room
-    // ในการใช้งานจริง: if (!socket.connected) { socket.connect(); }
-    socket.emit('join', user._id); 
+    if (!user?._id) return;
+    
+    // ⭐ 1. Join Room: บอก Backend ว่าผู้ใช้คนนี้พร้อมรับข้อความ
+    socket.emit('join', user._id); 
 
-    // ⭐ 2. ฟังข้อความใหม่
-    const handleNewMessage = (newMessage) => {
-        const fromUserId = newMessage.from;
-        const otherUserId = selected?.user?._id || selected?.user;
+    // ⭐ 2. ฟังข้อความใหม่
+    const handleNewMessage = (newMessage) => {
+        const fromUserId = newMessage.from;
+        const otherUserId = selected?.user?._id || selected?.user;
 
-        if (otherUserId === fromUserId || otherUserId === newMessage.to) {
-            // Case 1: ข้อความอยู่ในแชทปัจจุบัน -> แสดงผลทันที
-            setMessages(prev => [...prev, newMessage]);
-            
-            // ⭐ ต้อง Load Matches ใหม่ หากข้อความมาจากคนอื่น (เพื่ออัปเดต Last Message Time/Read Status)
-            if (fromUserId !== user._id) {
-                loadMatches();
-            }
-            
-        } else {
-            // Case 2: ข้อความมาจากแชทอื่น -> อัปเดต Matches List เพื่อแสดง Notification Dot
-            loadMatches(); 
-        }
-    };
+        if (otherUserId === fromUserId || otherUserId === newMessage.to) {
+            // Case 1: ข้อความอยู่ในแชทปัจจุบัน -> แสดงผลทันที
+            setMessages(prev => [...prev, newMessage]);
+            
+            // ⭐ ต้อง Load Matches ใหม่ หากข้อความมาจากคนอื่น (เพื่ออัปเดต Last Message Time/Read Status)
+            if (fromUserId !== user._id) {
+                loadMatches();
+            }
+            
+        } else {
+            // Case 2: ข้อความมาจากแชทอื่น -> อัปเดต Matches List เพื่อแสดง Notification Dot
+            loadMatches(); 
+        }
+    };
     
-    // ⭐ Attach listener (ในโค้ดจริงต้องใช้ socket.on('message:new', handleNewMessage);)
-    // socket.on('message:new', handleNewMessage); 
-    
-    // ⭐ Alternative: Polling (ถ้าไม่มี Socket)
-    const interval = setInterval(loadMatches, 15000); 
-    
-    // Cleanup
-    return () => {
-        clearInterval(interval);
-        // socket.off('message:new', handleNewMessage); // ในโค้ดจริง
-    };
-  }, [selected, user?._id]); 
+    // ⭐ 3. Attach listener
+    socket.on('message:new', handleNewMessage); 
+    
+    // ⭐ 4. REMOVE Polling (ถ้าใช้ Socket ไม่จำเป็นต้อง Polling ทุก 15 วินาทีแล้ว)
+    // const interval = setInterval(loadMatches, 15000); 
+    
+    // Cleanup: เลิกฟังเมื่อ Component ถูกทำลายหรือ Dependency เปลี่ยน
+    return () => {
+        // clearInterval(interval); 
+        socket.off('message:new', handleNewMessage); 
+    };
+  }, [selected, user?._id]); 
 
-  // Load Matches ครั้งแรก (และเมื่อ user เปลี่ยน)
-  useEffect(() => {
-    loadMatches();
-  }, [user?._id]); 
-  
-  // Load Chat เมื่อเปลี่ยน ID
-  useEffect(() => {
-    if (!matches.length || !id || id === "undefined") {
-      setSelected(null);
-      setMessages([]);
-      return;
-    }
-    loadChat(id);
-  }, [id, matches.length]);
+  // Load Matches ครั้งแรก (และเมื่อ user เปลี่ยน)
+  useEffect(() => {
+    loadMatches();
+  }, [user?._id]); 
+  
+  // Load Chat เมื่อเปลี่ยน ID
+  useEffect(() => {
+    if (!matches.length || !id || id === "undefined") {
+      setSelected(null);
+      setMessages([]);
+      return;
+    }
+    loadChat(id);
+  }, [id, matches.length]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   /* ================================
      TIME FORMAT & GROUPING
   ================================= */
   const formatTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  const formatDateHeader = (ts) => {
-    const d = new Date(ts);
-    const today = new Date();
-    const yesterday = new Date(Date.now() - 86400000);
+  const formatDateHeader = (ts) => {
+    const d = new Date(ts);
+    const today = new Date();
+    const yesterday = new Date(Date.now() - 86400000);
 
-    if (d.toDateString() === today.toDateString()) return "Today";
-    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    if (d.toDateString() === today.toDateString()) return "Today";
+    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
 
-    return d.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
-  const groupByDate = (msgs) => {
-    const groups = {};
-    msgs.forEach((msg) => {
-      const day = new Date(msg.createdAt).toDateString();
-      if (!groups[day]) groups[day] = [];
-      groups[day].push(msg);
-    });
-    return groups;
-  };
-
+  const groupByDate = (msgs) => {
+    const groups = {};
+    msgs.forEach((msg) => {
+      const day = new Date(msg.createdAt).toDateString();
+      if (!groups[day]) groups[day] = [];
+      groups[day].push(msg);
+    });
+    return groups;
+  };
   /* ================================
      SEND MESSAGE (ผ่าน API/Socket)
   ================================= */
   const sendText = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || !selected) return;
+    e.preventDefault();
+    if (!input.trim() || !selected) return;
 
-    const to = selected.user._id || selected.user;
-    
-    // 💡 การส่งผ่าน API POST เพื่อให้ Backend บันทึกและจัดการ Socket Emit
-    try {
-        const res = await api.post("/api/chat/text", { to, text: input });
-        setMessages((prev) => [...prev, res.data]);
-        setInput("");
-        loadMatches(); // รีเฟรช Sidebar
-    } catch (err) {
-        console.error(err);
-    }
-    
-    /* // ⭐ หรือถ้าส่งผ่าน Socket โดยตรง (ต้องจัดการบันทึกใน Backend เอง)
-    const messageData = { to, from: user._id, text: input, createdAt: new Date(), read: false };
-    socket.emit('chat:send', messageData); 
-    setInput("");
-    */
-  };
-  
-  const sendImage = async (e) => {
-    e.preventDefault();
-    if (!file || !selected) return;
+    const to = selected.user._id || selected.user;
+    
+    // 💡 การส่งผ่าน API POST เพื่อให้ Backend บันทึกและจัดการ Socket Emit
+    try {
+        const res = await api.post("/api/chat/text", { to, text: input });
+        // ข้อความจะถูกเพิ่มลงใน messages ทันทีโดยไม่ต้องรอ Socket Callback 
+        // เพราะเราเป็นผู้ส่งเอง (เหมือนกับการแสดงผล optimistic update)
+        setMessages((prev) => [...prev, res.data]);
+        setInput("");
+        loadMatches(); // รีเฟรช Sidebar
+    } catch (err) {
+        console.error(err);
+    }
+  };
+  
+  const sendImage = async (e) => {
+    e.preventDefault();
+    if (!file || !selected) return;
 
-    const to = selected.user._id || selected.user;
+    const to = selected.user._id || selected.user;
 
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("to", to);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("to", to);
 
-      // 💡 การส่งผ่าน API POST เพื่อให้ Backend บันทึกและจัดการ Socket Emit
-      const res = await api.post("/api/chat/image", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // 💡 การส่งผ่าน API POST เพื่อให้ Backend บันทึกและจัดการ Socket Emit
+      const res = await api.post("/api/chat/image", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      setMessages((prev) => [...prev, res.data]);
-      setFile(null);
-      loadMatches(); // รีเฟรช Sidebar
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
+      setMessages((prev) => [...prev, res.data]);
+      setFile(null);
+      loadMatches(); // รีเฟรช Sidebar
+    } catch (err) {
+      console.error(err);
+    }
+  };
   /* ================================
      SORT CHATS
   ================================= */
   const sortedChats = matches
-    .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity)) // ⭐ เรียงตาม Activity ล่าสุด
-    .map(m => {
-        // จัดการ Pin Chat โดยนำ Chats ที่ถูก Pin มาไว้ด้านบนสุด
-        if (pinnedChats.includes(m.user._id || m.user)) {
-            return { ...m, isPinned: true };
-        }
-        return m;
-    })
-    .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)); // ⭐ เรียง Pin ไว้บนสุด
+    .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity)) // ⭐ เรียงตาม Activity ล่าสุด
+    .map(m => {
+        // จัดการ Pin Chat โดยนำ Chats ที่ถูก Pin มาไว้ด้านบนสุด
+        if (pinnedChats.includes(m.user._id || m.user)) {
+            return { ...m, isPinned: true };
+        }
+        return m;
+    })
+    .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)); // ⭐ เรียง Pin ไว้บนสุด
 
   /* ================================
      UI
   ================================= */
   return (
-    <section className="max-w-6xl mx-auto px-4 py-6">
-      <div className="flex min-h-[70vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
+    <section className="max-w-6xl mx-auto px-4 py-6">
+      <div className="flex min-h-[70vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
 
         {/* -------------------------------------
             SIDEBAR
