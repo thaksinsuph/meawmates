@@ -1,20 +1,18 @@
-// frontend/src/socket.js
-import { io } from 'socket.io-client';
+// ตัวอย่าง: frontend/src/socket.js หรือจุดที่คุณเรียกใช้ Socket.IO
+import { io } from "socket.io-client";
 
-// 1. ดึง Base URL ของ Backend (ต้องใช้ VITE_ นำหน้าใน Vite/React)
-// *ต้องแน่ใจว่าได้ตั้งค่า VITE_API_BASE_URL ใน .env ของ Frontend แล้ว*
-const URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+// ⭐ ใช้ URL ของ Backend (Render Service)
+const API_BASE_URL = 'https://meowmates.onrender.com'; // หรือดึงจาก .env (VITE_API_BASE_URL)
 
-// 2. สร้าง Socket Instance
-export const socket = io(URL, {
-    // ต้องตั้งค่า withCredentials: true เพื่อให้ส่ง Auth Token (Cookie/JWT) ได้
+const socket = io(API_BASE_URL, {
+    // 🎯 1. Path ต้องตรงกับ Server
+    path: '/socket.io/', 
+    
+    // 🎯 2. Transports (ช่วยให้เชื่อมต่อเร็วขึ้นและเสถียรขึ้น)
+    transports: ['websocket', 'polling'], 
+    
+    // 🎯 3. ส่ง Cookie/Credential กลับไปด้วย
     withCredentials: true,
-    // อนุญาตให้เชื่อมต่อใหม่โดยอัตโนมัติหากหลุด
-    reconnection: true, 
-    // ถ้าใช้ HTTPS ใน Production (Render) ให้ใช้ transports: ['websocket']
-    transports: ['websocket', 'polling'] 
 });
 
-// (ไม่จำเป็นต้องมี console.log ใน Production แต่มีไว้สำหรับ Debug ได้)
-// socket.on('connect', () => console.log('✅ Socket connected to:', URL));
-// socket.on('disconnect', () => console.log('❌ Socket disconnected.'));
+export default socket;
