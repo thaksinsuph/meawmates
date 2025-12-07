@@ -4,11 +4,17 @@ import multer from "multer";
 import Message from "../models/Message.js";
 
 const router = express.Router();
+const BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
+const getFullImageUrl = (messageObj) => {
+    // ตรวจสอบว่าเป็นรูปภาพ, มี Path, และยังไม่ได้เป็น URL เต็ม
+    if (messageObj && messageObj.type === 'image' && messageObj.image) {
+        if (messageObj.image.startsWith('/uploads')) {
+            return BASE_URL + messageObj.image;
+        }
+    }
+    return messageObj.image; // คืนค่าเดิมถ้าไม่ใช่รูปภาพ หรือเป็น URL เต็มแล้ว
+};
 
-// 🚨 หมายเหตุ: หาก Backend ของคุณมีการจัดการ Socket.IO ที่ซับซ้อน
-// คุณอาจจะต้อง Import ตัวแปร 'io' เข้ามาในไฟล์นี้เพื่อใช้ io.to().emit()
-// แต่ในโค้ดนี้ เราจะใช้ Response JSON เพื่อให้ Frontend อัปเดตตัวเอง
-// และถือว่า Backend จัดการ Socket Emit หลังจาก API Response ถูกส่งแล้ว (ตามแนวทางที่อธิบายไปก่อนหน้า)
 
 /* ================================
    Multer สำหรับเก็บรูปแชท
@@ -77,19 +83,16 @@ router.post("/mark-all-seen", auth, async (req, res) => {
 
 /* ================================
    1) โหลดข้อความระหว่าง Owner 2 คน
-      - อัปเดตสถานะ 'Seen'
 ================================ */
 router.get("/:id", auth, async (req, res) => {
   try {
     const userA = req.user._id;
-    const userB = req.params.id; // นี่คือ ID ของคู่ Match
+    const userB = req.params.id;
+    const targetUserB = userB.toString(); 
 
-    // ⭐ การจัดการ Error: การแปลงค่า ID 
-    const targetUserB = userB.toString(); 
-
-    // ⭐ 1. อัปเดตสถานะการอ่าน (Seen)
+    // 1. อัปเดตสถานะการอ่าน (Seen) (โค้ดเดิม)
     await Message.updateMany(
-      { to: userA, from: targetUserB, seen: false }, // ใช้ targetUserB
+      { to: userA, from: targetUserB, seen: false },
       { $set: { seen: true, seenAt: new Date() } }
     );
 
@@ -101,10 +104,19 @@ router.get("/:id", auth, async (req, res) => {
       ],
     }).sort({ pinnedAt: -1, createdAt: 1 }); 
 
-    res.json(msgs);
+    // 🎯 แก้ไขตรงนี้: แปลง Path สัมพัทธ์เป็น Full URL ก่อนส่ง Response
+    const processedMsgs = msgs.map(msg => {
+        const msgObj = msg.toObject(); // แปลง Mongoose Document เป็น Plain Object
+        
+        // ใช้ Helper Function เพื่อสร้าง Full URL
+        msgObj.image = getFullImageUrl(msgObj);
+        
+        return msgObj;
+    });
+
+    res.json(processedMsgs); // ส่งข้อความที่ประมวลผลแล้ว
   } catch (err) {
-    console.error("Load chat error:", err);
-    // เพิ่มการจัดการ CastError/TypeError ที่นี่ด้วย
+// ... โค้ดเดิม
     res.status(500).json({ message: "Load chat error" });
   }
 });
@@ -154,18 +166,24 @@ router.post("/image", auth, upload.single("file"), async (req, res) => {
 
     const url = "/uploads/chat/" + req.file.filename;
 
+    // ⭐ 1. สร้างและบันทึกข้อความ (บันทึก Path สัมพัทธ์ลง DB)
     const msg = await Message.create({
       from: req.user._id,
       to,
       image: url,
       type: "image",
-      seen: false, // ⭐ สำคัญ: ข้อความใหม่ต้องถูกตั้งค่าเป็นยังไม่ได้อ่าน
+      seen: false,
     });
 
-    // 💡 หาก Backend มี Socket.IO: ควรส่ง io.to().emit('message:new', msg); ที่นี่
+    // ⭐ 2. แปลงเป็น Full URL สำหรับ Response ทันที (Frontend)
+    const responseMsg = msg.toObject(); // แปลง Mongoose Document เป็น Plain Object
+    responseMsg.image = getFullImageUrl(responseMsg);
 
-    res.json(msg);
+    // 💡 หาก Backend มี Socket.IO: ควรส่ง io.to().emit('message:new', responseMsg); ที่นี่
+
+    res.json(responseMsg); // ส่งข้อความที่ประมวลผลแล้ว
   } catch (err) {
+// ... โค้ดเดิม
     console.error("Send image error", err);
     res.status(500).json({ message: "Send image error" });
   }
