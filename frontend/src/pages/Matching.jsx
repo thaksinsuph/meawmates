@@ -98,7 +98,13 @@ export default function Matching() {
             hover:bg-gray-100 transition-colors
           "
         >
-          Manage Pets ✏️
+         Manage Pets 
+          <img 
+            src="/images/cat.png" // ⭐⭐ เปลี่ยนเป็นรูปที่คุณต้องการ
+            alt="pet icon"
+            className="w-4 h-4" 
+            onError={(e) => { e.target.onerror = null; e.target.src="/images/edit-icon.png" }} // Fallback
+          />
         </button>
       </div>
       {/* -------------------------------------------------------------------- */}

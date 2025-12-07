@@ -203,9 +203,7 @@ export default function Layout() {
 
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-2xl border bg-white shadow-lg py-2 text-sm">
-                  <Link to="/manage-pet" onClick={() => setMenuOpen(false)} className="flex gap-2 px-4 py-2 hover:bg-slate-100">
-                    <img src="/images/cat.png" className="w-5 h-5" /> Manage Pet
-                  </Link>
+                  
 
                   <Link to="/saved" onClick={() => setMenuOpen(false)} className="flex gap-2 px-4 py-2 hover:bg-slate-100">
                     <img src="/images/Savedd.png" className="w-5 h-5" /> Saved Posts
