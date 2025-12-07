@@ -2,12 +2,11 @@
 import { useEffect, useState } from "react";
 import api from "../api.js";
 import { getUser } from "../auth";
-import { Link, useNavigate } from "react-router-dom"; // ⭐ เพิ่ม useNavigate
+import { Link } from "react-router-dom";
 // 👇 1. Import Helper
 import { getImageUrl } from "../utils/imageHelper";
 
 export default function Home() {
-  const navigate = useNavigate(); // ⭐ เรียกใช้ Hook
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState("");
   
@@ -58,7 +57,7 @@ export default function Home() {
     }
   };
 
-  /* ------------------ CREATE POST ------------------ */
+  /* ------------------ CREATE POST (แก้ไข ⭐) ------------------ */
   const handlePost = async () => {
     if (!content && !imageFile) // เช็ค imageFile แทน
       return alert("Please write something or select an image before posting.");
@@ -106,29 +105,21 @@ export default function Home() {
     }
   };
 
-  /* ------------------ SAVE (แก้ไข ⭐) ------------------ */
+  /* ------------------ SAVE ------------------ */
   const toggleSave = async (id) => {
     try {
       const res = await api.post(`/api/posts/${id}/save`);
-      const isSavedNow = res.data.saved; // ตรวจสอบสถานะการบันทึก
-      
       setPosts((prev) =>
         prev.map((p) =>
           p._id === id
             ? {
                 ...p,
-                isSaved: isSavedNow,
+                isSaved: res.data.saved,
                 savedCount: res.data.savedCount,
               }
             : p
         )
       );
-
-      // ⭐ ถ้าเป็นการ SAVE (isSavedNow เป็น true) ให้สั่งนำทาง
-      if (isSavedNow) {
-          navigate("/saved");
-      }
-
     } catch (err) {
       console.error("Save error:", err);
     }
@@ -240,14 +231,14 @@ export default function Home() {
           <div key={p._id} className="relative bg-white rounded-2xl shadow-md hover:shadow-lg transition p-3">
             
             {p.image && (
-          <Link to={`/post/${p._id}`}>
-            <img
-              src={getImageUrl(p.image)}
-              className="w-full h-64 object-cover rounded-xl mb-3 border"
-              onError={(e) => { e.target.style.display = 'none' }} // ถ้าโหลดไม่ได้ให้ซ่อน
-            />
-          </Link>
-        )}
+  <Link to={`/post/${p._id}`}>
+    <img
+      src={getImageUrl(p.image)}
+      className="w-full h-64 object-cover rounded-xl mb-3 border"
+      onError={(e) => { e.target.style.display = 'none' }} // ถ้าโหลดไม่ได้ให้ซ่อน
+    />
+  </Link>
+)}
 
             <p className="text-gray-800 text-sm mb-2 line-clamp-2">{p.content}</p>
 

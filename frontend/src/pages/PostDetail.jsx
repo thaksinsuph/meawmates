@@ -31,7 +31,8 @@ export default function PostDetail() {
   const fetchPost = async () => {
     try {
       const res = await api.get(`/api/posts/${id}`);
-      setPost(res.data);
+      // ต้องตรวจสอบว่าข้อมูลที่ส่งกลับมามี isSaved และ savedCount หรือไม่
+      setPost(res.data); 
     } catch (err) {
       console.error("Fetch post error:", err);
     }
@@ -93,11 +94,25 @@ export default function PostDetail() {
     }
   };
 
-  /* ------------------------------ SAVE ------------------------------ */
+  /* ------------------------------ SAVE (แก้ไขแล้ว) ------------------------------ */
   const toggleSave = async () => {
     try {
-      await api.post(`/api/posts/${id}/save`);
-      fetchPost();
+      // 1. เรียก API เพื่อสลับสถานะการบันทึก
+      const res = await api.post(`/api/posts/${id}/save`);
+      
+      // 2. อัปเดต State โดยตรง
+      setPost((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          isSaved: res.data.saved,       // ✅ อัปเดตสถานะ Save/Unsave
+          savedCount: res.data.savedCount, // ✅ อัปเดตตัวนับ
+        };
+      });
+
+      // ❌ ลบ fetchPost(); ออกไป
+      // ❌ ไม่มีคำสั่ง navigate()
+      
     } catch (err) {
       console.error("Save error:", err);
     }
