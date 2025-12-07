@@ -241,7 +241,7 @@ export default function ManagePet() {
           <img 
             src="/images/back.png" // **ใช้รูปเท้าแมว (หรือเปลี่ยนเป็นรูปอื่นที่คุณต้องการ)**
             alt="Back Icon"
-            className="w-4 h-4 transform rotate-180" // หมุน 180 องศาเพื่อให้ดูชี้ไปทางซ้าย (ถ้าใช้รูปเท้าแมว)
+            className="w-4 h-4 " // หมุน 180 องศาเพื่อให้ดูชี้ไปทางซ้าย (ถ้าใช้รูปเท้าแมว)
           />
           Back to Pairing Selection
         </button>
