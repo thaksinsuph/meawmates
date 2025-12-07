@@ -128,30 +128,47 @@ export default function Saved() {
                   </span>
                 </div>
 
-                {/* Actions (Like, Comment, Unsave Button) */}
-                <div className="flex gap-3 text-sm items-center">
-                  
-                  {/* 1. Like Count */}
-                  <div 
-                    onClick={() => toggleLike(p._id)} 
-                    className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-red-500" // ⭐ เพิ่ม hover state สำหรับ Like
-                  >
-                    <img src="/images/Like.png" className={`w-5 h-5 ${isLiked(p) ? "opacity-100" : "opacity-50"}`} />
-                    <span>{p.likes?.length || 0}</span>
-                  </div>
+                {/* Actions (Like, Comment, Saved Count, Unsave Button) */}
+<div className="flex gap-3 text-sm items-center">
+    
+    {/* 1. Like Count */}
+    <div 
+        onClick={() => toggleLike(p._id)} 
+        className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-red-500"
+    >
+        <img src="/images/Like.png" className={`w-5 h-5 ${isLiked(p) ? "opacity-100" : "opacity-50"}`} />
+        <span>{p.likes?.length || 0}</span>
+    </div>
 
-                  {/* 2. Comment Count */}
-                  <Link to={`/post/${p._id}`} className="flex items-center gap-1 text-gray-500 hover:text-gray-700 transition">
-                      <img src="/images/comment-icon.png" className="w-5 h-5 opacity-70" />
-                      <span>{p.comments?.length || 0}</span>
-                  </Link>
+    {/* 2. Comment Count */}
+    <Link to={`/post/${p._id}`} className="flex items-center gap-1 text-gray-500 hover:text-gray-700 transition">
+        <img src="/images/comment-icon.png" className="w-5 h-5 opacity-70" />
+        <span>{p.comments?.length || 0}</span>
+    </Link>
 
-                  {/* 3. Unsave Button (ไอคอนที่สามในภาพ) */}
-                  <button onClick={() => toggleSave(p._id)} title="Unsave">
-                    {/* ไอคอนนี้ควรจะเป็น Savedd.png เสมอในหน้านี้ เพราะหน้าที่ของมันคือ Unsave */}
-                    <img src="/images/Savedd.png" className="w-5 h-5 hover:scale-110 transition" />
-                  </button>
-                </div>
+    {/* ⭐⭐⭐ 3. Saved Count (ไอคอนที่สามในภาพ) ⭐⭐⭐ */}
+    <div className="flex items-center gap-1 text-gray-500">
+        {/* ไอคอน Saved ที่สาม */}
+        <img src="/images/Savedd.png" className="w-5 h-5 opacity-70" />
+        {/* ตัวเลข Saved Count */}
+        <span>{p.savedCount || 0}</span>
+    </div>
+    {/* ❌ ลบปุ่ม Unsave (เพื่อไม่ให้ไอคอนซ้ำซ้อน) ❌ */}
+    {/*
+    <button onClick={() => toggleSave(p._id)} title="Unsave">
+        <img src="/images/Savedd.png" className="w-5 h-5 hover:scale-110 transition" />
+    </button>
+    */}
+
+    {/* ⭐⭐ 4. ปุ่ม Unsave (ต้องย้ายไปอยู่เป็นปุ่มแยกถ้ามีที่พอ) ⭐⭐
+       * หรือถ้าตามรูป: ใช้ปุ่ม Saved Count (ข้างบน) เป็นปุ่ม Unsave ไปเลย
+       *
+       * ***จากการวิเคราะห์รูป: ไอคอน Saved ที่มีตัวเลข 0 คือปุ่มที่ใช้ Unsave ด้วย***
+       *
+       * เราจะทำตามที่รูปแสดง: ทำให้ Saved Count เป็นปุ่มที่กดได้
+    */}
+    
+</div>
               </div>
             </div>
           ))}
