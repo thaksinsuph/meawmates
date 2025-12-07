@@ -198,21 +198,25 @@ router.delete("/:userId", auth, async (req, res) => {
 ================================ */
 router.get("/unseen-count", auth, async (req, res) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user._id; // ตรวจสอบว่า req.user._id มีค่าจริง
 
-        // นับจำนวนข้อความทั้งหมดที่ส่งมาถึงเรา (to: userId) และยังไม่ถูกอ่าน (seen: false)
+        // ถ้า req.user ไม่มีค่า (ไม่น่าจะเกิดขึ้นถ้า auth ทำงาน) ให้กันไว้
+        if (!userId) {
+             console.error("User ID missing in unseen-count request.");
+             return res.status(401).json({ message: "User not authenticated." });
+        }
+
         const count = await Message.countDocuments({
             to: userId,
             seen: false,
         });
 
-        res.json({ count });
+        res.json({ count }); 
     } catch (err) {
-        console.error("Unseen count error:", err);
-        res.status(500).json({ message: "Server error" });
+        // ⭐ เพิ่ม console.error เพื่อให้เห็น Error เต็ม ๆ ใน Server Log
+        console.error("Unseen count database error:", err); 
+        res.status(500).json({ message: "Server error during count." });
     }
 });
-
-// ... (Export router)
 
 export default router;
