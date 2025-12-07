@@ -5,172 +5,192 @@ import Message from "../models/Message.js";
 
 const router = express.Router();
 
+// 🚨 หมายเหตุ: หาก Backend ของคุณมีการจัดการ Socket.IO ที่ซับซ้อน
+// คุณอาจจะต้อง Import ตัวแปร 'io' เข้ามาในไฟล์นี้เพื่อใช้ io.to().emit()
+// แต่ในโค้ดนี้ เราจะใช้ Response JSON เพื่อให้ Frontend อัปเดตตัวเอง
+// และถือว่า Backend จัดการ Socket Emit หลังจาก API Response ถูกส่งแล้ว (ตามแนวทางที่อธิบายไปก่อนหน้า)
+
 /* ================================
-   Multer สำหรับเก็บรูปแชท
+   Multer สำหรับเก็บรูปแชท
 ================================ */
 const storage = multer.diskStorage({
-  destination: "uploads/chat",
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
+  destination: "uploads/chat",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
 });
 
 const upload = multer({ storage });
 
 /* ================================
-   โหลดข้อความระหว่าง Owner 2 คน
+   1) โหลดข้อความระหว่าง Owner 2 คน
+      - อัปเดตสถานะ 'Seen'
 ================================ */
 router.get("/:id", auth, async (req, res) => {
-  try {
-    const userA = req.user?._id;
-    const userB = req.params?.id;
+  try {
+    const userA = req.user?._id;
+    const userB = req.params?.id;
 
-    console.log("🔍 LOAD CHAT:", { me: userA, other: userB });
+    console.log("🔍 LOAD CHAT:", { me: userA, other: userB });
 
-    // 👉 กันค่าผิดพลาด (สาเหตุหลักของ CastError)
-    if (!userA || !userB || userB === "undefined") {
-      console.warn("❌ Invalid userId in chat request.");
-      return res.status(400).json({ message: "Invalid userId" });
-    }
+    // 👉 กันค่าผิดพลาด
+    if (!userA || !userB || userB === "undefined") {
+      console.warn("❌ Invalid userId in chat request.");
+      return res.status(400).json({ message: "Invalid userId" });
+    }
 
-    const msgs = await Message.find({
-      $or: [
-        { from: userA, to: userB },
-        { from: userB, to: userA },
-      ],
-    }).sort({ pinned: -1, createdAt: 1 });
+    // ⭐ 1. อัปเดตสถานะการอ่าน (Seen)
+    // ตั้งค่าข้อความทั้งหมดที่ส่งมาถึงเรา (to: userA) และยังไม่ได้อ่าน (seen: false) ให้เป็นอ่านแล้ว
+    await Message.updateMany(
+      { to: userA, from: userB, seen: false },
+      { $set: { seen: true, seenAt: new Date() } }
+    );
 
-    res.json(msgs);
-  } catch (err) {
-    console.error("Load chat error", err);
-    res.status(500).json({ message: "Load chat error" });
-  }
+    // 2. ดึงข้อความ
+    const msgs = await Message.find({
+      $or: [
+        { from: userA, to: userB },
+        { from: userB, to: userA },
+      ],
+    }).sort({ pinnedAt: -1, createdAt: 1 }); 
+
+    res.json(msgs);
+  } catch (err) {
+    console.error("Load chat error", err);
+    res.status(500).json({ message: "Load chat error" });
+  }
 });
 
 /* ================================
-   ส่งข้อความ Text
+   2) ส่งข้อความ Text
 ================================ */
 router.post("/text", auth, async (req, res) => {
-  try {
-    const { to, text } = req.body;
+  try {
+    const { to, text } = req.body;
 
-    if (!to || to === "undefined") {
-      return res.status(400).json({ message: "Invalid 'to' user" });
-    }
+    if (!to || to === "undefined") {
+      return res.status(400).json({ message: "Invalid 'to' user" });
+    }
 
-    const msg = await Message.create({
-      from: req.user._id,
-      to,
-      text,
-      type: "text",
-    });
+    const msg = await Message.create({
+      from: req.user._id,
+      to,
+      text,
+      type: "text",
+      seen: false, // ⭐ สำคัญ: ข้อความใหม่ต้องถูกตั้งค่าเป็นยังไม่ได้อ่าน
+    });
 
-    res.json(msg);
-  } catch (err) {
-    console.error("Send text error", err);
-    res.status(500).json({ message: "Send text error" });
-  }
+    // 💡 หาก Backend มี Socket.IO: ควรส่ง io.to().emit('message:new', msg); ที่นี่
+    
+    res.json(msg);
+  } catch (err) {
+    console.error("Send text error", err);
+    res.status(500).json({ message: "Send text error" });
+  }
 });
 
 /* ================================
-   ส่งรูปจริง (image upload)
+   3) ส่งรูปจริง (image upload)
 ================================ */
 router.post("/image", auth, upload.single("file"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
-    const { to } = req.body;
+    const { to } = req.body;
 
-    if (!to || to === "undefined") {
-      return res.status(400).json({ message: "Invalid 'to' user" });
-    }
+    if (!to || to === "undefined") {
+      return res.status(400).json({ message: "Invalid 'to' user" });
+    }
 
-    const url = "/uploads/chat/" + req.file.filename;
+    const url = "/uploads/chat/" + req.file.filename;
 
-    const msg = await Message.create({
-      from: req.user._id,
-      to,
-      image: url,
-      type: "image",
-    });
+    const msg = await Message.create({
+      from: req.user._id,
+      to,
+      image: url,
+      type: "image",
+      seen: false, // ⭐ สำคัญ: ข้อความใหม่ต้องถูกตั้งค่าเป็นยังไม่ได้อ่าน
+    });
 
-    res.json(msg);
-  } catch (err) {
-    console.error("Send image error", err);
-    res.status(500).json({ message: "Send image error" });
-  }
+    // 💡 หาก Backend มี Socket.IO: ควรส่ง io.to().emit('message:new', msg); ที่นี่
+
+    res.json(msg);
+  } catch (err) {
+    console.error("Send image error", err);
+    res.status(500).json({ message: "Send image error" });
+  }
 });
 
 /* ================================
-   Pin message
+   4) Pin message
 ================================ */
 router.post("/pin", auth, async (req, res) => {
-  try {
-    const { id, pin } = req.body;
+  try {
+    const { id, pin } = req.body;
 
-    if (!id) {
-      return res.status(400).json({ message: "Message ID required" });
-    }
+    if (!id) {
+      return res.status(400).json({ message: "Message ID required" });
+    }
 
-    const msg = await Message.findByIdAndUpdate(
-      id,
-      {
-        pinnedAt: pin ? new Date() : null,
-      },
-      { new: true }
-    );
+    const msg = await Message.findByIdAndUpdate(
+      id,
+      {
+        pinnedAt: pin ? new Date() : null, // ใช้ pinnedAt ในการสลับสถานะ
+      },
+      { new: true }
+    );
 
-    res.json(msg);
-  } catch (err) {
-    console.error("Pin message error", err);
-    res.status(500).json({ message: "Pin message error" });
-  }
+    res.json(msg);
+  } catch (err) {
+    console.error("Pin message error", err);
+    res.status(500).json({ message: "Pin message error" });
+  }
 });
 
 /* ================================
-   ลบข้อความเดี่ยว
+   5) ลบข้อความเดี่ยว
 ================================ */
 router.delete("/msg/:id", auth, async (req, res) => {
-  try {
-    const msgId = req.params.id;
+  try {
+    const msgId = req.params.id;
 
-    if (!msgId) return res.status(400).json({ message: "Invalid message ID" });
+    if (!msgId) return res.status(400).json({ message: "Invalid message ID" });
 
-    await Message.findByIdAndDelete(msgId);
+    await Message.findByIdAndDelete(msgId);
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Delete message error", err);
-    res.status(500).json({ message: "Delete message error" });
-  }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete message error", err);
+    res.status(500).json({ message: "Delete message error" });
+  }
 });
 
 /* ================================
-   ลบห้องแชท (Owner → Owner)
+   6) ลบห้องแชท (Owner → Owner)
 ================================ */
 router.delete("/:userId", auth, async (req, res) => {
-  try {
-    const me = req.user?._id;
-    const other = req.params?.userId;
+  try {
+    const me = req.user?._id;
+    const other = req.params?.userId;
 
-    if (!me || !other || other === "undefined") {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
+    if (!me || !other || other === "undefined") {
+      return res.status(400).json({ message: "Invalid userId" });
+    }
 
-    await Message.deleteMany({
-      $or: [
-        { from: me, to: other },
-        { from: other, to: me },
-      ],
-    });
+    await Message.deleteMany({
+      $or: [
+        { from: me, to: other },
+        { from: other, to: me },
+      ],
+    });
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Delete chat error", err);
-    res.status(500).json({ message: "Delete chat error" });
-  }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete chat error", err);
+    res.status(500).json({ message: "Delete chat error" });
+  }
 });
 
 export default router;

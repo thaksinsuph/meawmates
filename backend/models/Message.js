@@ -16,37 +16,25 @@ const MessageSchema = new mongoose.Schema(
       required: true 
     },
 
-    /* ================================
-       ประเภทข้อความ
-    ================================= */
+    /* ประเภทข้อความ */
     type: { 
       type: String, 
       enum: ["text", "image", "system"], 
       default: "text" 
     },
 
-    /* ================================
-       เนื้อหาข้อความ
-    ================================= */
+    /* เนื้อหาข้อความ */
     text: { type: String, default: "" },
     image: { type: String, default: "" },
 
-    /* ================================
-       Pin Message
-    ================================= */
-    pinnedAt: { type: Date, default: null },
+    /* Pin Message */
+    pinnedAt: { type: Date, default: null }, // ใช้ null/Date เพื่อบ่งชี้สถานะ Pin
 
-    /* ================================
-       ระบบ Seen
-    ================================= */
+    /* ระบบ Seen */
     seen: { type: Boolean, default: false },
     seenAt: { type: Date, default: null },
 
-    /* ================================
-       ฟีเจอร์เสริม (เผื่ออนาคต)
-    ================================= */
-
-    // ลบเฉพาะฝั่งฉัน
+    /* ฟีเจอร์เสริม */
     deletedFor: [
       { 
         type: mongoose.Schema.Types.ObjectId, 
@@ -54,7 +42,6 @@ const MessageSchema = new mongoose.Schema(
       }
     ],
 
-    // ระบบ reply
     replyTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
@@ -65,11 +52,9 @@ const MessageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/* ================================
-   Index สำคัญสำหรับประสิทธิภาพแชท
-================================= */
-MessageSchema.index({ from: 1, to: 1, createdAt: 1 });
-MessageSchema.index({ to: 1, seen: 1 });        //ดึง unread เร็วขึ้น
-MessageSchema.index({ pinnedAt: -1 });          // pin message บนสุดเร็วขึ้น
+/* Index สำคัญสำหรับประสิทธิภาพแชท */
+MessageSchema.index({ from: 1, to: 1, createdAt: 1 }); // ดึงประวัติแชทเร็วขึ้น
+MessageSchema.index({ to: 1, seen: 1 });             // ดึง unread เร็วขึ้น
+MessageSchema.index({ pinnedAt: -1 });               // pin message บนสุดเร็วขึ้น
 
 export default mongoose.model("Message", MessageSchema);

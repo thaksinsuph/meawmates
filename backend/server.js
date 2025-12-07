@@ -8,19 +8,21 @@ import { fileURLToPath } from "url";
 import session from "express-session";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import http from "http"; // ⭐ 1. Import HTTP Module
+import { Server } from "socket.io"; // ⭐ 1. Import Socket.IO Server
 import User from "./models/User.js";
 
 dotenv.config();
 
 // ----- FRONTEND ORIGINS (Render + Vercel + Local) -----
 const FRONTEND_ORIGINS = [
-  "http://localhost:5173",
-  "https://meaw-mates.vercel.app", // เผื่ออันเก่า
-  "https://meawmates.vercel.app",    // ⭐ เพิ่มอันนี้ (ชื่อจริงไม่มีขีด)
-  
-  // Regex: รองรับ Preview URL ทั้งแบบมีขีดและไม่มีขีด
-  /^https:\/\/meaw-mates-.*\.vercel\.app$/, 
-  /^https:\/\/meawmates-.*\.vercel\.app$/,  // ⭐ เพิ่มบรรทัดนี้ (สำคัญมาก!)
+  "http://localhost:5173",
+  "https://meaw-mates.vercel.app", 
+  "https://meawmates.vercel.app",    
+  
+  // Regex: รองรับ Preview URL ทั้งแบบมีขีดและไม่มีขีด
+  /^https:\/\/meaw-mates-.*\.vercel\.app$/, 
+  /^https:\/\/meawmates-.*\.vercel\.app$/,  
 ];
 
 console.log("🔍 Allowed Origins =", FRONTEND_ORIGINS);
@@ -35,53 +37,112 @@ import "./auth/facebook.js";
 
 const app = express();
 
-/* ======================================================
-      ⭐ REQUIRED FOR RENDER PROXY
-====================================================== */
-app.set("trust proxy", 1);
+// ⭐⭐ 2. สร้าง HTTP Server จาก Express App
+const server = http.createServer(app); 
 
 /* ======================================================
-      ⭐ CORS FIX (รองรับทุก Vercel Preview)
+      ⭐ SOCKET.IO SETUP (กำหนด CORS สำหรับ Socket) ⭐
 ====================================================== */
+const io = new Server(server, {
+    pingTimeout: 60000, // ป้องกันการเชื่อมต่อหลุดเมื่อไม่มีกิจกรรม
+    cors: {
+        // ใช้ฟังก์ชัน CORS เดิมเพื่ออนุญาตทุก Origin
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true); 
+
+            const allowed = FRONTEND_ORIGINS.some((rule) =>
+                rule instanceof RegExp ? rule.test(origin) : rule === origin
+            );
+
+            if (allowed) callback(null, true);
+            else {
+                console.log("❌ Socket CORS Blocked:", origin);
+                callback(new Error("CORS Blocked"));
+            }
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    }
+});
+
+
+/* ======================================================
+      ⭐ SOCKET.IO LISTENERS (Real-time Chat) ⭐
+====================================================== */
+io.on('connection', (socket) => {
+    console.log(`[SOCKET] User connected: ${socket.id}`);
+    
+    // [1] เข้าร่วมห้อง (เมื่อ Client ส่ง user._id มา)
+    socket.on('join', (userId) => {
+        if (userId) {
+            socket.join(userId); 
+            console.log(`[SOCKET] User ${userId} joined room.`);
+        }
+    });
+    
+    // [2] ส่งข้อความ (เมื่อ Client กดส่งข้อความ)
+    socket.on('chat:send', (messageData) => {
+        // messageData ควรมี { to: receiverId, from: senderId, text: ..., image: ..., read: false, ... }
+        
+        // ⭐ ส่งข้อความไปยังห้องของผู้รับ (to)
+        if (messageData.to) {
+             io.to(messageData.to).emit('message:new', messageData);
+        }
+
+        // ⭐ ส่งข้อความกลับไปหาผู้ส่ง (from) เพื่อให้แน่ใจว่า UI อัปเดตพร้อมกัน
+        if (messageData.from) {
+             io.to(messageData.from).emit('message:new', messageData);
+        }
+    });
+
+    // [3] ออกจากห้อง/ตัดการเชื่อมต่อ
+    socket.on('disconnect', () => {
+        console.log(`[SOCKET] User disconnected: ${socket.id}`);
+    });
+});
+/* ====================================================== */
+
+app.set("trust proxy", 1); // Required for Render Proxy
+
+/* ======================================================
+      CORS FIX (Express Middleware)
+====================================================== */
+// (Express CORS Middleware ยังคงต้องมี)
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // mobile apps / curl
+  cors({
+    origin: (origin, callback) => {
+      // ... (CORS Logic เดิม)
+      if (!origin) return callback(null, true);
 
-      const allowed = FRONTEND_ORIGINS.some((rule) =>
-        rule instanceof RegExp ? rule.test(origin) : rule === origin
-      );
+      const allowed = FRONTEND_ORIGINS.some((rule) =>
+        rule instanceof RegExp ? rule.test(origin) : rule === origin
+      );
 
-      if (allowed) callback(null, true);
-      else {
-        console.log("❌ CORS Blocked:", origin);
-        callback(new Error("CORS Blocked"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  })
+      if (allowed) callback(null, true);
+      else {
+        console.log("❌ CORS Blocked:", origin);
+        callback(new Error("CORS Blocked"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  })
 );
 
-/* ======================================================
-      JSON BODY
-====================================================== */
+// ... (ส่วน express.json, express.urlencoded, session, passport)
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-/* ======================================================
-      ⭐ SESSION FIX (OAuth Cookies on HTTPS)
-====================================================== */
 app.use(
-  session({
-    secret: process.env.JWT_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: true,          // must be true for HTTPS (Render)
-      sameSite: "none",      // required for cross-origin cookies
-    },
-  })
+  session({
+    secret: process.env.JWT_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: true,          
+      sameSite: "none",      
+    },
+  })
 );
 
 app.use(passport.initialize());
@@ -164,9 +225,10 @@ app.use((req, res) => {
 });
 
 /* ======================================================
-      Start Server
+      Start Server (เปลี่ยนไปใช้ server.listen)
 ====================================================== */
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+server.listen(PORT, () => { // ⭐⭐ ใช้ server.listen แทน app.listen
+  console.log(`🚀 HTTP Server running on port ${PORT}`);
+  console.log(`💬 Socket.IO running on port ${PORT}`);
 });
