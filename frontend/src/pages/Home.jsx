@@ -230,13 +230,15 @@ export default function Home() {
         {posts.map((p) => (
           <div key={p._id} className="relative bg-white rounded-2xl shadow-md hover:shadow-lg transition p-3">
             
-            <Link to={`/post/${p._id}`}>
-              <img
-                src={getImageUrl(p.image)} // ⭐ ใช้ Helper
-                className="w-full h-64 object-cover rounded-xl mb-3"
-                onError={(e) => { e.target.src = "/images/placeholder.png" }}
-              />
-            </Link>
+            {p.image && (
+  <Link to={`/post/${p._id}`}>
+    <img
+      src={getImageUrl(p.image)}
+      className="w-full h-64 object-cover rounded-xl mb-3 border"
+      onError={(e) => { e.target.style.display = 'none' }} // ถ้าโหลดไม่ได้ให้ซ่อน
+    />
+  </Link>
+)}
 
             <p className="text-gray-800 text-sm mb-2 line-clamp-2">{p.content}</p>
 
