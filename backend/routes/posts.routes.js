@@ -13,12 +13,11 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ⭐ Fix path (จัดการ Path รูปภาพ)
 const fixPath = (p) => {
   if (!p) return null;
   if (p.startsWith("data:")) return p;
-  if (p.startsWith("http")) return p; // เพิ่มรองรับ http เผื่อเป็นรูปจากภายนอก
-  // ลบเครื่องหมาย \ และ / ที่ซ้ำซ้อนออก
+  if (p.startsWith("http")) return p; // ⭐ เพิ่มบรรทัดนี้ (Cloudinary URL)
+  
   return "/" + p.replace(/\\/g, "/").replace(/^\/+/, "");
 };
 
@@ -232,9 +231,10 @@ router.post("/", auth, upload.single("image"), async (req, res) => {
     // แปลง avatar ให้มี path ถูกต้อง (เผื่อผู้เขียนยังใช้รูปเก่าแบบ local)
     const result = populated.toObject();
     if(result.author && result.author.avatar) {
-        // reuse fixPath logic หรือปล่อยไว้ก็ได้เพราะ frontend มี getImageUrl แล้ว
-        // แต่เพื่อความชัวร์ จะใส่ fixPath ไว้ก็ได้ครับ
+        result.author.avatar = fixPath(result.author.avatar);
     }
+    // ไม่ต้อง fixPath รูป post เพราะ Cloudinary ให้ URL เต็มมาแล้ว
+    // result.image = fixPath(result.image); 
 
     res.status(201).json(result);
 
