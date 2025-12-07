@@ -32,6 +32,7 @@ const postSchema = new mongoose.Schema(
 
     // ❗ ต้องใช้ ObjectId
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    savedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     comments: [commentSchema]
   },

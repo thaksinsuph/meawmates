@@ -23,55 +23,54 @@ const fixPath = (p) => {
 };
 
 /* ======================================================
-   1) GET SAVED POSTS — FIXED (แก้ปัญหา Unknown + จอดำ)
+   1) GET SAVED POSTS
 ====================================================== */
 router.get("/saved/:userId", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId)
-      .populate({
-        path: "savedPosts",
-        populate: { path: "author", select: "name avatar email" }
-      });
+  try {
+    const user = await User.findById(req.params.userId)
+      .populate({
+        path: "savedPosts",
+        populate: { path: "author", select: "name avatar email" }
+      });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // ⭐ FIX 1: กรองโพสต์ที่กลายเป็น null ทิ้งไป (ป้องกัน Error)
-    const validPosts = user.savedPosts.filter(p => p && p._id);
+    const validPosts = user.savedPosts.filter(p => p && p._id);
 
-    const formatted = await Promise.all(
-      validPosts.map(async (p) => {
-        // ⭐ FIX 2: ถ้าคนโพสต์หายไป (null) ให้ใช้ข้อมูลสมมติแทน
-        const author = p.author || { _id: "unknown", name: "Unknown User", avatar: null };
+    const formatted = validPosts.map((p) => { // ⭐ เปลี่ยนจาก Promise.all เป็น Map ธรรมดา
+        // FIX 2: ถ้าคนโพสต์หายไป (null) ให้ใช้ข้อมูลสมมติแทน
+        const author = p.author || { _id: "unknown", name: "Unknown User", avatar: null };
 
-        return {
-          _id: p._id,
-          content: p.content,
-          image: fixPath(p.image),
-          likes: p.likes || [],
-          comments: p.comments || [],
-          
-          author: {
-            _id: author._id,
-            name: author.name,
-            avatar: author.avatar ? fixPath(author.avatar) : null
-          },
+        return {
+          _id: p._id,
+          content: p.content,
+          image: fixPath(p.image),
+          likes: p.likes || [],
+          comments: p.comments || [],
+          createdAt: p.createdAt, // ⭐ ต้องรวม createdAt เข้ามาเพื่อเรียงลำดับ
+          
+          author: {
+            _id: author._id,
+            name: author.name,
+            avatar: author.avatar ? fixPath(author.avatar) : null
+          },
 
-          isSaved: true,
-          savedCount: await User.countDocuments({ savedPosts: p._id })
-        };
-      })
-    );
-    
-    // เรียงจากใหม่ไปเก่า
-    formatted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          isSaved: true,
+          // savedCount: await User.countDocuments({ savedPosts: p._id }) // ❌ ยกเลิกการคำนวณใน Map
+          savedCount: p.savedBy ? p.savedBy.length : 0 // ⭐ ถ้าใช้ Post.savedBy (ตามที่แนะนำก่อนหน้า)
+        };
+    });
+    
+    // ⭐⭐ เรียงจากใหม่ไปเก่า (ใช้ createdAt)
+    formatted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    res.json(formatted);
+    res.json(formatted);
 
-  } catch (err) {
-    console.error("SAVED POSTS ERROR:", err);
-    res.status(500).json({ message: err.message });
-  }
-});      
+  } catch (err) {
+    console.error("SAVED POSTS ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
 
 /* ======================================================
    2) GET ALL POSTS
