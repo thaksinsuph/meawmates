@@ -121,7 +121,6 @@ export default function Messages() {
 
             setSelected(found);
             
-            // เมื่อเปิดแชทแล้ว: โหลด Matches ใหม่เพื่อลบ Notification Dot
             loadMatches(); 
             
         } catch (err) {
@@ -374,7 +373,28 @@ export default function Messages() {
                         <>
                             {/* HEADER (unchanged) */}
                             <div className="border-b bg-white p-4 flex items-center gap-4 shadow-sm">
-                                {/* ... โค้ดเดิม ... */}
+                                <div className="flex -space-x-3">
+                                    {selected.cats?.slice(0, 3).map((cat, idx) => (
+                                        <img
+                                            key={idx}
+                                            src={cat.image}
+                                            className="w-11 h-11 rounded-full border-2 border-white shadow"
+                                        />
+                                    ))}
+
+                                    {selected.cats?.length > 3 && (
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs">
+                                            +{selected.cats.length - 3}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <h3 className="font-semibold text-lg text-slate-800">
+                                        {selected.cats?.map((c) => c.name).join(" • ")}
+                                    </h3>
+                                    <p className="text-xs text-gray-500">Matched Cat Owner</p>
+                                </div>
                             </div>
 
                             {/* PINNED MESSAGES */}
@@ -410,7 +430,7 @@ export default function Messages() {
                             )}
 
                             {/* NORMAL MESSAGES */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4"> {/* ⭐ overflow-y-auto สำหรับ Scroll */}
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4"> {/* ⭐ overflow-y-auto ทำให้เกิด Scroll ได้ */}
                                 {Object.entries(
                                     groupByDate(messages.filter((m) => !m.pinned))
                                 ).map(([day, msgs]) => (
@@ -470,7 +490,30 @@ export default function Messages() {
                                 className="p-4 border-t bg-white flex items-center gap-3 shadow-sm"
                                 onSubmit={(e) => (file ? sendImage(e) : sendText(e))}
                             >
-                                {/* ... โค้ดเดิม ... */}
+                                <label className="cursor-pointer text-pink-500 text-xl">
+                                    📎
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        onChange={(e) => setFile(e.target.files[0])}
+                                    />
+                                </label>
+
+                                {file && (
+                                    <span className="text-xs text-gray-600">{file.name}</span>
+                                )}
+
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder="Type your message..."
+                                    className="flex-1 px-4 py-2 rounded-2xl border text-sm"
+                                />
+
+                                <button className="p-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow">
+                                    ➤
+                                </button>
                             </form>
                         </>
                     ) : (
@@ -481,8 +524,54 @@ export default function Messages() {
                 </main>
             </div>
 
-            {/* CONTEXT MENUS (unchanged) */}
-            {/* ... โค้ดเดิม ... */}
+            {/* MESSAGE CONTEXT MENU (unchanged) */}
+            {msgMenu.show && (
+                <div
+                    className="fixed z-50 bg-white border shadow-xl rounded-lg py-2 w-44 text-sm animate-fadeIn"
+                    style={{ top: msgMenu.y, left: msgMenu.x }}
+                >
+                    <button
+                        onClick={togglePinMessage}
+                        className="block w-full text-left px-4 py-2 hover:bg-pink-50"
+                    >
+                        📌 {msgMenu.msg?.pinned ? "Unpin message" : "Pin message"}
+                    </button>
+
+                    <button
+                        onClick={deleteMessage}
+                        className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-500"
+                    >
+                        🗑 Delete message
+                    </button>
+                </div>
+            )}
+
+            {/* CHAT CONTEXT MENU (unchanged) */}
+            {chatMenu.show && (
+                <div
+                    className="fixed z-50 bg-white border shadow-xl rounded-lg py-2 w-40 text-sm animate-fadeIn"
+                    style={{ top: chatMenu.y, left: chatMenu.x }}
+                >
+                    <button
+                        onClick={togglePinChat}
+                        className="block w-full text-left px-4 py-2 hover:bg-pink-50"
+                    >
+                        📌{" "}
+                        {pinnedChats.includes(
+                            chatMenu.chat.user._id || chatMenu.chat.user
+                        )
+                            ? "Unpin Chat"
+                            : "Pin Chat"}
+                    </button>
+
+                    <button
+                        onClick={deleteChat}
+                        className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-500"
+                    >
+                        🗑 Delete Chat
+                    </button>
+                </div>
+            )}
             
             {/* Image Modal Component ถูกเรียกใช้ที่นี่ */}
             <ImageModal src={imageModal} onClose={closeImageModal} />
