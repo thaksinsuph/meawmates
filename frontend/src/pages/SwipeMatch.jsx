@@ -80,28 +80,38 @@ export default function SwipeMatch() {
       return 6;
     return 14;
   };
+  const getGenderScore = (my, target) => {
+    if (!my || !target) return 5;
+    if (my === target) return 10; // เพศเดียวกัน
+    if (my !== target) return 25; // เพศตรงข้าม
+    return 5;
+  };
 
   const getNameVibe = (my, target) => {
     if (!my || !target) return 0;
     return my[0].toLowerCase() === target[0].toLowerCase() ? 5 : 0;
   };
+  
 
   const calculateMatchScore = (me, target) => {
-    if (!me || !target) return 0;
+    if (!me || !target) return 0;
 
-    let score = 0;
-    score += getBreedScore(me.breed, target.breed);
+    let score = 0;
+    score += getBreedScore(me.breed, target.breed);
 
-    const myGroup = getColorGroup(me.color);
-    const tgGroup = getColorGroup(target.color);
-    score += myGroup === tgGroup ? 10 : 4;
+    const myGroup = getColorGroup(me.color);
+    const tgGroup = getColorGroup(target.color);
+    score += myGroup === tgGroup ? 10 : 4;
 
-    score += getAgeScore(me.age, target.age);
-    score += getEnergyScore(getEnergyType(me.breed), getEnergyType(target.breed));
-    score += getNameVibe(me.name, target.name);
+    score += getAgeScore(me.age, target.age);
+    score += getEnergyScore(getEnergyType(me.breed), getEnergyType(target.breed));
+    score += getNameVibe(me.name, target.name);
 
-    return Math.min(100, Math.max(0, Math.round(score)));
-  };
+    // ⭐ เพิ่มคะแนน GENDER ที่นี่
+    score += getGenderScore(me.gender, target.gender); 
+
+    return Math.min(100, Math.max(0, Math.round(score)));
+  };
 
   // ---------------------------------------------------------
   // Load Data

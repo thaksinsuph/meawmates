@@ -15,9 +15,9 @@ export default function Matching() {
   const fixImage = (img) => {
     if (!img) return null;
 
-    if (img.startsWith("data:")) return img;      // Base64
-    if (img.startsWith("http")) return img;       // Google หรือ external
-    if (img.startsWith("/images/")) return img;   // frontend static
+    if (img.startsWith("data:")) return img;     // Base64
+    if (img.startsWith("http")) return img;      // Google หรือ external
+    if (img.startsWith("/images/")) return img;  // frontend static
 
     // รูปที่ backend ส่งมา เช่น /uploads/xxxx.jpg
     return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
@@ -58,7 +58,7 @@ export default function Matching() {
     setSelectedPet({ ...pet, slot: index + 1 });
   };
 
-  /* ------------------ NEXT BUTTON ------------------ */
+  /* ------------------ NEXT BUTTON (Start Pairing) ------------------ */
   const handleNext = () => {
     if (!selectedPet) return alert("Please select a cat.");
 
@@ -68,17 +68,40 @@ export default function Matching() {
       breed: selectedPet.breed,
       color: selectedPet.color,
       age: selectedPet.age,
+      gender: selectedPet.gender,
     };
 
     localStorage.setItem("selectedPet", JSON.stringify(minimalPet));
     navigate("/matching/swipe");
   };
 
+  /* ------------------ NEW: MANAGE PET BUTTON ------------------ */
+  const handleManagePet = () => {
+    // นำทางไปยังหน้า managepet.jsx (สมมติว่า path คือ /managepet)
+    navigate("/managepet"); 
+  };
+  /* ------------------------------------------------------------------ */
+
+
   /* ============================================================
-      UI
+    UI
   ============================================================ */
   return (
     <div className="w-full flex flex-col items-center py-12 px-4 gap-12">
+      
+      {/* ------------------ NEW: MANAGE PET BUTTON SECTION ------------------ */}
+      <div className="w-full flex justify-end max-w-6xl">
+        <button
+          onClick={handleManagePet}
+          className="
+            px-6 py-2 rounded-full text-sm font-semibold text-gray-700 border-2 border-gray-300
+            hover:bg-gray-100 transition-colors
+          "
+        >
+          Manage Pets ✏️
+        </button>
+      </div>
+      {/* -------------------------------------------------------------------- */}
 
       <h1 className="text-4xl font-bold flex items-center gap-3 text-gray-800">
         <img src="/images/love.png" className="w-10 h-10" />
@@ -129,6 +152,14 @@ export default function Matching() {
                 <p><strong>Breed:</strong> {pet?.breed || "—"}</p>
                 <p><strong>Color:</strong> {pet?.color || "—"}</p>
                 <p><strong>Age:</strong> {pet?.age ? `${pet.age} yrs` : "—"}</p>
+                <p>
+                  <strong>Gender:</strong> 
+                  {pet?.gender ? (
+                    <span className={pet.gender === 'Male' ? 'text-blue-600' : 'text-pink-600'}>
+                      {pet.gender} {pet.gender === 'Male' ? '♂️' : '♀️'}
+                    </span>
+                  ) : '—'}
+                </p>
               </div>
             </div>
           );

@@ -13,6 +13,7 @@ const PetSchema = new mongoose.Schema(
     breed: String,
     color: String,
     age: Number,
+    gender: String,
 
     image: String,         // base64 รูปแมว
     vaccineImage: String,  // ⭐ รูปสมุดวัคซีน (base64) — ที่เพิ่มใหม่

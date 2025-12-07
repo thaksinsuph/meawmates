@@ -13,6 +13,7 @@ export default function ManagePet() {
     breed: "",
     color: "",
     age: "",
+    gender: "",
     image: null,      // เก็บ URL เดิม (ถ้ามี)
     vaccineImage: null, // เก็บ URL เดิม (ถ้ามี)
     // 👇 เพิ่ม 2 ตัวนี้มาเก็บไฟล์ที่จะอัปโหลด
@@ -57,6 +58,7 @@ export default function ManagePet() {
           breed: pet.breed || "",
           color: pet.color || "",
           age: pet.age || "",
+          gender: "",
           image: pet.image || null,
           vaccineImage: pet.vaccineImage || null,
           imageFile: null,      // Reset file ใหม่
@@ -80,6 +82,7 @@ export default function ManagePet() {
       breed: "",
       color: "",
       age: "",
+      gender: pet.gender || "",
       image: null,
       vaccineImage: null,
       imageFile: null,
@@ -336,6 +339,17 @@ export default function ManagePet() {
               value={form.age}
               onChange={(e) => setForm({ ...form, age: e.target.value })}
             />
+
+            <label className="block text-sm mb-1">Gender</label>
+            <select
+              className="w-full p-3 border rounded-xl mb-4"
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+            >
+              <option value="">Choose gender</option>
+              <option value="Male">Male ♂️</option>
+              <option value="Female">Female ♀️</option>
+            </select>
 
             <button
               onClick={savePet}

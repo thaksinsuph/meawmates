@@ -104,6 +104,7 @@ router.post("/swipe", auth, async (req, res) => {
           breed: myPet.breed,
           color: myPet.color,
           age: myPet.age,
+          gender: myPet.gender,
           image: myPet.image,
           slot: myPet.slot,
         });
@@ -116,6 +117,7 @@ router.post("/swipe", auth, async (req, res) => {
           breed: targetPet.breed,
           color: targetPet.color,
           age: targetPet.age,
+          gender: targetPet.gender,
           image: targetPet.image,
           slot: targetPet.slot,
         });
@@ -187,6 +189,7 @@ router.get("/matches", auth, async (req, res) => {
         image: other.image,
         breed: other.breed,
         age: other.age,
+        gender: other.gender,
       });
 
       // update last matched time
