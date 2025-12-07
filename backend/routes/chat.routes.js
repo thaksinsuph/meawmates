@@ -206,7 +206,7 @@ router.get("/unseen-count", auth, async (req, res) => {
             seen: false,
         });
 
-        res.json({ count }); // ส่ง { "count": N } กลับไป
+        res.json({ count });
     } catch (err) {
         console.error("Unseen count error:", err);
         res.status(500).json({ message: "Server error" });
