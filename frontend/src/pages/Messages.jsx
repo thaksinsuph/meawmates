@@ -51,27 +51,13 @@ export default function Messages() {
 
     const user = JSON.parse(localStorage.getItem("user"));
 
-    /* ================================
-        CONTEXT MENU & UI LOGIC (unchanged)
-     ================================= */
-    const [msgMenu, setMsgMenu] = useState({
-        show: false,
-        x: 0, y: 0, msg: null,
-    });
-    const openMsgMenu = (e, msg) => {
-        e.preventDefault();
-        setMsgMenu({ show: true, x: e.clientX, y: e.clientY, msg });
-    };
+    /* ... CONTEXT MENU & UI LOGIC (unchanged) ... */
+    const [msgMenu, setMsgMenu] = useState({ show: false, x: 0, y: 0, msg: null });
+    const openMsgMenu = (e, msg) => { e.preventDefault(); setMsgMenu({ show: true, x: e.clientX, y: e.clientY, msg }); };
     const closeMsgMenu = () => setMsgMenu({ show: false, x: 0, y: 0, msg: null });
 
-    const [chatMenu, setChatMenu] = useState({
-        show: false,
-        x: 0, y: 0, chat: null,
-    });
-    const openChatMenu = (e, chat) => {
-        e.preventDefault();
-        setChatMenu({ show: true, x: e.clientX, y: e.clientY, chat });
-    };
+    const [chatMenu, setChatMenu] = useState({ show: false, x: 0, y: 0, chat: null });
+    const openChatMenu = (e, chat) => { e.preventDefault(); setChatMenu({ show: true, x: e.clientX, y: e.clientY, chat }); };
     const closeChatMenu = () => setChatMenu({ show: false, x: 0, y: 0, chat: null });
 
     useEffect(() => {
@@ -80,54 +66,35 @@ export default function Messages() {
         return () => document.removeEventListener("click", closeMenus);
     }, []);
 
-    /* PIN/DELETE CHAT/MESSAGE LOGIC (Placeholder) */
     const togglePinChat = () => { closeChatMenu(); console.log("Pin Chat Toggle"); };
     const deleteChat = async () => { closeChatMenu(); console.log("Delete Chat"); };
     const togglePinMessage = async () => { closeMsgMenu(); console.log("Pin Message Toggle"); };
     const deleteMessage = async () => { closeMsgMenu(); console.log("Delete Message"); };
 
-    /* ================================
-        LOAD MATCH LIST & NOTIFICATION
-     ================================= */
+    /* ... LOAD MATCH LIST & NOTIFICATION (unchanged) ... */
     const loadMatches = async () => {
         try {
             const res = await api.get("/api/matching/matches");
-            
-            const updatedMatches = res.data.map(m => {
-                return m;
-            });
-
+            const updatedMatches = res.data.map(m => m);
             setMatches(updatedMatches || []);
         } catch (err) {
             console.error(err);
         }
     };
 
-    /* ================================
-        LOAD CHAT
-     ================================= */
+    /* ... LOAD CHAT (unchanged) ... */
     const loadChat = async (otherId) => {
-        if (!otherId || otherId === "undefined") {
-            console.warn("❌ Invalid chat ID:", otherId);
-            return;
-        }
+        if (!otherId || otherId === "undefined") { console.warn("❌ Invalid chat ID:", otherId); return; }
         try {
             const res = await api.get(`/api/chat/${otherId}`);
             setMessages(res.data);
-
-            const found = matches.find(
-                (m) => (m.user._id || m.user).toString() === otherId.toString()
-            );
-
+            const found = matches.find((m) => (m.user._id || m.user).toString() === otherId.toString());
             setSelected(found);
-            
             loadMatches(); 
-            
         } catch (err) {
             console.error(err);
         }
     };
-
     /* ================================
       MARK ALL AS READ ON PAGE LOAD
     ================================= */
@@ -154,57 +121,38 @@ export default function Messages() {
      ================================= */
     useEffect(() => {
         if (!user?._id) return;
-        
-        // ⭐ 2. Join Room
         socket.emit('join', user._id); 
-
-        // ⭐ 3. ฟังข้อความใหม่
         const handleNewMessage = (newMessage) => {
             const fromUserId = newMessage.from;
             const otherUserId = selected?.user?._id || selected?.user;
 
             if (otherUserId === fromUserId || otherUserId === newMessage.to) {
-                // Case 1: ข้อความอยู่ในแชทปัจจุบัน -> แสดงผลทันที
                 setMessages(prev => [...prev, newMessage]);
-                
                 if (fromUserId !== user._id) {
                     loadMatches();
                 }
-                
             } else {
-                // Case 2: ข้อความมาจากแชทอื่น -> อัปเดต Matches List
                 loadMatches(); 
             }
         };
-        
         socket.on('message:new', handleNewMessage); 
-        
-        // Cleanup
-        return () => {
-            socket.off('message:new', handleNewMessage); 
-        };
+        return () => { socket.off('message:new', handleNewMessage); };
     }, [selected, user?._id]); 
 
-    // Load Matches ครั้งแรก
-    useEffect(() => {
-        loadMatches();
-    }, [user?._id]); 
+    useEffect(() => { loadMatches(); }, [user?._id]); 
     
-    // Load Chat เมื่อเปลี่ยน ID
     useEffect(() => {
-        if (!matches.length || !id || id === "undefined") {
-            setSelected(null);
-            setMessages([]);
-            return;
-        }
+        if (!matches.length || !id || id === "undefined") { setSelected(null); setMessages([]); return; }
         loadChat(id);
     }, [id, matches.length]);
 
-    // ⭐ 4. AUTO-SCROLL LOGIC: เลื่อนลงไปที่ข้อความล่าสุดเมื่อ messages เปลี่ยน
+    // ⭐ AUTO-SCROLL LOGIC: เลื่อนลงไปที่ข้อความล่าสุดเมื่อ messages เปลี่ยน
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        // ใช้ requestAnimationFrame เพื่อให้แน่ใจว่า DOM ถูก Render ก่อน Scroll
+        requestAnimationFrame(() => {
+             chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        });
     }, [messages]);
-
     /* ================================
         TIME FORMAT & GROUPING (unchanged)
      ================================= */
@@ -295,7 +243,7 @@ export default function Messages() {
      ================================= */
     return (
         <section className="max-w-6xl mx-auto px-4 py-6">
-            <div className="flex min-h-[70vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
+            <div className="flex min-h-[70vh] max-h-[85vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
 
                 {/* -------------------------------------
                              SIDEBAR (unchanged)
