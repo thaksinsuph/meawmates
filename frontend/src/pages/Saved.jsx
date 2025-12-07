@@ -50,17 +50,37 @@ export default function Saved() {
     }
   };
 
-  const toggleSave = async (id) => {
+  // ใน Saved.jsx
+
+const toggleSave = async (id) => {
     try {
-      // Unsave API call
-      await api.post(`/api/posts/${id}/save`);
-      
-      // ลบออกจากรายการทันทีที่กด Unsave (เหมือนใน Saved.jsx ปัจจุบัน)
-      setPosts((prev) => prev.filter((p) => p._id !== id));
+        // API call สลับสถานะ Save/Unsave
+        const res = await api.post(`/api/posts/${id}/save`);
+        const isSavedNow = res.data.saved;
+        
+        // ⭐⭐ ใช้ Logic เหมือน Home.jsx: อัปเดตสถานะและ Saved Count
+        setPosts((prev) =>
+            prev.map((p) =>
+                p._id === id
+                    ? {
+                        ...p,
+                        isSaved: isSavedNow, // อัปเดตสถานะ
+                        savedCount: res.data.savedCount, // อัปเดตจำนวน
+                    }
+                    : p
+            )
+        );
+
+        // ⭐⭐ Logic ลบโพสต์ออกจากหน้า Saved ทันที
+        // หากผลลัพธ์คือ Unsaved (isSavedNow เป็น false) ให้ลบโพสต์นั้นออกจากรายการ
+        if (!isSavedNow) {
+            setPosts((prev) => prev.filter((p) => p._id !== id));
+        }
+
     } catch (err) {
-      console.error("Save error:", err);
+        console.error("Save error:", err);
     }
-  };
+};
 
   /* Helper Functions */
   const imageURL = (img) => {
@@ -147,33 +167,21 @@ export default function Saved() {
     </Link>
 
     // โค้ดที่แก้ไข (ทำให้เป็นปุ่ม Unsave และแสดง Saved Count)
-    {/* 3. Saved Count และ Unsave Button */}
-    <div 
-        // 💡 เพิ่ม onClick เพื่อเรียกฟังก์ชัน Unsave และลบโพสต์ออกจากรายการทันที
-        onClick={() => toggleSave(p._id)} 
-        title="Unsave Post" // เพื่อให้มี Tooltip แจ้งผู้ใช้
-        className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-pink-600 transition" // เพิ่ม cursor
-    >
-        {/* ไอคอน Saved ที่สาม (ควรเป็นสีที่โดดเด่นเพื่อบอกว่าถูกบันทึกไว้แล้ว) */}
-        <img src="/images/Savedd.png" className="w-5 h-5 opacity-100" />
-        
-        {/* ตัวเลข Saved Count (จะยังคงเป็น 0 จนกว่า Backend จะถูกแก้ไข) */}
-        <span>{p.savedCount || 0}</span>
-    </div>
-    {/* ❌ ลบปุ่ม Unsave (เพื่อไม่ให้ไอคอนซ้ำซ้อน) ❌ */}
-    {/*
-    <button onClick={() => toggleSave(p._id)} title="Unsave">
-        <img src="/images/Savedd.png" className="w-5 h-5 hover:scale-110 transition" />
+    {/* Saved Count และ Unsave Button */}
+    <button 
+        onClick={() => toggleSave(p._id)} 
+        title={p.isSaved ? "Unsave Post" : "Save Post"} // Tooltip จะเปลี่ยน
+        className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-pink-600 transition" 
+    >
+        {/* ใช้ p.isSaved เพื่อเลือกไอคอน (เหมือนใน Home.jsx) */}
+        <img 
+            src={p.isSaved ? "/images/Savedd.png" : "/images/Saved.png"} 
+            className="w-5 h-5 opacity-100" 
+        />
+        
+        <span>{p.savedCount || 0}</span>
     </button>
-    */}
 
-    {/* ⭐⭐ 4. ปุ่ม Unsave (ต้องย้ายไปอยู่เป็นปุ่มแยกถ้ามีที่พอ) ⭐⭐
-       * หรือถ้าตามรูป: ใช้ปุ่ม Saved Count (ข้างบน) เป็นปุ่ม Unsave ไปเลย
-       *
-       * ***จากการวิเคราะห์รูป: ไอคอน Saved ที่มีตัวเลข 0 คือปุ่มที่ใช้ Unsave ด้วย***
-       *
-       * เราจะทำตามที่รูปแสดง: ทำให้ Saved Count เป็นปุ่มที่กดได้
-    */}
     
 </div>
               </div>
