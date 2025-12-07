@@ -58,7 +58,7 @@ export default function ManagePet() {
           breed: pet.breed || "",
           color: pet.color || "",
           age: pet.age || "",
-          gender: "",
+          gender: pet.gender || "", // ⭐ แก้ไขตรงนี้: ดึงค่า gender ที่โหลดมา
           image: pet.image || null,
           vaccineImage: pet.vaccineImage || null,
           imageFile: null,      // Reset file ใหม่
@@ -82,7 +82,7 @@ export default function ManagePet() {
       breed: "",
       color: "",
       age: "",
-      gender: pet.gender || "",
+      gender:  "",
       image: null,
       vaccineImage: null,
       imageFile: null,
@@ -167,6 +167,7 @@ export default function ManagePet() {
       formData.append("breed", form.breed);
       formData.append("color", form.color);
       formData.append("age", form.age);
+      formData.append("gender", form.gender); // ⭐ เพิ่มบรรทัดนี้
 
       // ถ้ามีรูปเดิม ส่งไปเป็น text (URL)
       if (form.image) formData.append("image", form.image);
