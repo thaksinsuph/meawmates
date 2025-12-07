@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -8,8 +7,8 @@ import { fileURLToPath } from "url";
 import session from "express-session";
 import passport from "passport";
 import jwt from "jsonwebtoken";
-import http from "http"; // ⭐ 1. Import HTTP Module
-import { Server } from "socket.io"; // ⭐ 1. Import Socket.IO Server
+import http from "http"; 
+import { Server } from "socket.io"; 
 import User from "./models/User.js";
 
 dotenv.config();
@@ -37,32 +36,35 @@ import "./auth/facebook.js";
 
 const app = express();
 
-// ⭐⭐ 2. สร้าง HTTP Server จาก Express App
+// ⭐⭐ สร้าง HTTP Server จาก Express App
 const server = http.createServer(app); 
 
 /* ======================================================
       ⭐ SOCKET.IO SETUP (กำหนด CORS สำหรับ Socket) ⭐
 ====================================================== */
 const io = new Server(server, {
-    pingTimeout: 60000, // ป้องกันการเชื่อมต่อหลุดเมื่อไม่มีกิจกรรม
-    cors: {
-        // ใช้ฟังก์ชัน CORS เดิมเพื่ออนุญาตทุก Origin
-        origin: (origin, callback) => {
-            if (!origin) return callback(null, true); 
+    pingTimeout: 60000, 
+    cors: {
+        // ใช้ฟังก์ชัน CORS เดิมเพื่ออนุญาตทุก Origin
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true); 
 
-            const allowed = FRONTEND_ORIGINS.some((rule) =>
-                rule instanceof RegExp ? rule.test(origin) : rule === origin
-            );
+            const allowed = FRONTEND_ORIGINS.some((rule) =>
+                rule instanceof RegExp ? rule.test(origin) : rule === origin
+            );
 
-            if (allowed) callback(null, true);
-            else {
-                console.log("❌ Socket CORS Blocked:", origin);
-                callback(new Error("CORS Blocked"));
-            }
-        },
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    }
+            if (allowed) callback(null, true);
+            else {
+                console.log("❌ Socket CORS Blocked:", origin);
+                callback(new Error("CORS Blocked"));
+            }
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    },
+    // 🎯 1. แก้ไข WebSocket Error: กำหนด Path และ Transports สำหรับ Production
+    path: '/socket.io/', // ยืนยัน Path
+    transports: ['websocket', 'polling'], // บังคับให้ใช้ WebSocket
 });
 
 
@@ -70,35 +72,35 @@ const io = new Server(server, {
       ⭐ SOCKET.IO LISTENERS (Real-time Chat) ⭐
 ====================================================== */
 io.on('connection', (socket) => {
-    console.log(`[SOCKET] User connected: ${socket.id}`);
-    
-    // [1] เข้าร่วมห้อง (เมื่อ Client ส่ง user._id มา)
-    socket.on('join', (userId) => {
-        if (userId) {
-            socket.join(userId); 
-            console.log(`[SOCKET] User ${userId} joined room.`);
-        }
-    });
-    
-    // [2] ส่งข้อความ (เมื่อ Client กดส่งข้อความ)
-    socket.on('chat:send', (messageData) => {
-        // messageData ควรมี { to: receiverId, from: senderId, text: ..., image: ..., read: false, ... }
-        
-        // ⭐ ส่งข้อความไปยังห้องของผู้รับ (to)
-        if (messageData.to) {
-             io.to(messageData.to).emit('message:new', messageData);
-        }
+    console.log(`[SOCKET] User connected: ${socket.id}`);
+    
+    // [1] เข้าร่วมห้อง (เมื่อ Client ส่ง user._id มา)
+    socket.on('join', (userId) => {
+        if (userId) {
+            socket.join(userId); 
+            console.log(`[SOCKET] User ${userId} joined room.`);
+        }
+    });
+    
+    // [2] ส่งข้อความ (เมื่อ Client กดส่งข้อความ)
+    socket.on('chat:send', (messageData) => {
+        // messageData ควรมี { to: receiverId, from: senderId, text: ..., image: ..., read: false, ... }
+        
+        // ⭐ ส่งข้อความไปยังห้องของผู้รับ (to)
+        if (messageData.to) {
+             io.to(messageData.to).emit('message:new', messageData);
+        }
 
-        // ⭐ ส่งข้อความกลับไปหาผู้ส่ง (from) เพื่อให้แน่ใจว่า UI อัปเดตพร้อมกัน
-        if (messageData.from) {
-             io.to(messageData.from).emit('message:new', messageData);
-        }
-    });
+        // ⭐ ส่งข้อความกลับไปหาผู้ส่ง (from) เพื่อให้แน่ใจว่า UI อัปเดตพร้อมกัน
+        if (messageData.from) {
+             io.to(messageData.from).emit('message:new', messageData);
+        }
+    });
 
-    // [3] ออกจากห้อง/ตัดการเชื่อมต่อ
-    socket.on('disconnect', () => {
-        console.log(`[SOCKET] User disconnected: ${socket.id}`);
-    });
+    // [3] ออกจากห้อง/ตัดการเชื่อมต่อ
+    socket.on('disconnect', () => {
+        console.log(`[SOCKET] User disconnected: ${socket.id}`);
+    });
 });
 /* ====================================================== */
 
@@ -149,46 +151,47 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 /* ======================================================
-      OPTIONAL JWT AUTH
+      OPTIONAL JWT AUTH
 ====================================================== */
 const optionalAuth = async (req, res, next) => {
-  const header = req.headers.authorization;
+  const header = req.headers.authorization;
 
-  if (!header?.startsWith("Bearer ")) {
-    req.user = null;
-    return next();
-  }
+  if (!header?.startsWith("Bearer ")) {
+    req.user = null;
+    return next();
+  }
 
-  try {
-    const token = header.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select(
-      "_id name email role savedPosts avatar"
-    );
-  } catch {
-    req.user = null;
-  }
-  next();
+  try {
+    const token = header.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select(
+      "_id name email role savedPosts avatar"
+    );
+  } catch {
+    req.user = null;
+  }
+  next();
 };
 
 app.use(optionalAuth);
 
 /* ======================================================
-      Static Files
+      Static Files
 ====================================================== */
+// 🎯 2. Static Files: จำเป็นสำหรับรูปภาพเก่าที่ยังอยู่ใน DB เป็น Path สัมพัทธ์
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/uploads/chat", express.static(path.join(__dirname, "uploads/chat")));
 
 /* ======================================================
-      MongoDB
+      MongoDB
 ====================================================== */
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB error:", err));
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB error:", err));
 
 /* ======================================================
-      API Routes
+      API Routes
 ====================================================== */
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/users.routes.js";
@@ -211,24 +214,24 @@ app.use("/api/noti", notiRoutes);
 app.use("/api/reports", reportRoutes);
 
 /* ======================================================
-      Root Test
+      Root Test
 ====================================================== */
 app.get("/", (req, res) => {
-  res.send("🐾 MeowMates API is running on Render!");
+  res.send("🐾 MeowMates API is running on Render!");
 });
 
 /* ======================================================
-      404 Handler
+      404 Handler
 ====================================================== */
 app.use((req, res) => {
-  res.status(404).json({ message: "Route not found 🐾" });
+  res.status(404).json({ message: "Route not found 🐾" });
 });
 
 /* ======================================================
-      Start Server (เปลี่ยนไปใช้ server.listen)
+      Start Server (ใช้ server.listen)
 ====================================================== */
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => { // ⭐⭐ ใช้ server.listen แทน app.listen
+server.listen(PORT, () => { 
   console.log(`🚀 HTTP Server running on port ${PORT}`);
-  console.log(`💬 Socket.IO running on port ${PORT}`);
+  console.log(`💬 Socket.IO running on port ${PORT}`);
 });
