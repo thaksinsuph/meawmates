@@ -23,7 +23,7 @@ const fixPath = (p) => {
 };
 
 /* ======================================================
-   1) GET SAVED POSTS
+   1) GET SAVED POSTS (แก้ไขแล้ว)
 ====================================================== */
 router.get("/saved/:userId", auth, async (req, res) => {
   try {
@@ -37,9 +37,14 @@ router.get("/saved/:userId", auth, async (req, res) => {
 
     const validPosts = user.savedPosts.filter(p => p && p._id);
 
-    const formatted = validPosts.map((p) => { // ⭐ เปลี่ยนจาก Promise.all เป็น Map ธรรมดา
+    // ⭐⭐⭐ ต้องใช้ Promise.all เพื่อรอผลลัพธ์ของ User.countDocuments
+    const formatted = await Promise.all(
+      validPosts.map(async (p) => {
         // FIX 2: ถ้าคนโพสต์หายไป (null) ให้ใช้ข้อมูลสมมติแทน
         const author = p.author || { _id: "unknown", name: "Unknown User", avatar: null };
+
+        // ⭐ คำนวณ Saved Count อย่างถูกต้อง
+        const savedCount = await User.countDocuments({ savedPosts: p._id });
 
         return {
           _id: p._id,
@@ -47,7 +52,7 @@ router.get("/saved/:userId", auth, async (req, res) => {
           image: fixPath(p.image),
           likes: p.likes || [],
           comments: p.comments || [],
-          createdAt: p.createdAt, // ⭐ ต้องรวม createdAt เข้ามาเพื่อเรียงลำดับ
+          createdAt: p.createdAt,
           
           author: {
             _id: author._id,
@@ -56,12 +61,12 @@ router.get("/saved/:userId", auth, async (req, res) => {
           },
 
           isSaved: true,
-          // savedCount: await User.countDocuments({ savedPosts: p._id }) // ❌ ยกเลิกการคำนวณใน Map
-          savedCount: p.savedBy ? p.savedBy.length : 0 // ⭐ ถ้าใช้ Post.savedBy (ตามที่แนะนำก่อนหน้า)
+          savedCount: savedCount, // ⭐ ใส่ค่าที่คำนวณได้
         };
-    });
+      })
+    );
     
-    // ⭐⭐ เรียงจากใหม่ไปเก่า (ใช้ createdAt)
+    // ⭐⭐ เรียงจากใหม่ไปเก่า
     formatted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.json(formatted);

@@ -146,13 +146,20 @@ export default function Saved() {
         <span>{p.comments?.length || 0}</span>
     </Link>
 
-    {/* ⭐⭐⭐ 3. Saved Count (ไอคอนที่สามในภาพ) ⭐⭐⭐ */}
-    <div className="flex items-center gap-1 text-gray-500">
-        {/* ไอคอน Saved ที่สาม */}
-        <img src="/images/Savedd.png" className="w-5 h-5 opacity-70" />
-        {/* ตัวเลข Saved Count */}
-        <span>{p.savedCount || 0}</span>
-    </div>
+    // โค้ดที่แก้ไข (ทำให้เป็นปุ่ม Unsave และแสดง Saved Count)
+    {/* 3. Saved Count และ Unsave Button */}
+    <div 
+        // 💡 เพิ่ม onClick เพื่อเรียกฟังก์ชัน Unsave และลบโพสต์ออกจากรายการทันที
+        onClick={() => toggleSave(p._id)} 
+        title="Unsave Post" // เพื่อให้มี Tooltip แจ้งผู้ใช้
+        className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-pink-600 transition" // เพิ่ม cursor
+    >
+        {/* ไอคอน Saved ที่สาม (ควรเป็นสีที่โดดเด่นเพื่อบอกว่าถูกบันทึกไว้แล้ว) */}
+        <img src="/images/Savedd.png" className="w-5 h-5 opacity-100" />
+        
+        {/* ตัวเลข Saved Count (จะยังคงเป็น 0 จนกว่า Backend จะถูกแก้ไข) */}
+        <span>{p.savedCount || 0}</span>
+    </div>
     {/* ❌ ลบปุ่ม Unsave (เพื่อไม่ให้ไอคอนซ้ำซ้อน) ❌ */}
     {/*
     <button onClick={() => toggleSave(p._id)} title="Unsave">
