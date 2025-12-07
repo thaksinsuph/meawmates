@@ -78,7 +78,7 @@ export default function Matching() {
   /* ------------------ NEW: MANAGE PET BUTTON ------------------ */
   const handleManagePet = () => {
     // นำทางไปยังหน้า managepet.jsx (สมมติว่า path คือ /managepet)
-    navigate("/managepet"); 
+    navigate("/manage-pet"); 
   };
   /* ------------------------------------------------------------------ */
 
@@ -95,15 +95,15 @@ export default function Matching() {
           onClick={handleManagePet}
           className="
             px-6 py-2 rounded-full text-sm font-semibold text-gray-700 border-2 border-gray-300
-            hover:bg-gray-100 transition-colors
+            hover:bg-gray-100 transition-colors flex items-center gap-2
           "
         >
          Manage Pets 
           <img 
             src="/images/cat.png" // ⭐⭐ เปลี่ยนเป็นรูปที่คุณต้องการ
-            alt="pet icon"
-            className="w-4 h-4" 
-            onError={(e) => { e.target.onerror = null; e.target.src="/images/edit-icon.png" }} // Fallback
+            alt="Cat Icon"
+            className="w-4 h-4"
+            
           />
         </button>
       </div>
