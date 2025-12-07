@@ -189,9 +189,42 @@ export default function Layout() {
 
           {/* NAV LINKS */}
           <nav className="flex items-center gap-6 text-slate-700">
-            <NavLink to="/home">Home</NavLink>
-            <NavLink to="/matching">Matching</NavLink>
-            <NavLink to="/messages">Chat</NavLink>
+            <NavLink 
+                to="/home" 
+                className={({ isActive }) => 
+                    isActive 
+                        ? "text-pink-600 font-semibold relative after:content-[''] after:absolute after:left-0 after:bottom-[-4px] after:w-full after:h-0.5 after:bg-pink-600 after:rounded-full" 
+                        : "hover:text-pink-500 transition"
+                }
+            >
+                Home
+            </NavLink>
+            
+            <NavLink 
+                to="/matching" 
+                className={({ isActive }) => 
+                    isActive 
+                        ? "text-pink-600 font-semibold relative after:content-[''] after:absolute after:left-0 after:bottom-[-4px] after:w-full after:h-0.5 after:bg-pink-600 after:rounded-full" 
+                        : "hover:text-pink-500 transition"
+                }
+            >
+                Matching
+            </NavLink>
+            
+            <NavLink 
+                to="/messages" 
+                className={({ isActive }) => 
+                    isActive 
+                        ? "text-pink-600 font-semibold relative after:content-[''] after:absolute after:left-0 after:bottom-[-4px] after:w-full after:h-0.5 after:bg-pink-600 after:rounded-full" 
+                        : "hover:text-pink-500 transition"
+                }
+            >
+                Chat
+            </NavLink>
+
+            <div className="relative">
+              {/* ... ปุ่ม Menu และ Dropdown ที่เหลือ ... */}
+            </div>
 
             <div className="relative">
               <button
