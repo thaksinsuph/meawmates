@@ -56,6 +56,26 @@ router.get("/unseen-count", auth, async (req, res) => {
 });
 
 /* ================================
+   8) MARK ALL UNSEEN MESSAGES AS READ
+================================ */
+router.post("/mark-all-seen", auth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // อัปเดตข้อความทั้งหมดที่ส่งถึงผู้ใช้คนนี้ (to: userId) และยังไม่ได้อ่าน (seen: false)
+        await Message.updateMany(
+            { to: userId, seen: false },
+            { $set: { seen: true, seenAt: new Date() } }
+        );
+
+        res.json({ success: true, message: "All messages marked as seen" });
+    } catch (err) {
+        console.error("Mark all seen error:", err);
+        res.status(500).json({ message: "Error marking messages as seen" });
+    }
+});
+
+/* ================================
    1) โหลดข้อความระหว่าง Owner 2 คน
       - อัปเดตสถานะ 'Seen'
 ================================ */

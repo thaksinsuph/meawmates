@@ -113,6 +113,40 @@ export default function Messages() {
       console.error(err);
     }
   };
+  /* ================================
+   MARK ALL AS READ ON PAGE LOAD (NEW LOGIC)
+================================= */
+useEffect(() => {
+    if (!user?._id) return;
+
+    const markAllSeen = async () => {
+        try {
+            // ⭐ 1. เรียก API เพื่อทำเครื่องหมายข้อความทั้งหมดว่าอ่านแล้ว
+            // API นี้ถูกสร้างใน chat.routes.js (router.post("/mark-all-seen", ...))
+            await api.post('/api/chat/mark-all-seen');
+
+            // ⭐ 2. โหลด Matches ใหม่ เพื่ออัปเดต Sidebar และ Navbar Count
+            // การเรียก loadMatches() จะทำให้ Layout.jsx (ที่ใช้ Polling)
+            // เห็นว่าจำนวน unseen count เป็น 0 ในรอบ Polling ถัดไป
+            loadMatches(); 
+
+            // Note: ไม่จำเป็นต้องอัปเดต messages state ที่นี่ เพราะ loadChat() 
+            // จะอัปเดต messages และ loadMatches() จะถูกเรียกเมื่อเปลี่ยนแชท
+
+        } catch (err) {
+            console.error("Failed to mark all messages as seen:", err);
+        }
+    };
+
+    // เราจะเรียก markAllSeen ทันทีที่เข้าสู่หน้า Messages (โดยไม่มี ID ใน URL)
+    // หรือเมื่อโหลดหน้าเสร็จ (ในกรณีที่ไม่ใช่แชทเฉพาะ)
+    if (!id) {
+        markAllSeen();
+    }
+    
+    // ถ้ามีการเปลี่ยน ID, loadChat() จะเรียก loadMatches() ให้เอง
+    
+}, [user?._id, id]); // รันเมื่อผู้ใช้เปลี่ยน หรือเมื่อมีการเข้าสู่หน้า (id เป็น null)
 
   /* ================================
      SOCKET.IO CONNECTION AND LISTENERS
