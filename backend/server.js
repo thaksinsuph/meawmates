@@ -63,7 +63,7 @@ const io = new Server(server, {
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     },
     // 🎯 1. แก้ไข WebSocket Error: กำหนด Path และ Transports สำหรับ Production
-    path: '/socket.io/', // ยืนยัน Path
+    path: '/socket.io', // ยืนยัน Path
     transports: ['websocket', 'polling'], // บังคับให้ใช้ WebSocket
 });
 
