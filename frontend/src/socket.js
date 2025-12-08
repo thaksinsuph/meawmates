@@ -7,7 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://meowmates.onr
 // 🛑 Named Export: ใช้ export const เพื่อให้ Messages.jsx สามารถใช้ import { socket } ได้
 export const socket = io(API_BASE_URL, {
     // 🎯 1. Path: ต้องตรงกับ Server.js (โดยลบ Trailing Slash ออกเพื่อแก้ไขปัญหา Proxy/Render)
-    path: '/socket.io', 
+    path: '/socket.io/', 
     
     // 🎯 2. Transports: สำคัญสำหรับ Production/Render เพื่อให้ WebSocket ทำงาน
     transports: ['websocket', 'polling'], 
