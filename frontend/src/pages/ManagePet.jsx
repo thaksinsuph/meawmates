@@ -12,13 +12,13 @@ const GenderSelect = ({ value, onChange }) => {
         { 
             value: "Male", 
             label: "Male", 
-            img: "/images/male_icon.png", // Path รูปภาพเพศผู้
+            img: "/images/male.png", // Path รูปภาพเพศผู้
             style: "border-blue-300 text-blue-500 hover:bg-blue-50" 
         },
         { 
             value: "Female", 
             label: "Female", 
-            img: "/images/female_icon.png", // Path รูปภาพเพศเมีย
+            img: "/images/female.png", // Path รูปภาพเพศเมีย
             style: "border-pink-300 text-pink-500 hover:bg-pink-50" 
         },
     ];
