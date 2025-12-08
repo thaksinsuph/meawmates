@@ -8,11 +8,12 @@ import Landing from "./pages/Landing";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ManagePet from "./pages/ManagePet"; // ยังคง import
+import ManagePet from "./pages/ManagePet";
 import MatchList from "./pages/MatchList";
 import MatchHistory from "./pages/MatchHistory";
 import Matching from "./pages/Matching";
-import SwipeMatch from "./pages/SwipeMatch";
+// import SwipeMatch from "./pages/SwipeMatch"; // ❌ ลบออก! (แก้ไข Error Build)
+import MatchResult from "./pages/MatchResult"; // ต้องใช้ MatchResult
 import Messages from "./pages/Messages";
 import Saved from "./pages/Saved";
 import PostDetail from "./pages/PostDetail";
@@ -33,137 +34,148 @@ import AdminRoute from "./components/AdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
-    
-    // ============================
-    // 🔒 USER ROUTES (Standalone - ไม่มี Layout)
-    // ============================
-    { // ⭐ เพิ่ม Route /manage-pet ตรงนี้
-        path: "manage-pet",
-        element: (
-            <ProtectedRoute>
-                <ManagePet />
-            </ProtectedRoute>
-        ),
-    },
+    
+    // ============================
+    // 🔒 USER ROUTES (Standalone - ไม่มี Layout)
+    // ============================
+    { 
+        path: "manage-pet",
+        element: (
+            <ProtectedRoute>
+                <ManagePet />
+            </ProtectedRoute>
+        ),
+    },
 
-    // ============================
-    // 🌐 PUBLIC/USER ROUTES (มี Layout)
-    // ============================
-    {
-        path: "/",
-        element: <Layout />,
-        children: [
-            // ============================
-            // 🌐 PUBLIC ROUTES (ไม่ต้องล็อกอิน)
-            // ============================
-            { index: true, element: <Landing /> },
-            { path: "home", element: <Home /> },
-            { path: "post/:id", element: <PostDetail /> },
+    // ============================
+    // 🌐 PUBLIC/USER ROUTES (มี Layout)
+    // ============================
+    {
+        path: "/",
+        element: <Layout />,
+        children: [
+            // ============================
+            // 🌐 PUBLIC ROUTES (ไม่ต้องล็อกอิน)
+            // ============================
+            { index: true, element: <Landing /> },
+            { path: "home", element: <Home /> },
+            { path: "post/:id", element: <PostDetail /> },
 
-            { path: "login", element: <Login /> },
-            { path: "register", element: <Register /> },
+            { path: "login", element: <Login /> },
+            { path: "register", element: <Register /> },
 
-            // ============================
-            // 🔒 USER ROUTES (ต้องล็อกอิน)
-            // ============================
-            // ❌ ได้นำ /manage-pet ออกจากส่วนนี้แล้ว
-            
-            {
-                path: "matching",
-                element: (
-                    <ProtectedRoute>
-                        <Matching />
-                    </ProtectedRoute>
-                ),
-            },
+            // ============================
+            // 🔒 USER ROUTES (ต้องล็อกอิน)
+            // ============================
+            
+            // [3] หน้าเลือกแมว/เปิด Pop-up
+            {
+                path: "matching",
+                element: (
+                    <ProtectedRoute>
+                        <Matching />
+                    </ProtectedRoute>
+                ),
+            },
 
-            {
-                path: "matching/swipe",
-                element: (
-                    <ProtectedRoute>
-                        <SwipeMatch />
-                    </ProtectedRoute>
-                ),
-            },
-            
-            // ... (Routes อื่นๆ ของ User ที่ต้องการ Layout)
-            {
-                path: "match-history",
-                element: (
-                    <ProtectedRoute>
-                        <MatchHistory />
-                    </ProtectedRoute>
-                ),
-            },
+            // ⭐ 2. Route สำหรับแสดงผลลัพธ์แบบลิสต์
+            {
+                path: "matching/list-result",
+                element: (
+                    <ProtectedRoute>
+                        <MatchResult />
+                    </ProtectedRoute>
+                ),
+            },
 
-            {
-                path: "matches",
-                element: (
-                    <ProtectedRoute>
-                        <MatchList />
-                    </ProtectedRoute>
-                ),
-            },
+            // ❌ 3. ลบ Route Swiping ออก (ไม่ใช้แล้ว)
+            {
+                path: "matching/swipe",
+                element: (
+                    <ProtectedRoute>
+                        <NotFound /> 
+                    </ProtectedRoute>
+                ),
+            },
+            
+            // ... (Routes อื่นๆ ของ User ที่ต้องการ Layout)
+            {
+                path: "match-history",
+                element: (
+                    <ProtectedRoute>
+                        <MatchHistory />
+                    </ProtectedRoute>
+                ),
+            },
 
-            {
-                path: "messages",
-                element: (
-                    <ProtectedRoute>
-                        <Messages />
-                    </ProtectedRoute>
-                ),
-            },
+            {
+                path: "matches",
+                element: (
+                    <ProtectedRoute>
+                        <MatchList />
+                    </ProtectedRoute>
+                ),
+            },
 
-            {
-                path: "messages/:id",
-                element: (
-                    <ProtectedRoute>
-                        <Messages />
-                    </ProtectedRoute>
-                ),
-            },
+            {
+                path: "messages",
+                element: (
+                    <ProtectedRoute>
+                        <Messages />
+                    </ProtectedRoute>
+                ),
+            },
 
-            {
-                path: "saved",
-                element: (
-                    <ProtectedRoute>
-                        <Saved />
-                    </ProtectedRoute>
-                ),
-            },
+            {
+                path: "messages/:id",
+                element: (
+                    <ProtectedRoute>
+                        <Messages />
+                    </ProtectedRoute>
+                ),
+            },
 
-            {
-                path: "profile/:id",
-                element: (
-                    <ProtectedRoute>
-                        <ViewProfile />
-                    </ProtectedRoute>
-                ),
-            },
+            {
+                path: "saved",
+                element: (
+                    <ProtectedRoute>
+                        <Saved />
+                    </ProtectedRoute>
+                ),
+            },
 
-            // ============================
-            // ⭐ ADMIN ROUTES
-            // ============================
-            {
-                path: "admin",
-                element: (
-                    <AdminRoute>
-                        <AdminLayout />
-                    </AdminRoute>
-                ),
-                children: [
-                    { index: true, element: <AdminDashboard /> },
-                    { path: "users", element: <ManageUsers /> },
-                    { path: "pets", element: <ManagePetsAdmin /> },
-                    { path: "posts", element: <ManagePosts /> },
-                    { path: "reports", element: <ManageReports /> },
-                ],
-            },
+            {
+                path: "profile/:id",
+                element: (
+                    <ProtectedRoute>
+                        <ViewProfile />
+                    </ProtectedRoute>
+                ),
+            },
 
-            // ============================
-            // ❌ 404
-            // ============================
-            { path: "*", element: <NotFound /> },
-        ],
-    },
+            // ============================
+            // ⭐ ADMIN ROUTES
+            // ============================
+            {
+                path: "admin",
+                element: (
+                    <AdminRoute>
+                        <AdminLayout />
+                    </AdminRoute>
+                ),
+                children: [
+                    { index: true, element: <AdminDashboard /> },
+                    { path: "users", element: <ManageUsers /> },
+                    { path: "pets", element: <ManagePetsAdmin /> },
+                    { path: "posts", element: <ManagePosts /> },
+                    { path: "reports", element: <ManageReports /> },
+                ],
+            },
+
+            // ============================
+            // ❌ 404
+            // ============================
+            { path: "*", element: <NotFound /> },
+        ],
+    },
 ]);
