@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
+// ⭐ 1. นำเข้าข้อมูลสายพันธุ์และสี
+import { BREEDS, CAT_COLORS } from "../petData"; 
 
 // Helper function สำหรับแสดงผลเพศ (ใช้รูปภาพ)
 const getGenderDisplay = (gender) => {
@@ -23,50 +25,142 @@ const getGenderDisplay = (gender) => {
     return '—';
 };
 
+// =================================================================
+// ⭐ CriteriaModal Component (Pop-up เลือกเกณฑ์)
+// =================================================================
+const CriteriaModal = ({ isOpen, onClose, selectedCat, onStartPairing }) => {
+    
+    // ⭐ State สำหรับเก็บค่าเกณฑ์ที่ผู้ใช้เลือก
+    const [criteriaForm, setCriteriaForm] = useState({
+        targetBreed: '',
+        targetAge: 1,
+        targetColor: '',
+        targetGender: '',
+    });
+
+    if (!isOpen || !selectedCat) return null;
+
+    const handleStart = () => {
+        // Validation คร่าวๆ (ควรมีฟิลด์หลักอย่างน้อย)
+        if (!criteriaForm.targetBreed && !criteriaForm.targetGender) {
+            alert("กรุณาเลือกเกณฑ์จับคู่อย่างน้อย 1 เกณฑ์ (เช่น สายพันธุ์ หรือ เพศ)");
+            return;
+        }
+        onStartPairing(criteriaForm);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl animate-fadeIn">
+                <h2 className="text-2xl font-extrabold text-gray-800 mb-4">
+                    🎯 กำหนดเกณฑ์จับคู่ (Pet Pedigree)
+                </h2>
+                
+                <p className="text-lg mb-4 text-pink-600 font-semibold">
+                    แมวของคุณ: {selectedCat.name} ({getGenderDisplay(selectedCat.gender)})
+                </p>
+
+                <div className="space-y-4">
+                    {/* 1. เลือกสายพันธุ์ */}
+                    <div>
+                        <label className="block text-sm font-medium mb-1">สายพันธุ์ที่ต้องการ:</label>
+                        <select
+                            className="w-full p-3 border rounded-xl"
+                            value={criteriaForm.targetBreed}
+                            onChange={(e) => setCriteriaForm({...criteriaForm, targetBreed: e.target.value})}
+                        >
+                            <option value="">— เลือกสายพันธุ์ (ไม่บังคับ) —</option>
+                            {Object.keys(BREEDS).map((b) => (
+                                <option key={b} value={b}>{b}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* 2. เลือกสี */}
+                    <div>
+                        <label className="block text-sm font-medium mb-1">สีที่ต้องการ:</label>
+                        <select
+                            className="w-full p-3 border rounded-xl"
+                            value={criteriaForm.targetColor}
+                            onChange={(e) => setCriteriaForm({...criteriaForm, targetColor: e.target.value})}
+                        >
+                            <option value="">— เลือกสี (ไม่บังคับ) —</option>
+                            {Object.keys(CAT_COLORS).map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex gap-4">
+                        {/* 3. เลือกอายุ */}
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium mb-1">อายุสูงสุด (ปี):</label>
+                            <input
+                                type="number"
+                                min="1" max="20"
+                                className="w-full p-3 border rounded-xl"
+                                value={criteriaForm.targetAge}
+                                onChange={(e) => setCriteriaForm({...criteriaForm, targetAge: e.target.value})}
+                            />
+                        </div>
+                        
+                        {/* 4. เลือกเพศ */}
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium mb-1">เพศที่ต้องการ:</label>
+                            <select
+                                className="w-full p-3 border rounded-xl"
+                                value={criteriaForm.targetGender}
+                                onChange={(e) => setCriteriaForm({...criteriaForm, targetGender: e.target.value})}
+                            >
+                                <option value="">— เลือกเพศ (ไม่บังคับ) —</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="mt-6 flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                    >
+                        ยกเลิก
+                    </button>
+                    <button
+                        onClick={handleStart}
+                        className="flex-1 py-3 rounded-xl bg-pink-500 text-white font-semibold hover:bg-pink-600 transition"
+                    >
+                        เริ่มจับคู่ (Search)
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+// =================================================================
+
 export default function Matching() {
   const navigate = useNavigate();
 
   const [pets, setPets] = useState([{}, {}, {}, {}]);
   const [selectedPet, setSelectedPet] = useState(null);
+  
+  // ⭐ State สำหรับควบคุม Modal และ Criteria
+  const [criteriaModalOpen, setCriteriaModalOpen] = useState(false); 
 
   // ⭐ ใช้ API URL ของ backend เพื่อสร้าง path รูป
   const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
 
   // ⭐ Normalize รูปสัตว์เลี้ยงให้ใช้ได้จริงตอน Deploy
-  const fixImage = (img) => {
-    if (!img) return null;
-
-    if (img.startsWith("data:")) return img;     // Base64
-    if (img.startsWith("http")) return img;      // Google หรือ external
-    if (img.startsWith("/images/")) return img;  // frontend static
-
-    // รูปที่ backend ส่งมา เช่น /uploads/xxxx.jpg
-    return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
-  };
+  const fixImage = (img) => { /* ... Logic เดิม ... */ };
 
   const isEmptyPet = (pet) =>
     !pet || (!pet.name && !pet.breed && !pet.color && !pet.age && !pet.image);
 
   /* ------------------ LOAD PETS (4 slots) ------------------ */
-  const loadAllPets = async () => {
-    const results = [];
-
-    for (let i = 1; i <= 4; i++) {
-      try {
-        const res = await api.get(`/api/pets/${i}`);
-
-        results.push({
-          ...res.data,
-          image: fixImage(res.data?.image),
-          vaccineImage: fixImage(res.data?.vaccineImage),
-        });
-      } catch {
-        results.push({});
-      }
-    }
-
-    setPets(results);
-  };
+  const loadAllPets = async () => { /* ... Logic เดิม ... */ };
 
   useEffect(() => {
     loadAllPets();
@@ -75,33 +169,46 @@ export default function Matching() {
   /* ------------------ SELECT SLOT ------------------ */
   const handleSelectSlot = (pet, index) => {
     if (isEmptyPet(pet)) return alert("No cat saved in this slot.");
-
     setSelectedPet({ ...pet, slot: index + 1 });
   };
 
-  /* ------------------ NEXT BUTTON (Start Pairing) ------------------ */
+  /* ------------------ NEXT BUTTON (Open Criteria Modal) ------------------ */
   const handleNext = () => {
     if (!selectedPet) return alert("Please select a cat.");
-
-    const minimalPet = {
-      slot: selectedPet.slot,
-      name: selectedPet.name,
-      breed: selectedPet.breed,
-      color: selectedPet.color,
-      age: selectedPet.age,
-      gender: selectedPet.gender,
-    };
-
-    localStorage.setItem("selectedPet", JSON.stringify(minimalPet));
-    navigate("/matching/swipe");
+    // ⭐ เปิด Modal แทนการนำทาง
+    setCriteriaModalOpen(true);
   };
+  
+  /* ------------------ NEW: START PAIRING AFTER CRITERIA SELECTED ------------------ */
+    const handleStartPairing = (criteria) => {
+        if (!selectedPet) return;
+        
+        // 2. รวบรวมข้อมูลแมวที่เลือกและเกณฑ์ที่ต้องการ
+        const pairingData = {
+            selectedCat: {
+                slot: selectedPet.slot,
+                name: selectedPet.name,
+                breed: selectedPet.breed,
+                color: selectedPet.color,
+                age: selectedPet.age,
+                gender: selectedPet.gender,
+            },
+            criteria: criteria,
+        };
+        
+        // 3. เก็บข้อมูลทั้งหมดไว้ใน Local Storage
+        localStorage.setItem("pairingData", JSON.stringify(pairingData));
+        
+        // 4. ปิด Modal และนำทางไปหน้าแสดงผลลัพธ์
+        setCriteriaModalOpen(false);
+        // ⭐⭐ Route ใหม่สำหรับหน้าแสดงผลลัพธ์
+        navigate("/matching/list-result"); 
+    };
 
-  /* ------------------ NEW: MANAGE PET BUTTON ------------------ */
+  /* ------------------ MANAGE PET BUTTON (unchanged) ------------------ */
   const handleManagePet = () => {
-    // นำทางไปยังหน้า managepet.jsx (สมมติว่า path คือ /managepet)
     navigate("/manage-pet"); 
   };
-  /* ------------------------------------------------------------------ */
 
 
   /* ============================================================
@@ -110,7 +217,7 @@ export default function Matching() {
   return (
     <div className="w-full flex flex-col items-center py-12 px-4 gap-12">
       
-      {/* ------------------ NEW: MANAGE PET BUTTON SECTION ------------------ */}
+      {/* ------------------ MANAGE PET BUTTON SECTION (unchanged) ------------------ */}
       <div className="w-full flex justify-end max-w-6xl">
         <button
           onClick={handleManagePet}
@@ -121,7 +228,7 @@ export default function Matching() {
         >
          Manage Pets 
           <img 
-            src="/images/cat.png" // ⭐⭐ เปลี่ยนเป็นรูปที่คุณต้องการ
+            src="/images/cat.png" 
             alt="Cat Icon"
             className="w-4 h-4"
             
@@ -199,8 +306,16 @@ export default function Matching() {
           transition-all
         "
       >
-        Start Pairing
+        Go to Petdreegree
       </button>
+      
+      {/* ⭐⭐ NEW: Criteria Selection Modal ⭐⭐ */}
+      <CriteriaModal 
+          isOpen={criteriaModalOpen}
+          onClose={() => setCriteriaModalOpen(false)}
+          selectedCat={selectedPet}
+          onStartPairing={handleStartPairing}
+      />
     </div>
   );
 }

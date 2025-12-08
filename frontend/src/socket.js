@@ -27,4 +27,4 @@ socket.on('connect', () => {
 
 socket.on('disconnect', (reason) => {
     console.warn('❌ Socket disconnected:', reason);
-});
+});  
