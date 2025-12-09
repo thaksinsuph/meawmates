@@ -184,3 +184,17 @@ export const CAT_COLORS = {
     desc: "สีน้ำตาลอบเชยโทนอุ่น หายากมาก"
   }
 }
+
+export const ageOptions = [
+    "Any", 
+    "0-1", 
+    "1-3", 
+    "3-7", 
+    "7+",
+];
+
+export const genderOptions = [
+    "Any", 
+    "Male", 
+    "Female"
+];
