@@ -18,6 +18,7 @@ const FRONTEND_ORIGINS = [
   "http://localhost:5173",
   "https://meaw-mates.vercel.app", 
   "https://meawmates.vercel.app",    
+  "https://meaw-mates-hanggybirds-projects.vercel.app"  , 
   
   // Regex: รองรับ Preview URL ทั้งแบบมีขีดและไม่มีขีด
   /^https:\/\/(?:meaw-mates|meawmates)-.*\.vercel\.app$/, 
