@@ -335,31 +335,39 @@ export default function SwipeMatch() {
                             {target.name}
                         </h2>
                         
-                        {/* Details List (กระชับ: Breed • Age • Color) */}
-                        <div className="text-sm text-gray-700 flex flex-wrap gap-x-4 gap-y-1 mb-2">
-                            {/* Combined Breed • Age • Color */}
-                            <p className="font-medium text-gray-600">
-                                {target.breed || "—"} • {target.age ? `${target.age} yrs` : "—"} • {target.color || "—"}
+                        {/* Details List (ใช้ Label) */}
+                        <div className="text-sm text-gray-700 space-y-1">
+                            {/* Breed */}
+                            <p className="font-medium">
+                                <strong>Breed:</strong> {target.breed || "—"}
+                            </p>
+                            {/* Color */}
+                            <p className="font-medium">
+                                <strong>Color:</strong> {target.color || "—"}
+                            </p>
+                            {/* Age */}
+                            <p className="font-medium">
+                                <strong>Age:</strong> {target.age ? `${target.age} yrs` : "—"}
+                            </p>
+                        
+                            {/* Gender + Match Score (รวมในบรรทัดเดียวกัน) */}
+                            <p className="flex items-center gap-3 mt-1">
+                                <strong>Gender:
+                                  {targetGender.img && (
+                                      <img src={targetGender.img} className="w-4 h-4 inline-block align-middle ml-1" alt={targetGender.label} />
+                                  )}
+                                </strong> 
+                                <span className={`font-semibold ${targetGender.color}`}>
+                                    {targetGender.label}
+                                </span>
+                                {/* Match Score Badge */}
+                                <span className="ml-4 px-2 py-0.5 rounded-full text-xs font-bold"
+                                    style={{ backgroundColor: '#FBCFE8', color: '#DB2777' }} 
+                                >
+                                    MATCH: {score}%
+                                </span>
                             </p>
                         </div>
-                        
-                        {/* Gender + Match Score (รวมในบรรทัดเดียวกัน) */}
-                        <p className="flex items-center gap-3 mt-1">
-                            <strong>Gender:
-                                {targetGender.img && (
-                                    <img src={targetGender.img} className="w-4 h-4 inline-block align-middle ml-1" alt={targetGender.label} />
-                                  )}
-                            </strong> 
-                            <span className={`font-semibold ${targetGender.color}`}>
-                                {targetGender.label}
-                            </span>
-                                {/* Match Score Badge */}
-                            <span className="ml-4 px-2 py-0.5 rounded-full text-xs font-bold"
-                                style={{ backgroundColor: '#FBCFE8', color: '#DB2777' }} 
-                            >
-                                MATCH: {score}%
-                            </span>
-                        </p>
                     </div>
 
                     {/* Actions */}
@@ -368,13 +376,13 @@ export default function SwipeMatch() {
                             onClick={() => handleSwipe(target, "right")}
                             className="w-12 h-12 rounded-full bg-pink-500 text-white shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center"
                         >
-                            <img src="/images/Likematch.png" className="w-6 h-6 object-contain" alt="Like" />
+                            Like<img src="/images/Likematch.png" className="w-6 h-6 object-contain" alt="Like" />
                         </button>
                         <button
                             onClick={() => handleSwipe(target, "left")}
                             className="w-12 h-12 rounded-full bg-gray-300 text-gray-700 shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center"
                         >
-                            <img src="/images/dislike.png" className="w-6 h-6 object-contain" alt="Nope" />
+                            Dislike<img src="/images/dislike.png" className="w-6 h-6 object-contain" alt="Nope" />
                         </button>
                     </div>
                   </div>
