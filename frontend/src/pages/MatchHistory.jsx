@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api";
-import { Link } from "react-router-dom"; // เพิ่ม Link เพื่อเชื่อมไปหน้าโปรไฟล์ (ถ้ามี)
+import { Link } from "react-router-dom"; 
 
 // ⭐ 1. ฟังก์ชันสำหรับดึงข้อมูลรูปภาพเพศ
 const getGenderImage = (gender) => {
@@ -40,7 +40,7 @@ export default function MatchHistory() {
         setHistory(res.data || []);
     };
     
-    // ⭐ Image Modal Handlers (เพิ่มใหม่)
+    // ⭐ Image Modal Handlers
     const handleOpenImage = (cat) => {
         setImageModal({
             open: true,
@@ -65,7 +65,7 @@ export default function MatchHistory() {
     return (
         <div className="max-w-3xl mx-auto py-10 px-4">
             
-            {/* ⭐ IMAGE VIEW MODAL UI (เพิ่มใหม่) */}
+            {/* ⭐ IMAGE VIEW MODAL UI */}
             {imageModal.open && (
                 <div 
                     className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 cursor-pointer"
@@ -175,15 +175,7 @@ export default function MatchHistory() {
                                 <br />
                                 {new Date(h.createdAt).toLocaleTimeString()}
                             </div>
-                            {/* ปุ่มสำหรับไปที่ Chat หรือ Profile (ตัวอย่าง) */}
-                            {h.liked && (
-                                <Link 
-                                    to={`/chat/${targetCat.ownerId}`} 
-                                    className="mt-3 text-sm font-semibold text-white bg-green-500 px-3 py-1 rounded-lg hover:bg-green-600 transition"
-                                >
-                                    Chat Now
-                                </Link>
-                            )}
+                            {/* ลบปุ่ม Chat Now ออก */}
                         </div>
                     </div>
                 );
