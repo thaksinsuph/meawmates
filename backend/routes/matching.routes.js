@@ -260,6 +260,7 @@ router.get("/matches", auth, async (req, res) => {
                 name: other.name,
                 image: other.image,
                 breed: other.breed,
+                color: other.color,
                 age: other.age,
                 gender: other.gender,
             });
