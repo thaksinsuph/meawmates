@@ -370,7 +370,7 @@ export default function SwipeMatch() {
                           className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-semibold shadow-md 
                                       hover:bg-pink-600 transition flex items-center justify-center gap-2"
                       >
-                          Like <img src="/images/Like.png" className="w-5 h-5 object-contain" alt="Like" />
+                          Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
                       </button>
                       <button
                           onClick={() => handleSwipe(target, "left")}

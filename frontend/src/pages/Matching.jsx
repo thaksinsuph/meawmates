@@ -322,19 +322,20 @@ export default function Matching() {
                 <p><strong>Age:</strong> {pet?.age ? `${pet.age} yrs` : "—"}</p>
                 <p className="flex items-center gap-1">
                   <strong>
-                        {/* ⭐ แสดงรูปภาพ Gender */}
-                        {genderData ? (
-                            <img 
-                                src={genderData.img} 
-                                className="w-4 h-4 inline-block align-middle" 
-                                alt={genderData.label || 'Gender Icon'} 
-                            />
-                        ) : (
-                             // Icon default หรือเว้นว่าง
-                            <span className="w-4 h-4 inline-block align-middle"></span> 
-                        )} 
-                        Gender:
-                    </strong> 
+                        {/* 1. แสดงข้อความ "Gender:" ก่อน */}
+                        Gender:
+                        {/* 2. แสดงรูปภาพ Gender (ถ้ามี) */}
+                        {genderData ? (
+                            <img 
+                                src={genderData.img} 
+                                className="w-4 h-4 inline-block align-middle ml-1" // เพิ่ม ml-1 เพื่อเว้นวรรคจากข้อความ
+                                alt={genderData.label || 'Gender Icon'} 
+                            />
+                        ) : (
+                            // Icon default หรือเว้นว่าง
+                            <span className="w-4 h-4 inline-block align-middle ml-1"></span> 
+                        )} 
+                    </strong> 
                   {pet?.gender ? (
                     <span className={genderData?.color || 'text-gray-600'}>
                       {pet.gender}
