@@ -341,7 +341,7 @@ export default function SwipeMatch() {
             </button>
           </div>
 
-          {/* 2. TARGET CAT LIST (แก้ไขโครงสร้างเพื่อให้ดูไม่โล่งและมี Score วงกลม) */}
+          {/* 2. TARGET CAT LIST (ใช้ Match Score Ring และจัดวางใหม่) */}
           <div className="w-full max-w-4xl space-y-6 pb-12">
             {targets.length === 0 ? (
               <div className="text-center bg-white p-12 rounded-3xl shadow-xl mt-10 border border-gray-300">
@@ -411,19 +411,17 @@ export default function SwipeMatch() {
                             </div>
                         </div>
 
-                        {/* -------------------- ROW 2: SCORES & ACTIONS -------------------- */}
-                        {/* จัด Score วงกลม 2 แบบ และปุ่ม Actions ไว้ใน Row เดียวกัน */}
+                        {/* -------------------- ROW 2: SCORE & ACTIONS -------------------- */}
+                        {/* แสดง Score Ring (วงเดียว) และปุ่ม Actions */}
                         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
                             
-                            
-
-                                {/* ⭐ 2. Match Score Ring (วงใหญ่) */}
-                                <div className="flex items-center gap-2">
-                                    <div className="w-16 h-16 rounded-full bg-pink-50 border-2 border-pink-300 flex items-center justify-center font-extrabold text-pink-600 text-lg flex-shrink-0">
-                                        {score}%
-                                    </div>
-                                    <span className="text-gray-600 text-sm font-semibold">Match Score</span>
+                            {/* ⭐ Match Score Ring (วงใหญ่ที่เหลือ) */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <div className="w-16 h-16 rounded-full bg-pink-50 border-2 border-pink-300 flex flex-col items-center justify-center font-extrabold text-pink-600 text-lg">
+                                    <span className="text-[12px] font-bold tracking-tight text-gray-500">SCORE</span>
+                                    <span className="text-xl leading-none">{score}%</span>
                                 </div>
+                                <span className="text-gray-600 text-sm font-semibold">Match Compatibility</span>
                             </div>
 
                             {/* Actions Buttons */}
@@ -442,7 +440,7 @@ export default function SwipeMatch() {
                                 </button>
                             </div>
                         </div>
-                    
+                    </div>
                 );
               })
             )}
