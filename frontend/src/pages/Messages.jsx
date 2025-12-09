@@ -43,12 +43,11 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
     const cat = cats[selectedIndex];
 
     // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
-    const gender = cat.gender || '—'; 
-    const color = cat.color || '—';
     const breed = cat.breed || '—';
+    const color = cat.color || '—'
     const age = cat.age || null;
     const ageDisplay = age ? `${age} yrs` : '—';
-
+    const gender = cat.gender || '—';
 
     return (
         <div 
@@ -93,11 +92,10 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
 
                     {/* Cat Details */}
                     <div className="text-left space-y-2 text-gray-700">
-                        <p><strong>Gender:</strong> {gender}</p>
-                        <p><strong>Color:</strong> {color}</p> 
                         <p><strong>Breed:</strong> {breed}</p>
+                        <p><strong>Color:</strong> {color}</p>
                         <p><strong>Age:</strong> {ageDisplay}</p>
-                        
+                        <p><strong>Gender:</strong> {gender}</p>
                         <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
                             (Matched with your pet: **{matchedCatName || 'N/A'}**)
                         </p>
