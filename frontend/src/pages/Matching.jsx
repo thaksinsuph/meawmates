@@ -336,5 +336,5 @@ export default function Matching() {
         Go to Petdreegree (Select Pet)
       </button>
     </div>
-  );
+  );  
 }
