@@ -10,7 +10,7 @@ export const socket = io(API_BASE_URL, {
     path: '/socket.io/', 
     
     // 🎯 2. Transports: สำคัญสำหรับ Production/Render เพื่อให้ WebSocket ทำงาน
-    transports: ['websocket', 'polling'], 
+    transports: ['polling'], 
     
     // 🎯 3. Credentials: ต้องมีเพื่อให้ส่ง Auth Token (Cookie) กลับไปที่ Backend ได้
     withCredentials: true,
