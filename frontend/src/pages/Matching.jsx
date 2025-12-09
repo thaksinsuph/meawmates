@@ -15,11 +15,11 @@ const PetdreegreeSelectionModal = ({
   onClose, 
   onStartPairing,
   selectedPet,
-  // ⭐ รับ Options ที่ส่งมา
-  breedOptions, 
-  colorOptions, 
-  ageOptions, 
-  genderOptions,
+  // ⭐ รับ Options ที่ส่งมา
+  breedOptions, 
+  colorOptions, 
+  ageOptions, 
+  genderOptions,
 }) => {
   // State สำหรับเก็บเงื่อนไขที่เลือก
   const [breed, setBreed] = useState("Any");
@@ -121,6 +121,23 @@ const PetdreegreeSelectionModal = ({
   );
 };
 
+// ⭐ 1. เพิ่มฟังก์ชันสำหรับกำหนดรูปภาพเพศ
+const getGenderImage = (gender) => {
+    if (gender === "Male") {
+        return { 
+            img: "/images/male.png", 
+            color: "text-blue-600"
+        };
+    }
+    if (gender === "Female") {
+        return { 
+            img: "/images/female.png", // ตรวจสอบว่า path นี้ถูกต้อง
+            color: "text-pink-600"
+        };
+    }
+    return null;
+};
+
 
 export default function Matching() {
   const navigate = useNavigate();
@@ -131,16 +148,16 @@ export default function Matching() {
 
   const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
 
-    const fixImage = (img) => {
-        if (!img) return null;
-        if (img.startsWith("data:")) return img;
-        if (img.startsWith("http")) return img;
-        if (img.startsWith("/images/")) return img;
-        return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
-    };
+    const fixImage = (img) => {
+        if (!img) return null;
+        if (img.startsWith("data:")) return img;
+        if (img.startsWith("http")) return img;
+        if (img.startsWith("/images/")) return img;
+        return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
+    };
 
-    const isEmptyPet = (pet) =>
-        !pet || (!pet.name && !pet.breed && !pet.color && !pet.age && !pet.image);
+    const isEmptyPet = (pet) =>
+        !pet || (!pet.name && !pet.breed && !pet.color && !pet.age && !pet.image);
 
   /* ------------------ LOAD PETS (4 slots) ------------------ */
   const loadAllPets = async () => {
@@ -165,47 +182,47 @@ export default function Matching() {
     loadAllPets();
   }, []);
 
-    const handleSelectSlot = (pet, index) => {
-        if (isEmptyPet(pet)) {
-            alert("No cat saved in this slot. Please manage your pets first.");
-            setSelectedPet(null);
-            return;
-        }
-        setSelectedPet({ ...pet, slot: index + 1 });
-    };
+    const handleSelectSlot = (pet, index) => {
+        if (isEmptyPet(pet)) {
+            alert("No cat saved in this slot. Please manage your pets first.");
+            setSelectedPet(null);
+            return;
+        }
+        setSelectedPet({ ...pet, slot: index + 1 });
+    };
 
-    const handleOpenCriteriaModal = () => {
-        if (!selectedPet || isEmptyPet(selectedPet)) {
-            alert("Please select a cat from the channels above before defining Petdreegree criteria.");
-            return;
-        }
-        setIsCriteriaModalOpen(true);
-    };
+    const handleOpenCriteriaModal = () => {
+        if (!selectedPet || isEmptyPet(selectedPet)) {
+            alert("Please select a cat from the channels above before defining Petdreegree criteria.");
+            return;
+        }
+        setIsCriteriaModalOpen(true);
+    };
 
-    const handleStartPairing = (pet, criteria) => {
-        const dataToSave = {
-            pet: {
-                slot: pet.slot,
-                name: pet.name,
-                breed: pet.breed,
-                color: pet.color,
-                age: pet.age,
-                gender: pet.gender,
-            },
-            criteria: criteria
-        };
-        localStorage.setItem("matchingData", JSON.stringify(dataToSave));
-        setIsCriteriaModalOpen(false);
-        navigate("/matching/swipe");
-    };
+    const handleStartPairing = (pet, criteria) => {
+        const dataToSave = {
+            pet: {
+                slot: pet.slot,
+                name: pet.name,
+                breed: pet.breed,
+                color: pet.color,
+                age: pet.age,
+                gender: pet.gender,
+            },
+            criteria: criteria
+        };
+        localStorage.setItem("matchingData", JSON.stringify(dataToSave));
+        setIsCriteriaModalOpen(false);
+        navigate("/matching/swipe");
+    };
 
-    const handleManagePet = () => {
-        navigate("/manage-pet");
-    };
-    
-    // ⭐ 2. สร้าง Array สำหรับ Age และ Gender ภายใน Matching component
-    const localAgeOptions = [ "Any", "0-1", "1-3", "3-7", "7+" ];
-    const localGenderOptions = [ "Any", "Male", "Female" ];
+    const handleManagePet = () => {
+        navigate("/manage-pet");
+    };
+    
+    // ⭐ 2. สร้าง Array สำหรับ Age และ Gender ภายใน Matching component
+    const localAgeOptions = [ "Any", "0-1", "1-3", "3-7", "7+" ];
+    const localGenderOptions = [ "Any", "Male", "Female" ];
 
 
   /* ============================================================
@@ -215,18 +232,17 @@ export default function Matching() {
     <div className="w-full flex flex-col items-center py-12 px-4 gap-12">
       
       {/* ------------------ Modal Component ------------------ */}
-{/* ⭐ 3. ส่ง Options ที่ Import มาให้ Modal (Comment อยู่ด้านบน Tag) */} 
 <PetdreegreeSelectionModal 
-    isOpen={isCriteriaModalOpen}
-    onClose={() => setIsCriteriaModalOpen(false)}
-    onStartPairing={handleStartPairing}
-    selectedPet={selectedPet}
-    
-    // ✅ โค้ด Prop ที่ถูกต้อง
-    breedOptions={["Any", ...Object.keys(BREEDS)]} 
-    colorOptions={["Any", ...Object.keys(CAT_COLORS)]} 
-    ageOptions={localAgeOptions}
-    genderOptions={localGenderOptions}
+    isOpen={isCriteriaModalOpen}
+    onClose={() => setIsCriteriaModalOpen(false)}
+    onStartPairing={handleStartPairing}
+    selectedPet={selectedPet}
+    
+    // ✅ โค้ด Prop ที่ถูกต้อง
+    breedOptions={["Any", ...Object.keys(BREEDS)]} 
+    colorOptions={["Any", ...Object.keys(CAT_COLORS)]} 
+    ageOptions={localAgeOptions}
+    genderOptions={localGenderOptions}
 />
 
       {/* ------------------ MANAGE PET BUTTON SECTION ------------------ */}
@@ -261,6 +277,7 @@ export default function Matching() {
         {pets.map((pet, index) => {
           const empty = isEmptyPet(pet);
           const isSelected = selectedPet?.slot === index + 1;
+          const genderData = pet?.gender ? getGenderImage(pet.gender) : null; // ⭐ ดึงข้อมูลเพศ
 
           return (
             <div
@@ -297,17 +314,30 @@ export default function Matching() {
                 Channel {index + 1}
               </p>
 
-              {/* DETAILS */}
+              {/* DETAILS ที่แก้ไขเฉพาะ Gender */}
               <div className="text-sm text-gray-600 leading-6 mt-2 space-y-1">
                 <p><strong>Name:</strong> {pet?.name || "—"}</p>
                 <p><strong>Breed:</strong> {pet?.breed || "—"}</p>
                 <p><strong>Color:</strong> {pet?.color || "—"}</p>
                 <p><strong>Age:</strong> {pet?.age ? `${pet.age} yrs` : "—"}</p>
-                <p>
-                  <strong>Gender:</strong> 
+                <p className="flex items-center gap-1">
+                  <strong>
+                        {/* ⭐ แสดงรูปภาพ Gender */}
+                        {genderData ? (
+                            <img 
+                                src={genderData.img} 
+                                className="w-4 h-4 inline-block align-middle" 
+                                alt={genderData.label || 'Gender Icon'} 
+                            />
+                        ) : (
+                             // Icon default หรือเว้นว่าง
+                            <span className="w-4 h-4 inline-block align-middle"></span> 
+                        )} 
+                        Gender:
+                    </strong> 
                   {pet?.gender ? (
-                    <span className={pet.gender === 'Male' ? 'text-blue-600' : 'text-pink-600'}>
-                      {pet.gender} {pet.gender === 'Male' ? '♂️' : '♀️'}
+                    <span className={genderData?.color || 'text-gray-600'}>
+                      {pet.gender}
                     </span>
                   ) : '—'}
                 </p>
@@ -317,7 +347,7 @@ export default function Matching() {
         })}
       </div>
 
-      {/* NEXT BUTTON (เปิด Modal) */}
+      {/* NEXT BUTTON (โค้ดเดิม) */}
       <button
         onClick={handleOpenCriteriaModal} 
         disabled={!selectedPet || isEmptyPet(selectedPet)}
