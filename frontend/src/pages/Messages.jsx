@@ -33,13 +33,20 @@ const ImageModal = ({ src, onClose }) => {
 };
 
 // =================================================================
-// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (UPDATED!)
+// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (FINAL FIX!)
 // =================================================================
 const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
     if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
 
     const { cats, selectedIndex, matchedCatName } = modalState;
     const cat = cats[selectedIndex];
+
+    // ⭐ แก้ไข: เน้นใช้ชื่อ Field ตัวพิมพ์เล็กตามที่ยืนยันว่าถูกต้อง
+    const gender = cat.gender || '—'; 
+    const color = cat.color || '—';
+    const breed = cat.breed || '—';
+    const age = cat.age || null;
+    const ageDisplay = age ? `${age} yrs` : '—';
 
     return (
         <div 
@@ -53,7 +60,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
                 <div className="text-center">
                     <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
                         {cat.name} 
-                        <span className="text-xl align-top ml-2"></span>
+                        <span className="text-xl align-top ml-2">🐾</span>
                     </h2>
                     
                     {/* Cat Selector (ถ้ามีหลายตัว) */}
@@ -84,14 +91,13 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
 
                     {/* Cat Details */}
                     <div className="text-left space-y-2 text-gray-700">
-                        {/* Gender and Color ขึ้นก่อน */}
-                        <p><strong>Gender:</strong> {cat.gender || '—'}</p>
-                        <p><strong>Color:</strong> {cat.color || '—'}</p> 
-                        <p><strong>Breed:</strong> {cat.breed || '—'}</p>
-                        <p><strong>Age:</strong> {cat.age ? `${cat.age} yrs` : '—'}</p>
+                        <p><strong>Gender:</strong> {gender}</p>
+                        <p><strong>Color:</strong> {color}</p> 
+                        <p><strong>Breed:</strong> {breed}</p>
+                        <p><strong>Age:</strong> {ageDisplay}</p>
                         
                         <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
-                            
+                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
                         </p>
                     </div>
 
@@ -125,7 +131,7 @@ export default function Messages() {
     const openImageModal = (src) => setImageModal(src);
     const closeImageModal = () => setImageModal(null);
 
-    // ⭐ State สำหรับ Cat Profile Modal (แสดงข้อมูลแมวที่ Match) (UPDATED!)
+    // ⭐ State สำหรับ Cat Profile Modal (แสดงข้อมูลแมวที่ Match) 
     const [catProfileModal, setCatProfileModal] = useState({
         open: false,
         cats: [],
