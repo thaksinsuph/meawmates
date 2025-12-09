@@ -45,7 +45,7 @@ router.get("/saved/:userId", auth, async (req, res) => {
 
         // ⭐ คำนวณ Saved Count อย่างถูกต้อง
         const savedCount = await User.countDocuments({ savedPosts: p._id });
-
+  
         return {
           _id: p._id,
           content: p.content,
