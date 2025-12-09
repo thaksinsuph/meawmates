@@ -32,6 +32,56 @@ const ImageModal = ({ src, onClose }) => {
     );
 };
 
+// =================================================================
+// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (NEW!)
+// =================================================================
+const CatProfileModal = ({ cat, onClose }) => {
+    if (!cat) return null;
+
+    return (
+        <div 
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
+            onClick={onClose}
+        >
+            <div 
+                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="text-center">
+                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
+                        {cat.name} 🐾
+                    </h2>
+                    
+                    <img
+                        src={cat.image}
+                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4"
+                        alt={cat.name}
+                    />
+
+                    {/* Cat Details */}
+                    <div className="text-left space-y-2 text-gray-700">
+                        <p><strong>Breed:</strong> {cat.breed || '—'}</p>
+                        <p><strong>Age:</strong> {cat.age ? `${cat.age} yrs` : '—'}</p>
+                        <p><strong>Gender:</strong> {cat.gender || '—'}</p>
+                        <p><strong>Color:</strong> {cat.color || '—'}</p>
+                        <p className="text-sm italic mt-3 text-gray-500">
+                            (Matched with your pet: **{cat.matchedCatName || 'N/A'}**)
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 export default function Messages() {
     const navigate = useNavigate();
     const { id } = useParams();
@@ -48,6 +98,9 @@ export default function Messages() {
     const [imageModal, setImageModal] = useState(null); 
     const openImageModal = (src) => setImageModal(src);
     const closeImageModal = () => setImageModal(null);
+
+    // ⭐ State สำหรับ Cat Profile Modal (NEW!)
+    const [catProfileModal, setCatProfileModal] = useState(null);
 
     const user = JSON.parse(localStorage.getItem("user"));
 
@@ -96,7 +149,7 @@ export default function Messages() {
         }
     };
     /* ================================
-      MARK ALL AS READ ON PAGE LOAD
+      MARK ALL AS READ ON PAGE LOAD
     ================================= */
     useEffect(() => {
         if (!user?._id) return;
@@ -117,8 +170,8 @@ export default function Messages() {
     }, [user?._id, id]); 
 
     /* ================================
-        SOCKET.IO CONNECTION AND LISTENERS
-     ================================= */
+      SOCKET.IO CONNECTION AND LISTENERS
+      ================================= */
     useEffect(() => {
         if (!user?._id) return;
         socket.emit('join', user._id); 
@@ -153,9 +206,26 @@ export default function Messages() {
              chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
         });
     }, [messages]);
+
+    // ⭐ Handler สำหรับเปิด Cat Profile Modal (NEW!)
+    const handleOpenCatProfile = () => {
+        if (!selected || !selected.cats || selected.cats.length === 0) return;
+        
+        // เราจะเลือกแมวตัวแรกที่ Match ของคู่สนทนามาแสดงใน Modal
+        const catToShow = selected.cats[0]; 
+
+        // สมมติว่าแมวของเราที่ใช้ Match คือแมวตัวแรกใน matches (อาจจะต้องปรับตาม API จริง)
+        const myCat = user.cats?.find(c => c.slot === selected.myCatSlot) || { name: 'Your Pet' };
+
+        setCatProfileModal({
+            ...catToShow,
+            matchedCatName: myCat.name 
+        });
+    };
+
     /* ================================
-        TIME FORMAT & GROUPING (unchanged)
-     ================================= */
+      TIME FORMAT & GROUPING (unchanged)
+      ================================= */
     const formatTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     const formatDateHeader = (ts) => {
@@ -184,8 +254,8 @@ export default function Messages() {
     };
 
     /* ================================
-        SEND MESSAGE (unchanged)
-     ================================= */
+      SEND MESSAGE (unchanged)
+      ================================= */
     const sendText = async (e) => {
         e.preventDefault();
         if (!input.trim() || !selected) return;
@@ -226,8 +296,8 @@ export default function Messages() {
     };
 
     /* ================================
-        SORT CHATS (unchanged)
-     ================================= */
+      SORT CHATS (unchanged)
+      ================================= */
     const sortedChats = matches
         .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity))
         .map(m => {
@@ -239,15 +309,15 @@ export default function Messages() {
         .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
 
     /* ================================
-        UI
-     ================================= */
+      UI
+      ================================= */
     return (
         <section className="max-w-6xl mx-auto px-4 py-6">
             <div className="flex min-h-[70vh] max-h-[85vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
 
                 {/* -------------------------------------
-                             SIDEBAR (unchanged)
-                         -------------------------------------- */}
+                      SIDEBAR (unchanged)
+                    -------------------------------------- */}
                 <aside className="w-[280px] border-r bg-pink-50 flex flex-col">
                     <div className="p-4 border-b bg-white font-semibold text-slate-800 shadow-sm">
                         Messages
@@ -287,6 +357,7 @@ export default function Messages() {
                                         <img
                                             src={cat.cats[0]?.image}
                                             className="w-11 h-11 rounded-full object-cover shadow-sm"
+                                            alt={cat.cats[0]?.name}
                                         />
                                         <div>
                                             <p className={`font-medium text-sm ${isUnread ? "text-pink-600" : ""}`}>
@@ -314,19 +385,23 @@ export default function Messages() {
                 </aside>
 
                 {/* -------------------------------------
-                             CHAT AREA
-                         -------------------------------------- */}
+                      CHAT AREA
+                    -------------------------------------- */}
                 <main className="flex-1 flex flex-col bg-gradient-to-b from-white to-pink-50">
                     {selected ? (
                         <>
-                            {/* HEADER (unchanged) */}
-                            <div className="border-b bg-white p-4 flex items-center gap-4 shadow-sm">
+                            {/* ⭐ HEADER (Clickable to open Cat Profile Modal) ⭐ */}
+                            <div 
+                                className="border-b bg-white p-4 flex items-center gap-4 shadow-sm cursor-pointer hover:bg-pink-50 transition"
+                                onClick={handleOpenCatProfile} // ⭐ Added onClick Handler
+                            >
                                 <div className="flex -space-x-3">
                                     {selected.cats?.slice(0, 3).map((cat, idx) => (
                                         <img
                                             key={idx}
                                             src={cat.image}
                                             className="w-11 h-11 rounded-full border-2 border-white shadow"
+                                            alt={cat.name}
                                         />
                                     ))}
 
@@ -345,7 +420,7 @@ export default function Messages() {
                                 </div>
                             </div>
 
-                            {/* PINNED MESSAGES */}
+                            {/* PINNED MESSAGES (unchanged) */}
                             {messages.some((m) => m.pinned) && (
                                 <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
                                     <p className="text-xs text-yellow-700 font-semibold mb-2">
@@ -365,6 +440,7 @@ export default function Messages() {
                                                         src={msg.image}
                                                         className="rounded-xl mb-2 max-h-40 cursor-pointer"
                                                         onClick={() => openImageModal(msg.image)} 
+                                                        alt="Pinned message image"
                                                     />
                                                 )}
 
@@ -377,8 +453,8 @@ export default function Messages() {
                                 </div>
                             )}
 
-                            {/* NORMAL MESSAGES */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4"> {/* ⭐ overflow-y-auto ทำให้เกิด Scroll ได้ */}
+                            {/* NORMAL MESSAGES (unchanged) */}
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4"> 
                                 {Object.entries(
                                     groupByDate(messages.filter((m) => !m.pinned))
                                 ).map(([day, msgs]) => (
@@ -411,6 +487,7 @@ export default function Messages() {
                                                             src={msg.image}
                                                             className="rounded-xl mb-2 max-h-48 cursor-pointer"
                                                             onClick={() => openImageModal(msg.image)} // ⭐ Added onClick
+                                                            alt="Message image"
                                                         />
                                                     )}
 
@@ -523,6 +600,9 @@ export default function Messages() {
             
             {/* Image Modal Component ถูกเรียกใช้ที่นี่ */}
             <ImageModal src={imageModal} onClose={closeImageModal} />
+
+            {/* ⭐ Cat Profile Modal Component ถูกเรียกใช้ที่นี่ (NEW!) */}
+            <CatProfileModal cat={catProfileModal} onClose={() => setCatProfileModal(null)} />
             
         </section>
     );
