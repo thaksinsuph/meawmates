@@ -362,7 +362,6 @@ export default function SwipeMatch() {
                     : ''; 
 
                 return (
-                    // ⭐ กล่องหลักที่คลุมข้อมูลทั้งหมด (แก้: ลบ JSX Comment ออกจากนอกสุด)
                     <div 
                         key={target._id} 
                         className={`
@@ -371,72 +370,81 @@ export default function SwipeMatch() {
                             ${animationClasses}
                         `}
                     >
+                        {/* -------------------- ROW 1: INFO & IMAGE -------------------- */}
                         <div className="flex items-start gap-6">
 
-                            {/* Image & Score (รวมกัน) */}
+                            {/* Image (คลิกได้) */}
                             <div className="flex-shrink-0 relative">
-                                {/* ⭐ Image - คลิกได้เพื่อเปิด Modal ดูรูปใหญ่ */}
                                 <img 
                                     src={target.image} 
                                     className="w-28 h-28 rounded-xl object-cover shadow-lg border-2 border-pink-100 cursor-pointer hover:opacity-80 transition"
                                     alt={target.name}
                                     onClick={() => handleOpenImage(target)}
                                 />
+                            </div>
 
-                                {/* ⭐ Score Circle Badge */}
-                                <div className="absolute -top-3 -right-3 w-14 h-14 rounded-full bg-pink-500 border-3 border-white flex flex-col items-center justify-center font-black text-xs text-white shadow-lg transform rotate-6">
+                            {/* Info & Details (ขยายเต็มพื้นที่ที่เหลือ) */}
+                            <div className="flex-1 flex flex-col justify-start gap-2">
+                                <h2 className="font-extrabold text-2xl text-gray-800">
+                                    {target.name}
+                                </h2>
+                                <div className="text-sm text-gray-700 grid grid-cols-2 gap-x-4 gap-y-1">
+                                    <p className="font-medium">
+                                        <strong>Breed:</strong> {target.breed || "—"}
+                                    </p>
+                                    <p className="font-medium">
+                                        <strong>Age:</strong> {target.age ? `${target.age} yrs` : "—"}
+                                    </p>
+                                    <p className="font-medium">
+                                        <strong>Color:</strong> {target.color || "—"}
+                                    </p>
+                                    <p className="flex items-center gap-1">
+                                        <strong>Gender:</strong>
+                                        {targetGender.img && (
+                                            <img src={targetGender.img} className="w-4 h-4 inline-block align-middle ml-1" alt={targetGender.label} />
+                                        )}
+                                        <span className={`font-semibold ${targetGender.color}`}>
+                                            {targetGender.label}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* -------------------- ROW 2: SCORES & ACTIONS -------------------- */}
+                        {/* จัด Score วงกลม 2 แบบ และปุ่ม Actions ไว้ใน Row เดียวกัน */}
+                        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                            
+                            <div className="flex items-center gap-4">
+                                {/* ⭐ 1. Score Circle Badge (วงเล็ก) */}
+                                <div className="w-14 h-14 rounded-full bg-pink-500 border-3 border-white flex flex-col items-center justify-center font-black text-xs text-white shadow-lg flex-shrink-0">
                                     <span className="text-[10px] font-bold tracking-tight">SCORE</span>
                                     <span className="text-lg leading-none">{score}%</span>
                                 </div>
+
+                                {/* ⭐ 2. Match Score Ring (วงใหญ่) */}
+                                <div className="flex items-center gap-2">
+                                    <div className="w-16 h-16 rounded-full bg-pink-50 border-2 border-pink-300 flex items-center justify-center font-extrabold text-pink-600 text-lg flex-shrink-0">
+                                        {score}%
+                                    </div>
+                                    <span className="text-gray-600 text-sm font-semibold">Match Score</span>
+                                </div>
                             </div>
 
-                            {/* Info & Actions */}
-                            <div className="flex-1 flex flex-col justify-between gap-3">
-                                
-                                {/* Details */}
-                                <div>
-                                    <h2 className="font-extrabold text-2xl text-gray-800 mb-1">
-                                        {target.name}
-                                    </h2>
-                                    <div className="text-sm text-gray-700 grid grid-cols-2 gap-x-4 gap-y-1">
-                                        {/* Row 1 */}
-                                        <p className="font-medium">
-                                            <strong>Breed:</strong> {target.breed || "—"}
-                                        </p>
-                                        <p className="font-medium">
-                                            <strong>Age:</strong> {target.age ? `${target.age} yrs` : "—"}
-                                        </p>
-                                        {/* Row 2 */}
-                                        <p className="font-medium">
-                                            <strong>Color:</strong> {target.color || "—"}
-                                        </p>
-                                        <p className="flex items-center gap-1">
-                                            <strong>Gender:</strong>
-                                            {targetGender.img && (
-                                                <img src={targetGender.img} className="w-4 h-4 inline-block align-middle ml-1" alt={targetGender.label} />
-                                            )}
-                                            <span className={`font-semibold ${targetGender.color}`}>
-                                                {targetGender.label}
-                                            </span>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex gap-4 mt-2">
-                                    <button
-                                        onClick={() => handleSwipe(target, "right")}
-                                        className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-bold shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2"
-                                    >
-                                        Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleSwipe(target, "left")}
-                                        className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-bold shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2"
-                                    >
-                                        Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
-                                    </button>
-                                </div>
+                            {/* Actions Buttons */}
+                            <div className="flex gap-3 flex-1 min-w-[200px] md:min-w-0 md:flex-none">
+                                <button
+                                    onClick={() => handleSwipe(target, "right")}
+                                    className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-bold shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2"
+                                >
+                                    Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
+                                </button>
+                                <button
+                                    onClick={() => handleSwipe(target, "left")}
+                                    className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-bold shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2"
+                                >
+                                    Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
+                                </button>
                             </div>
                         </div>
                     </div>
