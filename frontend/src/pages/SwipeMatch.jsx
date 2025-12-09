@@ -321,45 +321,60 @@ export default function SwipeMatch() {
                 return (
                   <div 
                     key={target._id} 
-                    className={`
-                          bg-white rounded-3xl shadow-lg hover:shadow-pink-300/50 p-5 flex flex-col md:flex-row gap-5 items-center 
-                          transition-all duration-300 ease-in-out 
-                          ${animationClasses}
-                        `}
+                    cclassName={`
+                        flex items-start gap-4 bg-white shadow-lg border-l-4 border-pink-500/50 p-4 rounded-xl 
+                        hover:shadow-xl transition-all duration-300 ease-in-out
+                        ${animationClasses}
+                        `}
                   >
                     {/* Image */}
                     <div className="flex-shrink-0 w-full md:w-32 h-32 overflow-hidden rounded-xl shadow-md border-2 border-pink-100">
                         <img 
-                            src={target.image} 
-                            alt={target.name} 
-                            className="w-full h-full object-cover"
+                        src={target.image} 
+                        className="w-24 h-24 rounded-lg object-cover flex-shrink-0 shadow-inner"
+                        alt={target.name}
                         />
                     </div>
 
                     {/* Info */}
-                    <div className="flex-grow text-center md:text-left">
-                        <div className="flex items-center gap-2 justify-center md:justify-start mb-1">
-                            <h3 className="text-2xl font-bold text-gray-800">
-                                {target.name}
-                            </h3>
-                            {/* Gender Badge */}
-                            <div className={`flex items-center text-sm font-medium ${targetGender.color}`}>
-                                <img src={targetGender.img} className="w-4 h-4 mr-1" alt={targetGender.label} />
-                                {targetGender.label}
-                            </div>
+                    <div className="flex-1">
+                        <h2 className="font-extrabold text-xl text-gray-800 mb-1">
+                            {target.name}
+                        </h2>
+                        
+                        {/* Details List (กระชับ) */}
+                        <div className="text-sm text-gray-700 flex flex-wrap gap-x-4 gap-y-1 mb-2">
+                            {/* Breed */}
+                            <p className="font-medium">
+                                <strong>Breed:</strong> {target.breed || "—"}
+                            </p>
+                            {/* Color */}
+                            <p className="font-medium">
+                                <strong>Color:</strong> {target.color || "—"}
+                            </p>
+                            {/* Age */}
+                            <p className="font-medium">
+                                <strong>Age:</strong> {target.age ? `${target.age} yrs` : "—"}
+                            </p>
                         </div>
                         
-                        <p className="text-gray-600 text-sm mb-3">
-                            {target.breed} • {target.age} yrs • {target.color}
+                        {/* Gender + Match Score (รวมในบรรทัดเดียวกัน) */}
+                        <p className="flex items-center gap-3 mt-1">
+                            <strong>Gender:
+                                {targetGender.img && (
+                                    <img src={targetGender.img} className="w-4 h-4 inline-block align-middle ml-1" alt={targetGender.label} />
+                                  )}
+                            </strong> 
+                            <span className={`font-semibold ${targetGender.color}`}>
+                                {targetGender.label}
+                            </span>
+                                {/* Match Score Badge */}
+                            <span className="ml-4 px-2 py-0.5 rounded-full text-xs font-bold"
+                                style={{ backgroundColor: '#FBCFE8', color: '#DB2777' }} 
+                            >
+                                MATCH: {score}%
+                            </span>
                         </p>
-
-                        {/* Match Score Ring */}
-                        <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-pink-50 border-2 border-pink-300 flex items-center justify-center font-extrabold text-pink-600 text-lg mx-auto md:mx-0">
-                                {score}%
-                            </div>
-                            <span className="text-gray-600 text-sm font-medium hidden md:block">Match Score</span>
-                        </div>
                     </div>
 
                     {/* Actions */}
