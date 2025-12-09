@@ -8,6 +8,10 @@ export default function SwipeMatch() {
     const [matchingData, setMatchingData] = useState(null);
     const [targets, setTargets] = useState([]); 
     const [loading, setLoading] = useState(true);
+    
+    // ⭐ NEW STATE: สำหรับการดูรูปภาพเต็ม (Gallery Modal)
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [currentImage, setCurrentImage] = useState(null); 
 
     // ⭐ NEW STATE: สำหรับ Match Modal
     const [matchModal, setMatchModal] = useState({
@@ -121,6 +125,13 @@ export default function SwipeMatch() {
         return { img: "/images/unknown.png", color: "text-gray-500", label: "Unknown" };
     };
 
+    // ⭐ NEW: Handle Image Click
+    const handleImageClick = (imageSrc) => {
+        setCurrentImage(imageSrc);
+        setIsImageModalOpen(true);
+    };
+
+
     // ---------------------------------------------------------
     
     const loadTargetCats = async (criteria) => {
@@ -216,6 +227,34 @@ export default function SwipeMatch() {
     const handleContinueMatching = () => {
         setMatchModal({ open: false, cat: null, score: 0, ownerId: null });
     };
+    
+    // ⭐ Image Modal Component
+    const ImageModal = ({ imageSrc, onClose }) => {
+        if (!imageSrc) return null;
+        return (
+            <div 
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+                onClick={onClose}
+            >
+                <div 
+                    className="max-w-4xl max-h-[90vh] overflow-hidden rounded-lg shadow-2xl"
+                    onClick={(e) => e.stopPropagation()} // ป้องกันการปิด Modal เมื่อคลิกที่รูป
+                >
+                    <img 
+                        src={imageSrc} 
+                        alt="Full size cat image" 
+                        className="w-full h-full object-contain"
+                    />
+                    <button 
+                        onClick={onClose}
+                        className="absolute top-4 right-4 bg-white/30 text-white p-2 rounded-full text-lg font-bold hover:bg-white/50 transition"
+                    >
+                        ❌
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
 
     /* ============================================================
@@ -226,6 +265,12 @@ export default function SwipeMatch() {
       <div className="min-h-screen w-full flex flex-col items-center py-10 px-4 gap-8 
              bg-gradient-to-b from-pink-50 to-purple-50">
           
+          {/* ⭐ FULL SIZE IMAGE MODAL */}
+          <ImageModal 
+              imageSrc={currentImage} 
+              onClose={() => setIsImageModalOpen(false)}
+          />
+          
           {/* ⭐ MATCH MODAL UI */}
           {matchModal.open && (
               <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -322,12 +367,17 @@ export default function SwipeMatch() {
                         ${animationClasses}
                         `}
                   >
-                    {/* Image */}
-                    <img 
-                        src={target.image} 
-                        className="w-24 h-24 rounded-lg object-cover flex-shrink-0 shadow-inner"
-                        alt={target.name}
-                    />
+                    {/* Image (clickable) */}
+                    <button 
+                        onClick={() => handleImageClick(target.image)}
+                        className="flex-shrink-0 focus:outline-none"
+                    >
+                        <img 
+                            src={target.image} 
+                            className="w-24 h-24 rounded-lg object-cover flex-shrink-0 shadow-inner"
+                            alt={target.name}
+                        />
+                    </button>
 
                     {/* Info */}
                     <div className="flex-1">
@@ -360,34 +410,30 @@ export default function SwipeMatch() {
                                 <span className={`font-semibold ${targetGender.color}`}>
                                     {targetGender.label}
                                 </span>
-                                {/* Match Score Badge */}
-                                <span className="ml-4 px-2 py-0.5 rounded-full text-xs font-bold"
-                                    style={{ backgroundColor: '#FBCFE8', color: '#DB2777' }} 
-                                >
-                                    MATCH: {score}%
-                                </span>
                             </p>
                         </div>
                     </div>
 
-                    {/* Actions ที่ถูกแก้ไข */}
-                    <div className="flex flex-col gap-2 flex-shrink-0"> 
-                        <div className="flex gap-2">
-                          <button
-                              onClick={() => handleSwipe(target, "right")}
-                                // ใช้ flex-1, px/py และเอา w-12 h-12 ออก
-                              className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-semibold shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2"
-                          >
-                              Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
-                          </button>
-                          <button
-                              onClick={() => handleSwipe(target, "left")}
-                                // ใช้ flex-1, px/py และเอา w-12 h-12 ออก
-                              className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-semibold shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2"
-                          >
-                              Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
-                          </button>
+                    {/* Actions and Score (จัดใหม่) */}
+                    <div className="flex flex-col gap-2 items-center flex-shrink-0 md:w-32">
+                        {/* Score Circle (วงกลม) */}
+                        <div className="w-16 h-16 rounded-full bg-pink-100 border-2 border-pink-400 flex items-center justify-center font-extrabold text-pink-700 text-lg shadow-md mb-2">
+                             {score}%
                         </div>
+
+                        {/* Action Buttons (ปุ่มยาว) */}
+                        <button
+                            onClick={() => handleSwipe(target, "right")}
+                            className="w-full bg-pink-500 text-white py-2 rounded-xl font-semibold shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2"
+                        >
+                            Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
+                        </button>
+                        <button
+                            onClick={() => handleSwipe(target, "left")}
+                            className="w-full bg-gray-300 text-gray-700 py-2 rounded-xl font-semibold shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2"
+                        >
+                            Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
+                        </button>
                     </div>
                   </div>
                 );
