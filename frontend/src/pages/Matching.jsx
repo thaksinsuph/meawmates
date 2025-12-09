@@ -292,7 +292,7 @@ export default function Matching() {
               style={{ minHeight: "380px" }}
             >
               {isSelected && (
-                <div className="absolute top-2 right-4 text-pink-500 text-xl font-extrabold">✅ Selected</div>
+                <div className="absolute top-2 right-4 text-pink-500 text-xl font-extrabold"></div>
               )}
 
               {/* CAT IMAGE */}
