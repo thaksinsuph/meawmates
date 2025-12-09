@@ -20,8 +20,8 @@ const FRONTEND_ORIGINS = [
   "https://meawmates.vercel.app",    
   
   // Regex: รองรับ Preview URL ทั้งแบบมีขีดและไม่มีขีด
-  /^https:\/\/meaw-mates-.*\.vercel\.app$/, 
-  /^https:\/\/meawmates-.*\.vercel\.app$/,  
+  /^https:\/\/(?:meaw-mates|meawmates)-.*\.vercel\.app$/, 
+
 ];
 
 console.log("🔍 Allowed Origins =", FRONTEND_ORIGINS);
