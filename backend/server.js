@@ -21,6 +21,7 @@ const FRONTEND_ORIGINS = [
   
   // Regex: รองรับ Preview URL ทั้งแบบมีขีดและไม่มีขีด
   /^https:\/\/(?:meaw-mates|meawmates)-.*\.vercel\.app$/, 
+  /^https:\/\/(?:meaw-mates|meawmates)-.*-projects\.vercel\.app$/,
 
 ];
 
@@ -59,6 +60,7 @@ const io = new Server(server, {
                 callback(new Error("CORS Blocked"));
             }
         },
+        
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     },
