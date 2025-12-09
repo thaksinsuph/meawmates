@@ -12,9 +12,9 @@ export default function SwipeMatch() {
     // ⭐ NEW STATE: สำหรับ Match Modal
     const [matchModal, setMatchModal] = useState({
         open: false,
-        cat: null, 
+        cat: null, // แมวที่เรา Match ด้วย
         score: 0,
-        ownerId: null, 
+        ownerId: null, // ID เจ้าของแมวเป้าหมาย (สำหรับ Go to Chat)
     });
     // ⭐ NEW STATE: สำหรับ Animation
     const [animatedTargets, setAnimatedTargets] = useState({}); 
@@ -116,12 +116,8 @@ export default function SwipeMatch() {
     };
 
     const getGenderImage = (gender) => {
-        if (gender === "Male") {
-            return { img: "/images/male.png", color: "text-blue-500", label: "Male" };
-        }
-        if (gender === "Female") {
-            return { img: "/images/female.png", color: "text-pink-500", label: "Female" }; 
-        }
+        if (gender === "Male") { return { img: "/images/male.png", color: "text-blue-500", label: "Male" }; }
+        if (gender === "Female") { return { img: "/images/female.png", color: "text-pink-500", label: "Female" }; }
         return { img: "/images/unknown.png", color: "text-gray-500", label: "Unknown" };
     };
 
@@ -219,12 +215,11 @@ export default function SwipeMatch() {
 
     const handleContinueMatching = () => {
         setMatchModal({ open: false, cat: null, score: 0, ownerId: null });
-        // (ไม่ต้องทำอะไรเพิ่ม เพราะ Item ที่ Match ถูกลบออกไปแล้วใน handleSwipe)
     };
 
 
     /* ============================================================
-      UI: LIST VIEW + MATCH MODAL (Final Version)
+      UI: LIST VIEW + MATCH MODAL
     ============================================================ */
 
     return (
@@ -340,19 +335,11 @@ export default function SwipeMatch() {
                             {target.name}
                         </h2>
                         
-                        {/* Details List (กระชับ) */}
+                        {/* Details List (กระชับและรวมในบรรทัดเดียว) */}
                         <div className="text-sm text-gray-700 flex flex-wrap gap-x-4 gap-y-1 mb-2">
-                            {/* Breed */}
-                            <p className="font-medium">
-                                <strong>Breed:</strong> {target.breed || "—"}
-                            </p>
-                            {/* Color */}
-                            <p className="font-medium">
-                                <strong>Color:</strong> {target.color || "—"}
-                            </p>
-                            {/* Age */}
-                            <p className="font-medium">
-                                <strong>Age:</strong> {target.age ? `${target.age} yrs` : "—"}
+                            {/* Combined Breed / Age / Color */}
+                            <p className="font-medium text-gray-600">
+                                {target.breed || "—"} • {target.age ? `${target.age} yrs` : "—"} • {target.color || "—"}
                             </p>
                         </div>
                         
