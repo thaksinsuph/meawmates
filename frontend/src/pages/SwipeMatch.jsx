@@ -371,25 +371,25 @@ export default function SwipeMatch() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-4 flex-shrink-0 w-full md:w-auto">
-                        <button
-                            onClick={() => handleSwipe(target, "right")}
-                            className="w-12 h-12 rounded-full bg-pink-500 text-white shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center"
-                        >
-                            Like<img src="/images/Likematch.png" className="w-6 h-6 object-contain" alt="Like" />
-                        </button>
-                        <button
-                            onClick={() => handleSwipe(target, "left")}
-                            className="w-12 h-12 rounded-full bg-gray-300 text-gray-700 shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center"
-                        >
-                            Dislike<img src="/images/dislike.png" className="w-6 h-6 object-contain" alt="Nope" />
-                        </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-      </div>
-    );
+                    <div className="flex gap-4 flex-shrink-0 w-full md:w-auto">
+                        <button
+                            onClick={() => handleSwipe(target, "right")}
+                            className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-semibold shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2"
+                        >
+                            Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
+                        </button>
+                        <button
+                            onClick={() => handleSwipe(target, "left")}
+                            className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-semibold shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2"
+                        >
+                            Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
+                        </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+      </div>
+    );
 }
