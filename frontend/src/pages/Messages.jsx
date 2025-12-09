@@ -33,10 +33,13 @@ const ImageModal = ({ src, onClose }) => {
 };
 
 // =================================================================
-// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (NEW!)
+// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (UPDATED!)
 // =================================================================
-const CatProfileModal = ({ cat, onClose }) => {
-    if (!cat) return null;
+const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
+    if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
+
+    const { cats, selectedIndex, matchedCatName } = modalState;
+    const cat = cats[selectedIndex];
 
     return (
         <div 
@@ -49,8 +52,29 @@ const CatProfileModal = ({ cat, onClose }) => {
             >
                 <div className="text-center">
                     <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
-                        {cat.name} 🐾
+                        {cat.name} 
+                        <span className="text-xl align-top ml-2">🐾</span>
                     </h2>
+                    
+                    {/* Cat Selector (ถ้ามีหลายตัว) */}
+                    {cats.length > 1 && (
+                        <div className="flex justify-center mb-4 space-x-2">
+                            {cats.map((c, index) => (
+                                <button
+                                    key={c._id || index}
+                                    onClick={() => onSelectCat(index)}
+                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
+                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
+                                >
+                                    <img 
+                                        src={c.image} 
+                                        alt={c.name} 
+                                        className="w-full h-full object-cover"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     
                     <img
                         src={cat.image}
@@ -60,12 +84,14 @@ const CatProfileModal = ({ cat, onClose }) => {
 
                     {/* Cat Details */}
                     <div className="text-left space-y-2 text-gray-700">
+                        {/* Gender and Color ขึ้นก่อน */}
+                        <p><strong>Gender:</strong> {cat.gender || '—'}</p>
+                        <p><strong>Color:</strong> {cat.color || '—'}</p> 
                         <p><strong>Breed:</strong> {cat.breed || '—'}</p>
                         <p><strong>Age:</strong> {cat.age ? `${cat.age} yrs` : '—'}</p>
-                        <p><strong>Gender:</strong> {cat.gender || '—'}</p>
-                        <p><strong>Color:</strong> {cat.color || '—'}</p>
-                        <p className="text-sm italic mt-3 text-gray-500">
-                            (Matched with your pet: **{cat.matchedCatName || 'N/A'}**)
+                        
+                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
+                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
                         </p>
                     </div>
 
@@ -94,13 +120,18 @@ export default function Messages() {
     const [pinnedChats, setPinnedChats] = useState([]);
     const chatEndRef = useRef(null);
     
-    // ⭐ State สำหรับ Image Modal
+    // ⭐ State สำหรับ Image Modal (ขยายรูปภาพที่ส่ง)
     const [imageModal, setImageModal] = useState(null); 
     const openImageModal = (src) => setImageModal(src);
     const closeImageModal = () => setImageModal(null);
 
-    // ⭐ State สำหรับ Cat Profile Modal (NEW!)
-    const [catProfileModal, setCatProfileModal] = useState(null);
+    // ⭐ State สำหรับ Cat Profile Modal (แสดงข้อมูลแมวที่ Match) (UPDATED!)
+    const [catProfileModal, setCatProfileModal] = useState({
+        open: false,
+        cats: [],
+        selectedIndex: 0,
+        matchedCatName: null,
+    });
 
     const user = JSON.parse(localStorage.getItem("user"));
 
@@ -207,20 +238,28 @@ export default function Messages() {
         });
     }, [messages]);
 
-    // ⭐ Handler สำหรับเปิด Cat Profile Modal (NEW!)
+    // ⭐ Handler สำหรับเปิด Cat Profile Modal (UPDATED!)
     const handleOpenCatProfile = () => {
         if (!selected || !selected.cats || selected.cats.length === 0) return;
         
-        // เราจะเลือกแมวตัวแรกที่ Match ของคู่สนทนามาแสดงใน Modal
-        const catToShow = selected.cats[0]; 
-
-        // สมมติว่าแมวของเราที่ใช้ Match คือแมวตัวแรกใน matches (อาจจะต้องปรับตาม API จริง)
+        // หาชื่อแมวของเราที่ Match ด้วย
         const myCat = user.cats?.find(c => c.slot === selected.myCatSlot) || { name: 'Your Pet' };
 
+        // สร้างข้อมูล Modal
         setCatProfileModal({
-            ...catToShow,
+            open: true,
+            cats: selected.cats,
+            selectedIndex: 0,
             matchedCatName: myCat.name 
         });
+    };
+
+    const handleSelectCatInModal = (index) => {
+        setCatProfileModal(prev => ({ ...prev, selectedIndex: index }));
+    };
+
+    const handleCloseCatProfile = () => {
+        setCatProfileModal({ open: false, cats: [], selectedIndex: 0, matchedCatName: null });
     };
 
     /* ================================
@@ -602,7 +641,11 @@ export default function Messages() {
             <ImageModal src={imageModal} onClose={closeImageModal} />
 
             {/* ⭐ Cat Profile Modal Component ถูกเรียกใช้ที่นี่ (NEW!) */}
-            <CatProfileModal cat={catProfileModal} onClose={() => setCatProfileModal(null)} />
+            <CatProfileModal 
+                modalState={catProfileModal} 
+                onClose={handleCloseCatProfile} 
+                onSelectCat={handleSelectCatInModal}
+            />
             
         </section>
     );
