@@ -12,9 +12,9 @@ export default function SwipeMatch() {
     // ⭐ NEW STATE: สำหรับ Match Modal
     const [matchModal, setMatchModal] = useState({
         open: false,
-        cat: null, // แมวที่เรา Match ด้วย
+        cat: null, 
         score: 0,
-        ownerId: null, // ID เจ้าของแมวเป้าหมาย (สำหรับ Go to Chat)
+        ownerId: null, 
     });
     // ⭐ NEW STATE: สำหรับ Animation
     const [animatedTargets, setAnimatedTargets] = useState({}); 
@@ -22,8 +22,8 @@ export default function SwipeMatch() {
     // ---------------------------------------------------------
     // Compatibility Engine & Utility Functions
     // ---------------------------------------------------------
-    
-    // Logic Data
+    
+    // Logic Data
     const colorGroups = {
         warm: ["orange", "cream", "brown", "ginger", "gold", "tan"],
         cool: ["gray", "black", "blue", "silver"],
@@ -31,7 +31,7 @@ export default function SwipeMatch() {
         mixed: ["calico", "tabby"],
     };
 
-    // Functions
+    // Functions
     const getColorGroup = (color) => {
         if (!color) return "neutral";
         const c = color.toLowerCase();
@@ -224,7 +224,7 @@ export default function SwipeMatch() {
 
 
     /* ============================================================
-      UI: LIST VIEW + MATCH MODAL (Enhanced Design)
+      UI: LIST VIEW + MATCH MODAL (Final Version)
     ============================================================ */
 
     return (
@@ -321,20 +321,18 @@ export default function SwipeMatch() {
                 return (
                   <div 
                     key={target._id} 
-                    cclassName={`
+                    className={`
                         flex items-start gap-4 bg-white shadow-lg border-l-4 border-pink-500/50 p-4 rounded-xl 
                         hover:shadow-xl transition-all duration-300 ease-in-out
                         ${animationClasses}
                         `}
                   >
                     {/* Image */}
-                    <div className="flex-shrink-0 w-full md:w-32 h-32 overflow-hidden rounded-xl shadow-md border-2 border-pink-100">
-                        <img 
+                    <img 
                         src={target.image} 
                         className="w-24 h-24 rounded-lg object-cover flex-shrink-0 shadow-inner"
                         alt={target.name}
-                        />
-                    </div>
+                    />
 
                     {/* Info */}
                     <div className="flex-1">
@@ -344,15 +342,15 @@ export default function SwipeMatch() {
                         
                         {/* Details List (กระชับ) */}
                         <div className="text-sm text-gray-700 flex flex-wrap gap-x-4 gap-y-1 mb-2">
-                            {/* Breed */}
+                            {/* Breed */}
                             <p className="font-medium">
                                 <strong>Breed:</strong> {target.breed || "—"}
                             </p>
-                            {/* Color */}
+                            {/* Color */}
                             <p className="font-medium">
                                 <strong>Color:</strong> {target.color || "—"}
                             </p>
-                            {/* Age */}
+                            {/* Age */}
                             <p className="font-medium">
                                 <strong>Age:</strong> {target.age ? `${target.age} yrs` : "—"}
                             </p>
@@ -378,19 +376,22 @@ export default function SwipeMatch() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-4 flex-shrink-0 w-full md:w-auto">
-                        <button
-                            onClick={() => handleSwipe(target, "right")}
-                            className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-semibold shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2"
-                        >
-                            Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
-                        </button>
-                        <button
-                            onClick={() => handleSwipe(target, "left")}
-                            className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-semibold shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2"
-                        >
-                            Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
-                        </button>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 mt-2">
+                          <button
+                              onClick={() => handleSwipe(target, "right")}
+                              className="w-12 h-12 rounded-full bg-pink-500 text-white shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center"
+                          >
+                              <img src="/images/Likematch.png" className="w-6 h-6 object-contain" alt="Like" />
+                          </button>
+                          <button
+                              onClick={() => handleSwipe(target, "left")}
+                              className="w-12 h-12 rounded-full bg-gray-300 text-gray-700 shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center"
+                          >
+                              <img src="/images/dislike.png" className="w-6 h-6 object-contain" alt="Nope" />
+                          </button>
+                        </div>
                     </div>
                   </div>
                 );
