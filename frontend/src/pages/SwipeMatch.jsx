@@ -370,26 +370,30 @@ export default function SwipeMatch() {
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-4 flex-shrink-0 w-full md:w-auto">
-                        <button
-                            onClick={() => handleSwipe(target, "right")}
-                            className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-semibold shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2"
-                        >
-                            Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
-                        </button>
-                        <button
-                            onClick={() => handleSwipe(target, "left")}
-                            className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-semibold shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2"
-                        >
-                            Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
-                        </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-      </div>
-    );
+                    {/* Actions ที่ถูกแก้ไข */}
+                    <div className="flex flex-col gap-2 flex-shrink-0"> 
+                        <div className="flex gap-2">
+                          <button
+                              onClick={() => handleSwipe(target, "right")}
+                                // ใช้ flex-1, px/py และเอา w-12 h-12 ออก
+                              className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-semibold shadow-pink-300/50 shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2"
+                          >
+                              Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
+                          </button>
+                          <button
+                              onClick={() => handleSwipe(target, "left")}
+                                // ใช้ flex-1, px/py และเอา w-12 h-12 ออก
+                              className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-semibold shadow-gray-400/50 shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2"
+                          >
+                              Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
+                          </button>
+                        </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+      </div>
+    );
 }
