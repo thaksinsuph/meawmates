@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://meowmates.onrender.com';
 
 export const socket = io(API_BASE_URL, {
-    path: '/socket.io/', 
+     
     
     // ⭐ แก้ไขตรงนี้: ให้ตรงกับ Backend และใช้ WebSocket ก่อน
     transports: ['websocket', 'polling'], // <-- เปลี่ยน
