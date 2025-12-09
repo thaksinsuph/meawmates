@@ -421,7 +421,7 @@ export default function SwipeMatch() {
                                     <span className="text-[12px] font-bold tracking-tight text-gray-500"></span>
                                     <span className="text-xl leading-none">{score}%</span>
                                 </div>
-                                <span className="text-gray-600 text-sm font-semibold">Score</span>
+                                <span className="text-gray-600 text-sm font-semibold">Match Score</span>
                             </div>
 
                             {/* Actions Buttons */}
