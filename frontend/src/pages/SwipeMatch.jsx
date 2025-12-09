@@ -415,12 +415,7 @@ export default function SwipeMatch() {
                         {/* จัด Score วงกลม 2 แบบ และปุ่ม Actions ไว้ใน Row เดียวกัน */}
                         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
                             
-                            <div className="flex items-center gap-4">
-                                {/* ⭐ 1. Score Circle Badge (วงเล็ก) */}
-                                <div className="w-14 h-14 rounded-full bg-pink-500 border-3 border-white flex flex-col items-center justify-center font-black text-xs text-white shadow-lg flex-shrink-0">
-                                    <span className="text-[10px] font-bold tracking-tight">SCORE</span>
-                                    <span className="text-lg leading-none">{score}%</span>
-                                </div>
+                            
 
                                 {/* ⭐ 2. Match Score Ring (วงใหญ่) */}
                                 <div className="flex items-center gap-2">
@@ -447,7 +442,7 @@ export default function SwipeMatch() {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    
                 );
               })
             )}
