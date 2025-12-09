@@ -418,10 +418,10 @@ export default function SwipeMatch() {
                             {/* ⭐ Match Score Ring (วงใหญ่ที่เหลือ) */}
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <div className="w-16 h-16 rounded-full bg-pink-50 border-2 border-pink-300 flex flex-col items-center justify-center font-extrabold text-pink-600 text-lg">
-                                    <span className="text-[12px] font-bold tracking-tight text-gray-500">SCORE</span>
+                                    <span className="text-[12px] font-bold tracking-tight text-gray-500"></span>
                                     <span className="text-xl leading-none">{score}%</span>
                                 </div>
-                                <span className="text-gray-600 text-sm font-semibold">Match Compatibility</span>
+                                <span className="text-gray-600 text-sm font-semibold">Score</span>
                             </div>
 
                             {/* Actions Buttons */}
