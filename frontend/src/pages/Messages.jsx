@@ -53,7 +53,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
                 <div className="text-center">
                     <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
                         {cat.name} 
-                        <span className="text-xl align-top ml-2">🐾</span>
+                        <span className="text-xl align-top ml-2"></span>
                     </h2>
                     
                     {/* Cat Selector (ถ้ามีหลายตัว) */}
@@ -91,7 +91,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
                         <p><strong>Age:</strong> {cat.age ? `${cat.age} yrs` : '—'}</p>
                         
                         <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
-                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
+                            
                         </p>
                     </div>
 
