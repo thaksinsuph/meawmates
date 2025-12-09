@@ -43,7 +43,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
     const cat = cats[selectedIndex];
 
     // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
-    const breed = cat.breed || '—';
+    const breed = cat.breed || '—'; 
     const color = cat.color || '—'
     const age = cat.age || null;
     const ageDisplay = age ? `${age} yrs` : '—';
