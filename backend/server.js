@@ -234,6 +234,15 @@ app.use((req, res) => {
       Start Server (ใช้ server.listen)
 ====================================================== */
 const PORT = process.env.PORT || 4000;
+server.on('upgrade', (req, socket, head) => {
+    if (req.url.startsWith('/socket.io/')) {
+        io.handleUpgrade(req, socket, head, (ws) => {
+            io.emit('connection', ws, req);
+        });
+    } else {
+        socket.destroy();
+    }
+});
 server.listen(PORT, () => { 
   console.log(`🚀 HTTP Server running on port ${PORT}`);
   console.log(`💬 Socket.IO running on port ${PORT}`);
