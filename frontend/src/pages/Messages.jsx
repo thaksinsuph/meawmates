@@ -6,7 +6,6 @@ import { socket } from '../socket';
 
 // =================================================================
 // ⭐ NEW: ฟังก์ชันสำหรับกำหนดรูปภาพและสีของเพศ
-// (เพิ่มกลับเข้ามาเนื่องจากถูกลบไปในโค้ดรอบล่าสุด)
 // =================================================================
 const getGenderImage = (gender) => {
     if (gender === "Male") {
@@ -54,8 +53,7 @@ const ImageModal = ({ src, onClose }) => {
 };
 
 // =================================================================
-// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (FIXED/UPDATED!)
-// *รับ handleOpenImageFromCatProfile เข้ามา*
+// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) 
 // =================================================================
 const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFromCatProfile }) => {
     if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
@@ -63,14 +61,14 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
     const { cats, selectedIndex, matchedCatName } = modalState;
     const cat = cats[selectedIndex];
     
-    // ⭐ ดึงข้อมูลที่ขาดหายไป (Gender, Province)
+    // ⭐ ดึงข้อมูล Gender, Province
     const breed = cat.breed || '—'; 
     const color = cat.color || '—'
     const age = cat.age || null;
     const ageDisplay = age ? `${age} yrs` : '—';
     const gender = cat.gender || '—';
-    const province = cat.province || '—'; // ⭐ เพิ่ม Province
-    const genderData = cat.gender ? getGenderImage(cat.gender) : null; // ⭐ ดึง Gender Icon
+    const province = cat.province || '—'; 
+    const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
 
     return (
         <div 
@@ -189,14 +187,19 @@ export default function Messages() {
     });
 
     const user = JSON.parse(localStorage.getItem("user"));
-    
-    // ⭐ NEW: Handler สำหรับเปิด Image Modal จากภายใน CatProfileModal
-    const handleOpenImageFromCatProfile = (src) => {
-        handleCloseCatProfile(); // 1. สั่งปิด CatProfileModal (ป๊อปอัพตัวแม่)
-        openImageModal(src);     // 2. เปิด Image Modal (ซูมรูป)
+
+    // ⭐ NEW: ฟังก์ชันสำหรับโหลด Pet ของ User ล่าสุด
+    const loadAllPets = async () => {
+        try {
+            const res = await api.get("/api/pets/me");
+            const user = JSON.parse(localStorage.getItem("user"));
+            // อัปเดต user object ใน local storage ให้มี pets array ที่สดใหม่
+            localStorage.setItem("user", JSON.stringify({ ...user, pets: res.data }));
+        } catch (err) {
+            console.error("Failed to load user pets for message context:", err);
+        }
     };
-
-
+    
     /* ... CONTEXT MENU & UI LOGIC (unchanged) ... */
     const [msgMenu, setMsgMenu] = useState({ show: false, x: 0, y: 0, msg: null });
     const openMsgMenu = (e, msg) => { e.preventDefault(); setMsgMenu({ show: true, x: e.clientX, y: e.clientY, msg }); };
@@ -264,7 +267,7 @@ export default function Messages() {
 
     /* ================================
       SOCKET.IO CONNECTION AND LISTENERS
-      ================================= */
+    ================================= */
     useEffect(() => {
         if (!user?._id) return;
         socket.emit('join', user._id); 
@@ -285,7 +288,11 @@ export default function Messages() {
         return () => { socket.off('message:new', handleNewMessage); };
     }, [selected, user?._id]); 
 
-    useEffect(() => { loadMatches(); }, [user?._id]); 
+    // ⭐ FIX: โหลด Pet ของ User ก่อน Load Chat
+    useEffect(() => { 
+        loadMatches(); 
+        loadAllPets(); // <-- เรียก API ดึง Pet ล่าสุดมาอัปเดต Local Storage
+    }, [user?._id]); 
     
     useEffect(() => {
         if (!matches.length || !id || id === "undefined") { setSelected(null); setMessages([]); return; }
@@ -300,19 +307,30 @@ export default function Messages() {
         });
     }, [messages]);
 
-    // ⭐ Handler สำหรับเปิด Cat Profile Modal (UPDATED!)
+    // ⭐ Handler สำหรับปิด Cat Profile Modal
+    const handleCloseCatProfile = () => {
+        setCatProfileModal({ open: false, cats: [], selectedIndex: 0, matchedCatName: null });
+    };
+
+    // ⭐ NEW: Handler สำหรับเปิด Image Modal จากภายใน CatProfileModal
+    const handleOpenImageFromCatProfile = (src) => {
+        handleCloseCatProfile(); // 1. สั่งปิด CatProfileModal (ป๊อปอัพตัวแม่)
+        openImageModal(src);     // 2. เปิด Image Modal (ซูมรูป)
+    };
+
+    // ⭐ Handler สำหรับเปิด Cat Profile Modal (อัปเดต Logic การหาชื่อแมว)
     const handleOpenCatProfile = () => {
         
         if (!selected || !selected.cats || selected.cats.length === 0) return;
-
         
+        // 1. ดึง user object ที่ถูกอัปเดตแล้วจาก local storage (เพื่อความแน่นอน)
+        const updatedUser = JSON.parse(localStorage.getItem("user")); 
         
-        /// 1. หาชื่อแมวของเราที่ Match ด้วย
-        // ⭐⭐ FIX: เปลี่ยน user.cats เป็น user.pets ⭐⭐
-        const myCat = user.pets?.find(c => c.slot === selected.myCatSlot); 
+        /// 2. หาชื่อแมวของเราที่ Match ด้วย slot
+        const myCat = updatedUser.pets?.find(c => c.slot === selected.myCatSlot); 
         
-        // 2. กำหนดชื่อแมวของเรา (ป้องกัน myCat เป็น undefined/null)
-        const catName = myCat?.name || 'N/A'; // ⭐⭐ FIX: ใช้ Optional Chaining และ Fallback
+        // 3. กำหนดชื่อแมวของเรา (ป้องกัน myCat เป็น undefined/null)
+        const catName = myCat?.name || 'N/A'; 
 
         // สร้างข้อมูล Modal
         setCatProfileModal({
@@ -325,10 +343,6 @@ export default function Messages() {
 
     const handleSelectCatInModal = (index) => {
         setCatProfileModal(prev => ({ ...prev, selectedIndex: index }));
-    };
-
-    const handleCloseCatProfile = () => {
-        setCatProfileModal({ open: false, cats: [], selectedIndex: 0, matchedCatName: null });
     };
 
     /* ================================
@@ -714,7 +728,7 @@ export default function Messages() {
                 modalState={catProfileModal} 
                 onClose={handleCloseCatProfile} 
                 onSelectCat={handleSelectCatInModal}
-                handleOpenImageFromCatProfile={handleOpenImageFromCatProfile} // ⭐ FIX: ส่ง handler ที่แก้ไขแล้วเข้าไป
+                handleOpenImageFromCatProfile={handleOpenImageFromCatProfile} // ⭐ ส่ง handler ที่แก้ไขแล้วเข้าไป
             />
             
         </section>
