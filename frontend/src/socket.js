@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://meowmates.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://meawmates.onrender.com';
 
 export const socket = io(API_BASE_URL, {
      
