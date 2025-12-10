@@ -70,6 +70,11 @@ router.get('/filtered-cats', auth, async (req, res) => {
             filter.gender = gender;
         }
 
+        // ⭐ NEW: กรองตามจังหวัด (Province)
+        if (province && province !== 'Any') {
+            filter.province = province;
+        }
+
         // กรองตามช่วงอายุ (Age Range)
         if (age && age !== 'Any') {
             // age format: '0-1', '1-3', '7+'
@@ -86,8 +91,9 @@ router.get('/filtered-cats', auth, async (req, res) => {
         
         // 4. ดึงข้อมูลสัตว์เลี้ยงที่ตรงตามเงื่อนไข
         const targets = await Pet.find(filter)
-            .select('name breed color age gender image user')
-            .limit(50); // จำกัดจำนวนผลลัพธ์ (Optional)
+            .select('name breed color age gender province image user') // ⭐ เพิ่ม province ใน select
+            .limit(50)
+            .populate("user", "name"); // 💡 เพิ่ม populate user เพื่อให้ได้ชื่อเจ้าของมาแสดง
             
         res.json(targets);
         

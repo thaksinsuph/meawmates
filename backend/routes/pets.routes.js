@@ -1,8 +1,7 @@
-// backend/routes/pets.routes.js
 import express from "express";
 import auth from "../auth.js";
 import Pet from "../models/Pet.js";
-import upload from "../utils/cloudinary.js"; // 👈 1. Import ตัวจัดการ upload
+import upload from "../utils/cloudinary.js";
 
 const router = express.Router();
 
@@ -20,7 +19,7 @@ const petUploads = upload.fields([
 ]);
 
 /* ============================================================
-   📌 GET ALL PETS OF CURRENT USER
+   📌 GET ALL PETS OF CURRENT USER (No Change)
    GET /api/pets/me
 ============================================================ */
 router.get("/me", auth, async (req, res) => {
@@ -34,7 +33,7 @@ router.get("/me", auth, async (req, res) => {
 });
 
 /* ============================================================
-   📌 GET PET BY SLOT
+   📌 GET PET BY SLOT (No Change)
    GET /api/pets/:slot
 ============================================================ */
 router.get("/:slot", auth, async (req, res) => {
@@ -66,20 +65,19 @@ router.post("/:slot", auth, petUploads, async (req, res) => {
     }
 
     // ข้อมูล Text จะอยู่ใน req.body
-    // ⭐ เพิ่ม gender เข้ามา
-    const { name, breed, color, age, gender } = req.body; 
+    // ⭐ MODIFIED: เพิ่ม province เข้ามา
+    const { name, breed, color, age, gender, province } = req.body; 
 
     // เตรียมตัวแปรสำหรับ URL รูปภาพ
     let imageUrl = req.body.image; // ค่าเดิม (ถ้ามี)
     let vaccineUrl = req.body.vaccineImage; // ค่าเดิม (ถ้ามี)
 
-    // ⭐ ตรวจสอบว่ามีการอัปโหลดไฟล์ "image" ใหม่มาหรือไม่?
-    // req.files จะมีโครงสร้างเป็น Object เก็บ array ของไฟล์
+    // ⭐ ตรวจสอบว่ามีการอัปโหลดไฟล์ "image" ใหม่มาหรือไม่? (No Change)
     if (req.files && req.files['image']) {
        imageUrl = req.files['image'][0].path; // ใช้ URL ใหม่จาก Cloudinary
     }
 
-    // ⭐ ตรวจสอบว่ามีการอัปโหลดไฟล์ "vaccineImage" ใหม่มาหรือไม่?
+    // ⭐ ตรวจสอบว่ามีการอัปโหลดไฟล์ "vaccineImage" ใหม่มาหรือไม่? (No Change)
     if (req.files && req.files['vaccineImage']) {
        vaccineUrl = req.files['vaccineImage'][0].path; // ใช้ URL ใหม่จาก Cloudinary
     }
@@ -93,8 +91,9 @@ router.post("/:slot", auth, petUploads, async (req, res) => {
       pet.breed = breed;
       pet.color = color;
       pet.age = age;
-      // ⭐ อัปเดต gender
       pet.gender = gender; 
+      // ⭐ MODIFIED: อัปเดต province
+      pet.province = province; 
       pet.image = imageUrl; // อัปเดต URL (ใหม่หรือเก่า)
       pet.vaccineImage = vaccineUrl; // อัปเดต URL (ใหม่หรือเก่า)
       
@@ -111,8 +110,9 @@ router.post("/:slot", auth, petUploads, async (req, res) => {
       breed,
       color,
       age,
-      // ⭐ สร้าง gender
       gender, 
+      // ⭐ MODIFIED: สร้าง province
+      province, 
       image: imageUrl,
       vaccineImage: vaccineUrl,
     });
@@ -126,7 +126,7 @@ router.post("/:slot", auth, petUploads, async (req, res) => {
 });
 
 /* ============================================================
-   📌 DELETE PET IN SLOT
+   📌 DELETE PET IN SLOT (No Change)
    DELETE /api/pets/:slot
 ============================================================ */
 router.delete("/:slot", auth, async (req, res) => {

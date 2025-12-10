@@ -8,6 +8,8 @@ import {
     CAT_COLORS, 
 } from "../petData"; 
 
+import THAI_PROVINCES from "../thaiProvinces";
+
 
 // 💡 NEW COMPONENT: Modal สำหรับเลือกเงื่อนไขการจับคู่ (Petdreegree Selection)
 const PetdreegreeSelectionModal = ({ 
@@ -20,18 +22,20 @@ const PetdreegreeSelectionModal = ({
   colorOptions, 
   ageOptions, 
   genderOptions,
+  provinceOptions,
 }) => {
   // State สำหรับเก็บเงื่อนไขที่เลือก
   const [breed, setBreed] = useState("Any");
   const [color, setColor] = useState("Any");
   const [age, setAge] = useState("Any");
   const [gender, setGender] = useState("Any");
+  const [province, setProvince] = useState("Any");
 
   if (!isOpen || !selectedPet) return null;
 
   const handleStart = () => {
     // 💡 ส่งเงื่อนไขการจับคู่และข้อมูลแมวของเรากลับไป
-    onStartPairing(selectedPet, { breed, color, age, gender });
+    onStartPairing(selectedPet, { breed, color, age, gender , province});
   };
   
   return (
@@ -96,6 +100,19 @@ const PetdreegreeSelectionModal = ({
               {genderOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
           </label>
+
+          {/* ⭐ NEW: จังหวัด (Province) */}
+          <label className="block col-span-2">
+            <span className="text-gray-700 font-semibold">Province</span>
+            <select
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+              className="mt-1 block w-full rounded-xl border-gray-300 shadow-sm p-3 focus:ring-pink-500 focus:border-pink-500"
+            >
+              {provinceOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </label>
+          
         </div>
         
         {/* BUTTONS ของ Modal */}
@@ -208,6 +225,7 @@ export default function Matching() {
                 color: pet.color,
                 age: pet.age,
                 gender: pet.gender,
+                province: pet.province,
             },
             criteria: criteria
         };
@@ -223,6 +241,8 @@ export default function Matching() {
     // ⭐ 2. สร้าง Array สำหรับ Age และ Gender ภายใน Matching component
     const localAgeOptions = [ "Any", "0-1", "1-3", "3-7", "7+" ];
     const localGenderOptions = [ "Any", "Male", "Female" ];
+// ⭐ NEW: Options สำหรับจังหวัด
+    const localProvinceOptions = [ "Any", ...THAI_PROVINCES ];
 
 
   /* ============================================================
@@ -243,6 +263,7 @@ export default function Matching() {
     colorOptions={["Any", ...Object.keys(CAT_COLORS)]} 
     ageOptions={localAgeOptions}
     genderOptions={localGenderOptions}
+    provinceOptions={localProvinceOptions}
 />
 
       {/* ------------------ MANAGE PET BUTTON SECTION ------------------ */}
