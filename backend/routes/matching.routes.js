@@ -38,60 +38,36 @@ GET /api/matching/filtered-cats?breed=...&province=...
 router.get('/filtered-cats', auth, async (req, res) => {
     try {
         const userId = req.user._id; 
-        // 💡 MODIFIED: รับเงื่อนไขการกรองจาก Frontend (req.query) รวมถึง 'province'
-        const { breed, color, age, gender, province } = req.query; // ✅ FIX: เพิ่ม province
+        const { breed, color, age, gender, province } = req.query; 
 
-        // 1. หาแมวที่เราเคยปัดไปแล้ว (เพื่อให้ไม่โชว์ซ้ำ)
         const swiped = await CatLike.find({ user: userId }).distinct("targetCat");
 
-        // 2. สร้าง Query Object พื้นฐาน
         const filter = {
-            user: { $ne: userId },        // ไม่เอาแมวที่เป็นของ User ที่กำลังค้นหา
-            _id: { $nin: swiped },        // ไม่เอาแมวที่เคยปัดไปแล้ว
-            name: { $exists: true, $ne: "" }, // ต้องมีชื่อ
-            image: { $exists: true, $ne: "" }, // ต้องมีรูป
+            user: { $ne: userId }, 
+            _id: { $nin: swiped },
+            name: { $exists: true, $ne: "" }, 
+            image: { $exists: true, $ne: "" }, 
         };
         
-        // 3. เพิ่มเงื่อนไขการกรองตาม Petdreegree Criteria
-        
-        // กรองตามสายพันธุ์ (Breed)
-        if (breed && breed !== 'Any') {
-            filter.breed = breed;
-        }
+        if (breed && breed !== 'Any') { filter.breed = breed; }
+        if (color && color !== 'Any') { filter.color = color; }
+        if (gender && gender !== 'Any') { filter.gender = gender; }
+        if (province && province !== 'Any') { filter.province = province; }
 
-        // กรองตามสี (Color)
-        if (color && color !== 'Any') {
-            filter.color = color;
-        }
-
-        // กรองตามเพศ (Gender)
-        if (gender && gender !== 'Any') {
-            filter.gender = gender;
-        }
-
-        // ⭐ NEW: กรองตามจังหวัด (Province)
-        if (province && province !== 'Any') {
-            filter.province = province;
-        }
-
-        // กรองตามช่วงอายุ (Age Range)
         if (age && age !== 'Any') {
-            // age format: '0-1', '1-3', '7+'
             const [minStr, maxStr] = age.split('-');
             const min = parseInt(minStr);
             
-            if (age.includes('+')) { // สำหรับ '7+'
+            if (age.includes('+')) {
                 filter.age = { $gte: min }; 
-            } else if (min !== undefined && maxStr !== undefined) { // สำหรับ '0-1', '1-3'
+            } else if (min !== undefined && maxStr !== undefined) {
                 const max = parseInt(maxStr);
                 filter.age = { $gte: min, $lte: max };
             }
         }
         
-        // 4. ดึงข้อมูลสัตว์เลี้ยงที่ตรงตามเงื่อนไข
-        // 💡 เราจะใส่ province ใน select list ด้วย
         const targets = await Pet.find(filter)
-            .select('name breed color age gender province image user') // ✅ เพิ่ม province
+            .select('name breed color age gender province image user')
             .limit(50); 
         
         res.json(targets);
@@ -120,7 +96,6 @@ router.post("/swipe", auth, async (req, res) => {
 
         if (!liked) return res.json({ match: false });
 
-        // ⭐ ดึง myPet และ targetPet เพื่อเข้าถึง Province
         const myPet = await Pet.findOne({ user: me, slot: myCatSlot });
         if (!myPet) return res.json({ match: false });
 
@@ -166,7 +141,6 @@ router.post("/swipe", auth, async (req, res) => {
                 return res.json({
                     match: true,
                     matchedCat: targetSnapshot,
-                    // ⭐ ส่ง ownerId กลับไปเพื่อให้ Frontend เปิด Chat ได้
                     ownerId: targetOwner, 
                 });
             }
@@ -182,7 +156,7 @@ router.post("/swipe", auth, async (req, res) => {
                   color: myPet.color,
                   age: myPet.age,
                   gender: myPet.gender,
-                  province: myPet.province, // ✅ เพิ่ม province
+                  province: myPet.province,
                   image: myPet.image,
                   slot: myPet.slot,
               });
@@ -197,7 +171,7 @@ router.post("/swipe", auth, async (req, res) => {
                   color: targetPet.color,
                   age: targetPet.age,
                   gender: targetPet.gender,
-                  province: targetPet.province, // ✅ เพิ่ม province
+                  province: targetPet.province,
                   image: targetPet.image,
                   slot: targetPet.slot,
               });
@@ -210,7 +184,6 @@ router.post("/swipe", auth, async (req, res) => {
         return res.json({
             match: true,
             matchedCat: targetMatchCat,
-            // ⭐ ส่ง ownerId กลับไปเพื่อให้ Frontend เปิด Chat ได้
             ownerId: targetOwner, 
         });
     } catch (err) {
@@ -235,13 +208,13 @@ router.get("/history", auth, async (req, res) => {
 });
 
 /* ======================================================
-📌 3) รายชื่อคู่ที่ Match แล้ว (FINAL FIX: ใช้ Pet Model เสริมข้อมูล Gender/Province)
+📌 3) รายชื่อคู่ที่ Match แล้ว (FINAL FIX: ใช้ Pet Model เสริมข้อมูล Gender/Province และนับ Unseen Count)
 ====================================================== */
 router.get("/matches", auth, async (req, res) => {
     try {
         const me = req.user._id;
 
-        // 1. Populate CatMatch (ซึ่งมีข้อมูลไม่สมบูรณ์สำหรับ Match เก่า)
+        // 1. Populate CatMatch 
         const matches = await CatMatch.find()
             .populate("cat1")
             .populate("cat2");
@@ -261,10 +234,9 @@ router.get("/matches", auth, async (req, res) => {
              const ownerId = otherMatchCat.user.toString();
 
              // ⭐ NEW STEP: ดึง Pet Document (จาก Pet Model) ที่สมบูรณ์มาใช้
-             // ใช้ Pet.findOne โดย Match ด้วย ownerId และชื่อ (หรือ Slot)
              const fullOtherPet = await Pet.findOne({ 
                  user: ownerId, 
-                 name: otherMatchCat.name // Match ด้วยชื่อ
+                 name: otherMatchCat.name 
              }).select('gender province'); 
              
              // 3. จัดกลุ่ม (Grouped logic)
@@ -290,7 +262,7 @@ router.get("/matches", auth, async (req, res) => {
                 age: otherMatchCat.age,
                 gender: finalGender,         // ⭐ ใช้ finalGender
                 province: finalProvince,     // ⭐ ใช้ finalProvince
-                _id: otherMatchCat._id,      // เพิ่ม _id เพื่อให้ Frontend แยกแยะได้
+                _id: otherMatchCat._id,      
             });
 
             // update last matched time
@@ -300,14 +272,21 @@ router.get("/matches", auth, async (req, res) => {
 
         });
         
-        await Promise.all(matchPromises); // รอให้การดึง Pet Document ทั้งหมดเสร็จสิ้น
+        await Promise.all(matchPromises); 
 
-        // ⭐⭐ NEW: Map เพื่อหา Last Message และ Unread Status (UNCHANGED)
+        // ⭐⭐ FIX: Map เพื่อหา Last Message และ Unread Status
         const groupsForLastMessage = Object.values(grouped); 
         
         const resultWithLastMessage = await Promise.all(
             groupsForLastMessage.map(async (group) => {
                 const ownerId = group.user; 
+                
+                // ⭐ NEW: นับจำนวนข้อความที่ยังไม่ได้อ่าน
+                const unseenCount = await Message.countDocuments({
+                    to: req.user._id, // ส่งถึงฉัน
+                    from: ownerId,    // มาจากคู่แชท
+                    seen: false,      // ยังไม่ได้อ่าน
+                });
                 
                 const lastMessage = await Message.findOne({
                     $or: [
@@ -320,23 +299,25 @@ router.get("/matches", auth, async (req, res) => {
                 
                 let hasNewMessage = false;
                 let lastMessageContent = "Chat now";
-                let lastActivity = group.lastMatchedAt; // ใช้ Match Time เป็นค่าเริ่มต้น
+                let lastActivity = group.lastMatchedAt; 
+
+                // Logic ตรวจสอบข้อความใหม่ (ใช้ unseenCount)
+                if (unseenCount > 0) {
+                     hasNewMessage = true; 
+                }
 
                 if (lastMessage) {
-                    const isFromOtherUser = lastMessage.from.toString() === ownerId;
-                    const isUnseen = lastMessage.seen === false;
-                    
-                    hasNewMessage = isFromOtherUser && isUnseen;
                     lastMessageContent = lastMessage.text || "[Image]";
-                    lastActivity = lastMessage.createdAt; // อัปเดต Activity Time
+                    lastActivity = lastMessage.createdAt;
                 }
 
                 return {
                     ...group,
                     lastMessage: lastMessage,
                     lastMessageContent: lastMessageContent, 
-                    hasNewMessage: hasNewMessage, // ⭐ Frontend ใช้ field นี้
-                    lastActivity: lastActivity, // ⭐ Frontend ใช้ field นี้ในการเรียง
+                    hasNewMessage: hasNewMessage, 
+                    lastActivity: lastActivity, 
+                    unseenCount: unseenCount, // ⭐ FIX: ส่ง unseenCount กลับไป
                 };
             })
         );

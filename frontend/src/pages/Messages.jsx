@@ -454,64 +454,72 @@ export default function Messages() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-3 pb-3">
-                        {sortedChats.map((cat) => {
-                            const ownerId = cat.user?._id || cat.user || cat.owner?._id;
-                            const isUnread = cat.hasNewMessage; 
-                            const lastMsgText = cat.lastMessageContent || "Chat now"; 
+                        {sortedChats.map((cat) => {
+                            const ownerId = cat.user?._id || cat.user || cat.owner?._id;
+                            // ⭐ ใช้ cat.hasNewMessage (สถานะตัวหนา)
+                            const isUnread = cat.hasNewMessage; 
+                            const lastMsgText = cat.lastMessageContent || "Chat now"; 
+                            // ⭐ NEW: ดึงจำนวนข้อความที่ยังไม่ได้อ่าน (จาก Backend)
+                            const unreadCount = cat.unseenCount || 0; 
 
-                            if (!ownerId || typeof ownerId !== "string" || ownerId.length !== 24) {
-                                console.warn("❌ Invalid ownerId:", ownerId);
-                                return null;
-                            }
-                            
-                            return (
-                                <div
-                                    key={ownerId}
-                                    onClick={() => navigate(`/messages/${ownerId}`)}
-                                    onContextMenu={(e) => openChatMenu(e, cat)}
-                                    className={`flex items-center justify-between p-3 mb-2 cursor-pointer rounded-2xl transition-all
-                                        ${
-                                            selected && (selected.user._id || selected.user) === ownerId
-                                                ? "bg-white shadow border border-pink-200"
-                                                : "hover:bg-white/70"
-                                        }
-                                        ${
-                                            cat.isPinned
-                                                ? "border border-pink-400"
-                                                : ""
-                                        }
-                                        ${ isUnread ? "bg-pink-100 font-bold" : "" }
-                                    `}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <img
-                                            src={cat.cats[0]?.image}
-                                            className="w-11 h-11 rounded-full object-cover shadow-sm"
-                                            alt={cat.cats[0]?.name}
-                                        />
-                                        <div>
-                                            <p className={`font-medium text-sm ${isUnread ? "text-pink-600" : ""}`}>
-                                                {cat.cats[0]?.name}
-                                            </p>
-                                            <p className={`text-xs w-[150px] truncate ${isUnread ? "text-slate-800 font-semibold" : "text-gray-600"}`}>
-                                                {lastMsgText} 
-                                            </p>
-                                        </div>
-                                    </div>
+                            if (!ownerId || typeof ownerId !== "string" || ownerId.length !== 24) {
+                                console.warn("❌ Invalid ownerId:", ownerId);
+                                return null;
+                            }
+                            
+                            return (
+                                <div
+                                    key={ownerId}
+                                    onClick={() => navigate(`/messages/${ownerId}`)}
+                                    onContextMenu={(e) => openChatMenu(e, cat)}
+                                    className={`flex items-center justify-between p-3 mb-2 cursor-pointer rounded-2xl transition-all
+                                        ${
+                                            selected && (selected.user._id || selected.user) === ownerId
+                                                ? "bg-white shadow border border-pink-200"
+                                                : "hover:bg-white/70"
+                                        }
+                                        ${
+                                            cat.isPinned
+                                                ? "border border-pink-400"
+                                                : ""
+                                        }
+                                        ${ isUnread ? "bg-pink-100 font-bold" : "" }
+                                    `}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={cat.cats[0]?.image}
+                                            className="w-11 h-11 rounded-full object-cover shadow-sm"
+                                            alt={cat.cats[0]?.name}
+                                        />
+                                        <div>
+                                            <p className={`font-medium text-sm ${isUnread ? "text-pink-600" : ""}`}>
+                                                {cat.cats[0]?.name}
+                                            </p>
+                                            {/* ⭐ FIX: ข้อความล่าสุดเป็นตัวหนาถ้ามีข้อความใหม่ */}
+                                            <p className={`text-xs w-[150px] truncate ${isUnread ? "text-slate-800 font-bold" : "text-gray-600"}`}>
+                                                {lastMsgText} 
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                    {/* Notification Dot / Pin Icon */}
-                                    <div className="flex items-center gap-1">
-                                        {isUnread && (
-                                            <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse mr-1"></span>
-                                        )}
-                                        {cat.isPinned && (
-                                            <span className="text-pink-500 text-xs">📌</span>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                    {/* ⭐ NEW: Unread Count / Pin Icon */}
+                                    <div className="flex flex-col items-end gap-0.5"> 
+                                            {/* 1. แสดง Unread Count */}
+                                        {unreadCount > 0 && (
+                                            <span className="text-xs font-bold bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">
+                                                {unreadCount}
+                                            </span>
+                                        )}
+                                            {/* 2. แสดง Pin Icon (ถ้าไม่มี Unread Count) */}
+                                        {cat.isPinned && unreadCount === 0 && (
+                                            <span className="text-pink-500 text-xs">📌</span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </aside>
 
                 {/* -------------------------------------
