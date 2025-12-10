@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
-// ⭐ 1. นำเข้า Socket Client จริง (สมมติว่าไฟล์นี้ถูกสร้างแล้วที่ src/socket.js)
 import { socket } from '../socket'; 
 
 // =================================================================
@@ -16,7 +15,7 @@ const getGenderImage = (gender) => {
     }
     if (gender === "Female") {
         return { 
-            img: "/images/female.png", // ตรวจสอบว่า path นี้ถูกต้อง
+            img: "/images/female.png",
             color: "text-pink-600"
         };
     }
@@ -25,11 +24,11 @@ const getGenderImage = (gender) => {
 
 
 // =================================================================
-// ⭐ Image Modal Component (สำหรับแสดงรูปภาพขนาดเต็ม)
+// ⭐ Image Modal Component
 // =================================================================
 const ImageModal = ({ src, onClose }) => {
     if (!src) return null;
-
+    // ... (unchanged ImageModal component logic)
     return (
         <div 
             className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center backdrop-blur-sm" 
@@ -53,7 +52,7 @@ const ImageModal = ({ src, onClose }) => {
 };
 
 // =================================================================
-// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) 
+// ⭐ Cat Profile Modal Component
 // =================================================================
 const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFromCatProfile }) => {
     if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
@@ -109,7 +108,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
                         src={cat.image}
                         className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer"
                         alt={cat.name}
-                        onClick={() => handleOpenImageFromCatProfile(cat.image)} // ⭐ FIX: เมื่อกดรูป ให้ปิด Modal นี้ด้วย
+                        onClick={() => handleOpenImageFromCatProfile(cat.image)} // เปิดรูปและปิดตัวแม่
                     />
 
                     {/* Cat Details */}
@@ -186,6 +185,7 @@ export default function Messages() {
         matchedCatName: null,
     });
 
+    // ดึง user จาก local storage ครั้งเดียว
     const user = JSON.parse(localStorage.getItem("user"));
 
     // ⭐ NEW: ฟังก์ชันสำหรับโหลด Pet ของ User ล่าสุด
@@ -231,15 +231,20 @@ export default function Messages() {
         }
     };
 
-    /* ... LOAD CHAT (unchanged) ... */
+    /* ... LOAD CHAT (UPDATED: Remove redundant loadMatches) ... */
     const loadChat = async (otherId) => {
         if (!otherId || otherId === "undefined") { console.warn("❌ Invalid chat ID:", otherId); return; }
         try {
+            // 1. โหลดข้อความ (Backend จะทำ Mark as Seen ให้แล้ว)
             const res = await api.get(`/api/chat/${otherId}`);
             setMessages(res.data);
+            
             const found = matches.find((m) => (m.user._id || m.user).toString() === otherId.toString());
             setSelected(found);
+            
+            // 2. ⭐ FIX: โหลด Match List ใหม่ เพื่ออัปเดตสถานะ Unread Count ใน Sidebar
             loadMatches(); 
+
         } catch (err) {
             console.error(err);
         }
@@ -277,7 +282,8 @@ export default function Messages() {
 
             if (otherUserId === fromUserId || otherUserId === newMessage.to) {
                 setMessages(prev => [...prev, newMessage]);
-                if (fromUserId !== user._id) {
+                // เมื่อรับข้อความมา ให้โหลด Match List ใหม่ เพื่ออัปเดตสถานะ Unread Count
+                if (fromUserId !== user._id) { 
                     loadMatches();
                 }
             } else {
@@ -301,7 +307,6 @@ export default function Messages() {
 
     // ⭐ AUTO-SCROLL LOGIC: เลื่อนลงไปที่ข้อความล่าสุดเมื่อ messages เปลี่ยน
     useEffect(() => {
-        // ใช้ requestAnimationFrame เพื่อให้แน่ใจว่า DOM ถูก Render ก่อน Scroll
         requestAnimationFrame(() => {
              chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
         });
@@ -318,7 +323,7 @@ export default function Messages() {
         openImageModal(src);     // 2. เปิด Image Modal (ซูมรูป)
     };
 
-    // ⭐ Handler สำหรับเปิด Cat Profile Modal (อัปเดต Logic การหาชื่อแมว)
+    // ⭐ Handler สำหรับเปิด Cat Profile Modal (FINAL FIX FOR N/A)
     const handleOpenCatProfile = () => {
     
     if (!selected || !selected.cats || selected.cats.length === 0) return;
@@ -328,19 +333,22 @@ export default function Messages() {
     
     let catName = 'N/A'; // กำหนดค่าเริ่มต้นเป็น N/A
     
-    // 2. พยายามหาแมวของเราโดยใช้ myCatSlot ที่ API ส่งมา
-    // ใช้วิธีค้นหาแบบยืดหยุ่น:
-    const myCat = updatedUser.pets?.find(c => c.slot === selected.myCatSlot || c.name === selected.myCatSlot); 
+    // 2. ดึง Pets Array ล่าสุด
+    const userPets = updatedUser.pets;
+
+    // 3. พยายามหาแมวของเราโดยใช้ myCatSlot (ถ้า Slot มีค่าถูกต้อง)
+    const myCat = userPets?.find(c => c.slot === selected.myCatSlot); 
 
     if (myCat?.name) {
-        // A. ถ้าหาเจอโดย Slot หรือ Name
+        // A. ถ้าหาเจอโดย Slot ให้ใช้ชื่อนั้น
         catName = myCat.name;
-    } else if (updatedUser.pets && updatedUser.pets.length > 0) {
-        // B. FALLBACK: ถ้าหาไม่เจอโดย Slot ให้ใช้ชื่อของแมวตัวแรกในรายการ Pet ของเราเอง
-        catName = updatedUser.pets[0].name || 'N/A';
+    } else if (userPets && userPets.length > 0) {
+        // B. FALLBACK: ถ้าหาไม่เจอโดย Slot (Match เก่า/Slot ว่าง) ให้ใช้ชื่อของแมวตัวแรก
+        catName = userPets[0].name || 'N/A';
+        // console.log("Fallback used. Slot:", selected.myCatSlot, "Pet Name:", catName); // Debug line
     }
     
-    // 3. สร้างข้อมูล Modal
+    // 4. สร้างข้อมูล Modal
     setCatProfileModal({
         open: true,
         cats: selected.cats,
@@ -396,7 +404,7 @@ export default function Messages() {
             const res = await api.post("/api/chat/text", { to, text: input });
             setMessages((prev) => [...prev, res.data]);
             setInput("");
-            loadMatches(); 
+            loadMatches(); // Update sidebar immediately after sending
         } catch (err) {
             console.error(err);
         }
@@ -419,7 +427,7 @@ export default function Messages() {
 
             setMessages((prev) => [...prev, res.data]);
             setFile(null);
-            loadMatches(); 
+            loadMatches(); // Update sidebar immediately after sending
         } catch (err) {
             console.error(err);
         }
@@ -456,9 +464,11 @@ export default function Messages() {
                     <div className="flex-1 overflow-y-auto px-3 pb-3">
                         {sortedChats.map((cat) => {
                             const ownerId = cat.user?._id || cat.user || cat.owner?._id;
-                            // ⭐ FIX: ใช้ unseenCount เป็นตัวบ่งชี้หลัก
+                            
+                            // ⭐ FIX: ใช้ unseenCount เป็นตัวบ่งชี้หลักและแสดงผล
                             const unreadCount = cat.unseenCount || 0; 
                             const isUnread = unreadCount > 0;
+                            
                             const lastMsgText = cat.lastMessageContent || "Chat now"; 
 
                             if (!ownerId || typeof ownerId !== "string" || ownerId.length !== 24) {
@@ -502,12 +512,12 @@ export default function Messages() {
                                         </div>
                                     </div>
 
-                                    {/* ⭐ NEW: Unread Count / Pin Icon */}
+                                    {/* ⭐ FIX: Unread Count / Pin Icon */}
                                     <div className="flex flex-col items-end gap-0.5"> 
                                         {/* 1. แสดง Unread Count */}
                                         {unreadCount > 0 && (
                                             <span className="text-xs font-bold bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">
-                                                {unreadCount > 99 ? '99+' : unreadCount} {/* Limit display to 99+ */}
+                                                {unreadCount > 99 ? '99+' : unreadCount} 
                                             </span>
                                         )}
                                         {/* 2. แสดง Pin Icon (ถ้าไม่มี Unread Count) */}
