@@ -253,6 +253,7 @@ router.get("/matches", auth, async (req, res) => {
                     user: ownerId,      // ⭐ สำคัญที่สุดสำหรับ Messages.jsx
                     cats: [],
                     lastMatchedAt: m.createdAt,
+                    myCatSlot: iAmCat1 ? m.cat1.slot : m.cat2.slot,
                 };
             }
 

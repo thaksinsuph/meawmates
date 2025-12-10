@@ -61,7 +61,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
                 <div className="text-center">
                     <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
                         {cat.name} 
-                        <span className="text-xl align-top ml-2">🐾</span>
+                        <span className="text-xl align-top ml-2"></span>
                     </h2>
                     
                     {/* Cat Selector (ถ้ามีหลายตัว) */}
