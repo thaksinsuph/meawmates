@@ -27,7 +27,7 @@ export default function SwipeMatch() {
     });
 
     // ---------------------------------------------------------
-    // Compatibility Engine & Utility Functions (UNCHANGED)
+    // Compatibility Engine & Utility Functions (UNCHANGED logic, but included for completeness)
     // ---------------------------------------------------------
     
     // Logic Data
@@ -102,13 +102,13 @@ export default function SwipeMatch() {
         if (!my || !target) return 0;
         return my[0].toLowerCase() === target[0].toLowerCase() ? 5 : 0;
     };
-    
-    // ⭐ NEW: ฟังก์ชันคำนวณคะแนนจังหวัด (ให้คะแนนสูงถ้าตรงกัน)
-    const getProvinceScore = (my, target) => {
-        if (!my || !target) return 5;
-        if (my === target) return 15; // คะแนนสูงถ้าอยู่จังหวัดเดียวกัน
-        return 5;
-    };
+    
+    // ⭐ NEW: ฟังก์ชันคำนวณคะแนนจังหวัด 
+    const getProvinceScore = (my, target) => {
+        if (!my || !target) return 5;
+        if (my === target) return 15; // คะแนนสูงถ้าอยู่จังหวัดเดียวกัน
+        return 5;
+    };
     
     const calculateMatchScore = (me, target) => {
         if (!me || !target) return 0;
@@ -125,14 +125,10 @@ export default function SwipeMatch() {
         score += getNameVibe(me.name, target.name);
 
         score += getGenderScore(me.gender, target.gender); 
-        
-        // ⭐ NEW: เพิ่มคะแนนจังหวัดในสูตรคำนวณ
-        score += getProvinceScore(me.province, target.province); 
-
-        // ปรับน้ำหนักคะแนนรวมเพื่อให้ Max Score ใกล้ 100
-        // (40 + 10 + 20 + 20 + 5 + 25 + 15 = 135) -> หารด้วย 1.35 
-        // score = score / 1.35; // ถ้าต้องปรับน้ำหนัก
-        
+        
+        // ⭐ NEW: เพิ่มคะแนนจังหวัดในสูตรคำนวณ
+        score += getProvinceScore(me.province, target.province); 
+        
         return Math.min(100, Math.max(0, Math.round(score)));
     };
 
@@ -288,7 +284,7 @@ export default function SwipeMatch() {
           )}
           {/* ⭐ END IMAGE VIEW MODAL UI */}
           
-          {/* ⭐ MATCH MODAL UI (UNCHANGED, but displays province if available) */}
+          {/* ⭐ MATCH MODAL UI (แสดงจังหวัดหากมี) */}
           {matchModal.open && (
               <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                   <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border-4 border-pink-300 text-center animate-fadeIn transform scale-105">
@@ -299,14 +295,15 @@ export default function SwipeMatch() {
                       <p className="text-gray-700 text-lg">
                           You and **{matchModal.cat?.name}** are a purr-fect pair!
                       </p>
-                      
-                      {/* ⭐ NEW: แสดงจังหวัดใน Modal */}
-                      {matchModal.cat?.province && (
-                          <p className="text-sm text-gray-500 mb-4">
-                              (from {matchModal.cat.province})
-                          </p>
-                      )}
-                      
+                      
+                      {/* ⭐ NEW: แสดงจังหวัดใน Modal */}
+                      {matchModal.cat?.province && (
+                          <p className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-1">
+                                <img src="/images/location.png" className="w-4 h-4" alt="Location" />
+                              (from {matchModal.cat.province})
+                          </p>
+                      )}
+                      
                       {/* Score Badge in Modal */}
                       <div className="flex justify-center my-6">
                             <div className="w-24 h-24 rounded-full bg-pink-100 border-4 border-pink-400 flex items-center justify-center font-black text-xl text-pink-700 shadow-inner">
@@ -351,7 +348,7 @@ export default function SwipeMatch() {
             <p className="text-xl font-semibold text-gray-700 mb-1">
                 Your Cat: <span className="text-pink-600 font-extrabold">{myCat.name}</span>
             </p>
-              {/* ⭐ MODIFIED: แสดง Criteria Summary พร้อมจังหวัด */}
+              {/* ⭐ MODIFIED: แสดง Criteria Summary พร้อมจังหวัด */}
             <p className="text-sm text-gray-500 italic">
                 Filtering for: {criteria.breed} / {criteria.color} / {criteria.age} / {criteria.gender} / **{criteria.province}**
             </p>
@@ -420,8 +417,9 @@ export default function SwipeMatch() {
                                     <p className="font-medium">
                                         <strong>Color:</strong> {target.color || "—"}
                                     </p>
-                                    {/* ⭐ NEW: Province */}
-                                    <p className="font-medium">
+                                {/* ⭐ NEW: แสดงจังหวัดพร้อมไอคอน */}
+                                    <p className="flex items-center gap-1">
+                                    <img src="/images/location.png" className="w-4 h-4" alt="Location" />
                                         <strong>Province:</strong> {target.province || "—"}
                                     </p>
 
