@@ -117,30 +117,33 @@ router.get(
 );
 
 /* =====================================================================
-   FACEBOOK LOGIN
+   FACEBOOK LOGIN
 ===================================================================== */
 
 router.get(
-  "/facebook",
-  passportFacebook.authenticate("facebook", { scope: ["email"] })
+  "/facebook",
+  // ⭐ FIX 1: เพิ่ม session: false ที่นี่
+  passportFacebook.authenticate("facebook", { scope: ["email"], session: false }) 
 );
 
 router.get(
-  "/facebook/callback",
-  passportFacebook.authenticate("facebook", {
-    failureRedirect: `${FRONTEND_URL}/login`,
-  }),
-  async (req, res) => {
-    const user = req.user;
+  "/facebook/callback",
+  passportFacebook.authenticate("facebook", {
+    failureRedirect: `${FRONTEND_URL}/login`,
+    // ⭐ FIX 2: เพิ่ม session: false ที่นี่
+    session: false,
+  }),
+  async (req, res) => {
+    const user = req.user;
 
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    res.redirect(`${FRONTEND_URL}/login?token=${encodeURIComponent(token)}`);
-  }
+    res.redirect(`${FRONTEND_URL}/login?token=${encodeURIComponent(token)}`);
+  }
 );
 
 export default router;
