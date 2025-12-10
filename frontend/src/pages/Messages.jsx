@@ -246,19 +246,26 @@ export default function Messages() {
 
     // ⭐ Handler สำหรับเปิด Cat Profile Modal (UPDATED!)
     const handleOpenCatProfile = () => {
-        if (!selected || !selected.cats || selected.cats.length === 0) return;
         
-        // หาชื่อแมวของเราที่ Match ด้วย
-        const myCat = user.cats?.find(c => c.slot === selected.myCatSlot); // <--- ต้องมี user.cats
+        if (!selected || !selected.cats || selected.cats.length === 0) return;
 
-        // สร้างข้อมูล Modal
-        setCatProfileModal({
-            open: true,
-            cats: selected.cats,
-            selectedIndex: 0,
-            matchedCatName: myCat.name 
-        });
-    };
+        
+        
+        /// 1. หาชื่อแมวของเราที่ Match ด้วย
+        // ⭐⭐ FIX: เปลี่ยน user.cats เป็น user.pets ⭐⭐
+        const myCat = user.pets?.find(c => c.slot === selected.myCatSlot); 
+        
+        // 2. กำหนดชื่อแมวของเรา (ป้องกัน myCat เป็น undefined/null)
+        const catName = myCat?.name || 'N/A'; // ⭐⭐ FIX: ใช้ Optional Chaining และ Fallback
+
+        // สร้างข้อมูล Modal
+        setCatProfileModal({
+            open: true,
+            cats: selected.cats,
+            selectedIndex: 0,
+            matchedCatName: catName
+        });
+    };
 
     const handleSelectCatInModal = (index) => {
         setCatProfileModal(prev => ({ ...prev, selectedIndex: index }));
