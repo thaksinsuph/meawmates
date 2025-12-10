@@ -12,7 +12,10 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 // Dynamic Callback (Production + Dev)
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000";
+const BACKEND_URL = 
+  process.env.BACKEND_URL || 
+  process.env.VITE_API_BASE_URL || // <-- เพิ่มบรรทัดนี้เพื่อดึงค่าจาก VITE_API_BASE_URL
+  "http://localhost:4000";
 
 const CALLBACK_URL = `${BACKEND_URL}/api/auth/google/callback`;
 console.log("🔍 [GOOGLE] Callback URL =", CALLBACK_URL);
