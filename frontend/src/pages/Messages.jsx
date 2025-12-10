@@ -329,18 +329,15 @@ export default function Messages() {
     let catName = 'N/A'; // กำหนดค่าเริ่มต้นเป็น N/A
     
     // 2. พยายามหาแมวของเราโดยใช้ myCatSlot ที่ API ส่งมา
-    const myCat = updatedUser.pets?.find(c => c.slot === selected.myCatSlot); 
+    // ใช้วิธีค้นหาแบบยืดหยุ่น:
+    const myCat = updatedUser.pets?.find(c => c.slot === selected.myCatSlot || c.name === selected.myCatSlot); 
 
     if (myCat?.name) {
-        // A. ถ้าหาเจอโดย Slot ให้ใช้ชื่อนั้น
+        // A. ถ้าหาเจอโดย Slot หรือ Name
         catName = myCat.name;
     } else if (updatedUser.pets && updatedUser.pets.length > 0) {
-        // B. FALLBACK: ถ้าหาไม่เจอโดย Slot (เช่น myCatSlot เป็นค่าว่าง) 
-        //    ให้ใช้ชื่อของแมวตัวแรกในรายการ Pet ของเราเองแทน
+        // B. FALLBACK: ถ้าหาไม่เจอโดย Slot ให้ใช้ชื่อของแมวตัวแรกในรายการ Pet ของเราเอง
         catName = updatedUser.pets[0].name || 'N/A';
-        
-        // ⭐ Optional Log: สามารถเปิดบรรทัดนี้เพื่อ debug ได้
-        // console.log("Warning: myCatSlot not found, using first pet:", catName);
     }
     
     // 3. สร้างข้อมูล Modal
