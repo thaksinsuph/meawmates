@@ -82,7 +82,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
                                 </button>
                             ))}
                         </div>
-                    )}
+                    )}  
                     
                     <img
                         src={cat.image}
