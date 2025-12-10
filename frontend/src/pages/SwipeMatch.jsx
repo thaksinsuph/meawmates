@@ -420,7 +420,7 @@ export default function SwipeMatch() {
                                 {/* ⭐ NEW: แสดงจังหวัดพร้อมไอคอน */}
                                     <p className="flex items-center gap-1">
                                     <img src="/images/location.png" className="w-4 h-4" alt="Location" />
-                                        <strong>Province:</strong> {target.province || "—"}
+                                        <strong>Adress:</strong> {target.province || "—"}
                                     </p>
 
                                     <p className="flex items-center gap-1">

@@ -102,7 +102,7 @@ const PetdreegreeSelectionModal = ({
 
           {/* ⭐ NEW: จังหวัด (Province) */}
           <label className="block col-span-2">
-            <span className="text-gray-700 font-semibold">Province</span>
+            <span className="text-gray-700 font-semibold">Adress</span>
             <select
               value={province}
               onChange={(e) => setProvince(e.target.value)}
@@ -300,7 +300,9 @@ export default function Matching() {
         **1. Select a cat** from the channels below, then **2. Press Go to Petdreegree** to define criteria.
       </p>
 
-      {/* PET LIST */}
+      
+
+{/* PET LIST */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-6xl">
         {pets.map((pet, index) => {
           const empty = isEmptyPet(pet);
@@ -342,18 +344,14 @@ export default function Matching() {
                 Channel {index + 1}
               </p>
 
-              {/* DETAILS ที่แก้ไขเฉพาะ Gender */}
+              {/* DETAILS: จัดเรียงใหม่ให้ Address อยู่ล่างสุด */}
               <div className="text-sm text-gray-600 leading-6 mt-2 space-y-1">
                 <p><strong>Name:</strong> {pet?.name || "—"}</p>
                 <p><strong>Breed:</strong> {pet?.breed || "—"}</p>
                 <p><strong>Color:</strong> {pet?.color || "—"}</p>
                 <p><strong>Age:</strong> {pet?.age ? `${pet.age} yrs` : "—"}</p>
-                {/* ⭐ NEW: เพิ่มบรรทัดแสดงจังหวัด */}
-                <p className="flex items-center gap-1">
-                    <img src="/images/location.png" className="w-4 h-4" alt="Location" />
-                    <strong>Province:</strong> {pet?.province || "—"}
-                </p>
-                
+                
+                {/* Gender (ย้ายมาอยู่เหนือ Address) */}
                 <p className="flex items-center gap-1">
                   <strong>
                         {/* 1. แสดงข้อความ "Gender:" ก่อน */}
@@ -362,7 +360,7 @@ export default function Matching() {
                         {genderData ? (
                             <img 
                                 src={genderData.img} 
-                                className="w-4 h-4 inline-block align-middle ml-1" // เพิ่ม ml-1 เพื่อเว้นวรรคจากข้อความ
+                                className="w-4 h-4 inline-block align-middle ml-1" 
                                 alt={genderData.label || 'Gender Icon'} 
                             />
                         ) : (
@@ -375,6 +373,12 @@ export default function Matching() {
                       {pet.gender}
                     </span>
                   ) : '—'}
+                </p>
+
+                {/* ⭐ Address/Province (ย้ายลงมาล่างสุด) */}
+                <p className="flex items-center gap-1">
+                    <img src="/images/location.png" className="w-4 h-4" alt="Location" />
+                    <strong>Adress:</strong> {pet?.province || "—"}
                 </p>
               </div>
             </div>

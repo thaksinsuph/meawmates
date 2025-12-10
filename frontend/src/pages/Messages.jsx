@@ -37,80 +37,89 @@ const ImageModal = ({ src, onClose }) => {
 // *ใช้ชื่อ Field 'gender' และ 'color' ตัวพิมพ์เล็กเท่านั้น*
 // =================================================================
 const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
-    if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
+    if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
 
-    const { cats, selectedIndex, matchedCatName } = modalState;
-    const cat = cats[selectedIndex];
+    const { cats, selectedIndex, matchedCatName } = modalState;
+    const cat = cats[selectedIndex];
 
-    // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
-    const breed = cat.breed || '—'; 
-    const color = cat.color || '—'
-    const age = cat.age || null;
-    const ageDisplay = age ? `${age} yrs` : '—';
-    const gender = cat.gender || '—';
+    // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
+    const breed = cat.breed || '—'; 
+    const color = cat.color || '—'
+    const age = cat.age || null;
+    const ageDisplay = age ? `${age} yrs` : '—';
+    const gender = cat.gender || '—';
+    // ⭐ NEW: ดึงข้อมูลจังหวัด
+    const province = cat.province || '—';
 
-    return (
-        <div 
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
-            onClick={onClose}
-        >
-            <div 
-                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="text-center">
-                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
-                        {cat.name} 
-                        <span className="text-xl align-top ml-2"></span>
-                    </h2>
-                    
-                    {/* Cat Selector (ถ้ามีหลายตัว) */}
-                    {cats.length > 1 && (
-                        <div className="flex justify-center mb-4 space-x-2">
-                            {cats.map((c, index) => (
-                                <button
-                                    key={c._id || index}
-                                    onClick={() => onSelectCat(index)}
-                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
-                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
-                                >
-                                    <img 
-                                        src={c.image} 
-                                        alt={c.name} 
-                                        className="w-full h-full object-cover"
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    )}  
-                    
-                    <img
-                        src={cat.image}
-                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4"
-                        alt={cat.name}
-                    />
+    return (
+        <div 
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
+            onClick={onClose}
+        >
+            <div 
+                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="text-center">
+                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
+                        {cat.name} 
+                        <span className="text-xl align-top ml-2"></span>
+                    </h2>
+                    
+                    {/* Cat Selector (ถ้ามีหลายตัว) */}
+                    {cats.length > 1 && (
+                        <div className="flex justify-center mb-4 space-x-2">
+                            {cats.map((c, index) => (
+                                <button
+                                    key={c._id || index}
+                                    onClick={() => onSelectCat(index)}
+                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
+                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
+                                >
+                                    <img 
+                                        src={c.image} 
+                                        alt={c.name} 
+                                        className="w-full h-full object-cover"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}  
+                    
+                    <img
+                        src={cat.image}
+                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4"
+                        alt={cat.name}
+                    />
 
-                    {/* Cat Details */}
-                    <div className="text-left space-y-2 text-gray-700">
-                        <p><strong>Breed:</strong> {breed}</p>
-                        <p><strong>Color:</strong> {color}</p>
-                        <p><strong>Age:</strong> {ageDisplay}</p>
-                        <p><strong>Gender:</strong> {gender}</p>
-                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
-                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
+                    {/* Cat Details */}
+                    <div className="text-left space-y-2 text-gray-700">
+                        <p><strong>Breed:</strong> {breed}</p>
+                        <p><strong>Color:</strong> {color}</p>
+                        <p><strong>Age:</strong> {ageDisplay}</p>
+                        <p><strong>Gender:</strong> {gender}</p>
+                        
+                        {/* ⭐ NEW: แสดงจังหวัดพร้อมไอคอน */}
+                        <p className="flex items-center gap-2 pt-1 border-t border-gray-100"> 
+                            <img src="/images/location.png" className="w-4 h-4" alt="Location Icon" />
+                            <strong>Province:</strong> {province}
                         </p>
-                    </div>
+                        
+                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
+                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
+                        </p>
+                    </div>
 
-                    <button
-                        onClick={onClose}
-                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+                    <button
+                        onClick={onClose}
+                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 

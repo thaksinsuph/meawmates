@@ -142,7 +142,7 @@ export default function MatchHistory() {
 
                                 {/* ⭐ NEW: Province */}
                                 <p className="flex items-center gap-2">
-                                    <strong>Province:</strong> {targetCat.province || "—"}
+                                    <strong>Adress:</strong> {targetCat.province || "—"}
                                 </p>
                                 
                                 {/* Gender (รูปภาพอยู่หลังตัวหนังสือ) */}
