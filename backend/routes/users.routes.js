@@ -11,10 +11,17 @@ const router = express.Router();
 ===================================================== */
 
 /* 📌 GET MY PROFILE */
+/* 📌 GET MY PROFILE */
 router.get("/me", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id)
-    .select("-password");
+  try {
+    const user = await User.findById(req.user._id)
+      .select("-password")
+      // ⭐⭐ FIX: เพิ่ม populate cats (Pet model) ⭐⭐
+      .populate({ 
+          path: 'cats', 
+          model: 'Pet', 
+          select: 'slot name image breed color age gender' // ดึงฟิลด์ที่จำเป็นทั้งหมด
+      });
     res.json(user);
   } catch (err) {
     console.error("GET /me error:", err);
