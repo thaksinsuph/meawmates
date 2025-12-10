@@ -5,7 +5,7 @@ import api from "../api";
 import { socket } from '../socket'; 
 
 // =================================================================
-// ⭐ Image Modal Component (สำหรับแสดงรูปภาพขนาดเต็ม) (UNCHANGED)
+// ⭐ Image Modal Component (สำหรับแสดงรูปภาพขนาดเต็ม)
 // =================================================================
 const ImageModal = ({ src, onClose }) => {
     if (!src) return null;
@@ -33,94 +33,93 @@ const ImageModal = ({ src, onClose }) => {
 };
 
 // =================================================================
-// ⭐ Cat Profile Modal Component (MODIFIED)
+// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (FIXED!)
+// *ใช้ชื่อ Field 'gender' และ 'color' ตัวพิมพ์เล็กเท่านั้น*
 // =================================================================
-const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) => { // ✅ รับ openImageModal
-    if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
+const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
+    if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
 
-    const { cats, selectedIndex, matchedCatName } = modalState;
-    const cat = cats[selectedIndex];
+    const { cats, selectedIndex, matchedCatName } = modalState;
+    const cat = cats[selectedIndex];
 
-    // ⭐ ดึงข้อมูลที่จำเป็น
-    const breed = cat.breed || '—'; 
-    const color = cat.color || '—'
-    const age = cat.age || null;
-    const ageDisplay = age ? `${age} yrs` : '—';
-    const gender = cat.gender || '—';
-    const province = cat.province || '—'; // ✅ ดึงข้อมูลจังหวัด
+    // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
+    const breed = cat.breed || '—'; 
+    const color = cat.color || '—'
+    const age = cat.age || null;
+    const ageDisplay = age ? `${age} yrs` : '—';
+    const gender = cat.gender || '—';
+    // ⭐ NEW: ดึงข้อมูลจังหวัด
+    const province = cat.province || '—';
 
-    return (
-        <div 
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
-            onClick={onClose}
-        >
-            <div 
-                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="text-center">
-                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
-                        {cat.name} 
-                        <span className="text-xl align-top ml-2"></span>
-                    </h2>
-                    
-                    {/* Cat Selector (ถ้ามีหลายตัว) */}
-                    {cats.length > 1 && (
-                        <div className="flex justify-center mb-4 space-x-2">
-                            {cats.map((c, index) => (
-                                <button
-                                    key={c._id || index}
-                                    onClick={() => onSelectCat(index)}
-                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
-                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
-                                >
-                                    <img 
-                                        src={c.image} 
-                                        alt={c.name} 
-                                        className="w-full h-full object-cover"
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    )}  
-                    
-                    {/* ⭐ IMAGE (คลิกเพื่อขยาย) */}
-                    <img
-                        src={cat.image}
-                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer"
-                        alt={cat.name}
-                        onClick={() => openImageModal(cat.image)} // ✅ เพิ่ม onClick
-                    />
+    return (
+        <div 
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
+            onClick={onClose}
+        >
+            <div 
+                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="text-center">
+                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
+                        {cat.name} 
+                        <span className="text-xl align-top ml-2"></span>
+                    </h2>
+                    
+                    {/* Cat Selector (ถ้ามีหลายตัว) */}
+                    {cats.length > 1 && (
+                        <div className="flex justify-center mb-4 space-x-2">
+                            {cats.map((c, index) => (
+                                <button
+                                    key={c._id || index}
+                                    onClick={() => onSelectCat(index)}
+                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
+                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
+                                >
+                                    <img 
+                                        src={c.image} 
+                                        alt={c.name} 
+                                        className="w-full h-full object-cover"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}  
+                    
+                    <img
+                        src={cat.image}
+                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4"
+                        alt={cat.name}
+                    />
 
-                    {/* Cat Details */}
-                    <div className="text-left space-y-2 text-gray-700">
-                        <p><strong>Breed:</strong> {breed}</p>
-                        <p><strong>Color:</strong> {color}</p>
-                        <p><strong>Age:</strong> {ageDisplay}</p>
-                        <p><strong>Gender:</strong> {gender}</p>
+                    {/* Cat Details */}
+                    <div className="text-left space-y-2 text-gray-700">
+                        <p><strong>Breed:</strong> {breed}</p>
+                        <p><strong>Color:</strong> {color}</p>
+                        <p><strong>Age:</strong> {ageDisplay}</p>
+                        <p><strong>Gender:</strong> {gender}</p>
                         
-                        {/* ⭐ Province (Address) - ย้ายลงมาล่างสุด */}
+                        {/* ⭐ NEW: แสดงจังหวัดพร้อมไอคอน */}
                         <p className="flex items-center gap-2 pt-1 border-t border-gray-100"> 
                             <img src="/images/location.png" className="w-4 h-4" alt="Location Icon" />
                             <strong>Province:</strong> {province}
                         </p>
                         
-                        {/* Matched with text */}
-                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
-                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
-                        </p>
-                    </div>
+                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
+                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
+                        </p>
+                    </div>
 
-                    <button
-                        onClick={onClose}
-                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+                    <button
+                        onClick={onClose}
+                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 
@@ -149,9 +148,7 @@ export default function Messages() {
         matchedCatName: null,
     });
 
-    // 💡 FIX: State สำหรับข้อมูล User ที่มี Pet List
-    const [userData, setUserData] = useState(JSON.parse(localStorage.getItem("user")));
-    const user = userData;
+    const user = JSON.parse(localStorage.getItem("user"));
 
     /* ... CONTEXT MENU & UI LOGIC (unchanged) ... */
     const [msgMenu, setMsgMenu] = useState({ show: false, x: 0, y: 0, msg: null });
@@ -183,27 +180,6 @@ export default function Messages() {
             console.error(err);
         }
     };
-    
-    // ⭐ NEW: ฟังก์ชันสำหรับโหลดข้อมูลแมวทั้งหมดของผู้ใช้ (Pet List)
-    const loadUserPets = async () => {
-        try {
-            const res = await api.get("/api/pets/me"); // Endpoint ที่ดึงแมว 4 ตัวของเรา
-            // อัปเดตข้อมูล user ใน state/localStorage ด้วย pet list
-            const updatedUser = { ...userData, pets: res.data };
-            setUserData(updatedUser);
-            localStorage.setItem("user", JSON.stringify(updatedUser));
-        } catch (err) {
-            console.error("Failed to load user pets:", err);
-        }
-    };
-    
-    // โหลดแมวของเราเมื่อ Component โหลดครั้งแรก
-    useEffect(() => {
-        if (user?._id) {
-            loadUserPets();
-        }
-    }, [user?._id]);
-
 
     /* ... LOAD CHAT (unchanged) ... */
     const loadChat = async (otherId) => {
@@ -218,8 +194,9 @@ export default function Messages() {
             console.error(err);
         }
     };
-
-    /* ... MARK ALL AS READ ON PAGE LOAD, SOCKET.IO, useEffects (unchanged) ... */
+    /* ================================
+      MARK ALL AS READ ON PAGE LOAD
+    ================================= */
     useEffect(() => {
         if (!user?._id) return;
 
@@ -238,6 +215,9 @@ export default function Messages() {
         
     }, [user?._id, id]); 
 
+    /* ================================
+      SOCKET.IO CONNECTION AND LISTENERS
+      ================================= */
     useEffect(() => {
         if (!user?._id) return;
         socket.emit('join', user._id); 
@@ -261,40 +241,40 @@ export default function Messages() {
     useEffect(() => { loadMatches(); }, [user?._id]); 
     
     useEffect(() => {
-        // 💡 FIX: ตรวจสอบว่า userData (รวม pets) ถูกโหลดแล้วก่อนใช้ matches
-        if (!matches.length || !id || id === "undefined" || !user?.pets) { 
-            setSelected(null); setMessages([]); return; 
-        }
+        if (!matches.length || !id || id === "undefined") { setSelected(null); setMessages([]); return; }
         loadChat(id);
-    }, [id, matches.length, user?.pets]); // ✅ เพิ่ม user?.pets เป็น dependency
+    }, [id, matches.length]);
 
-    // ⭐ AUTO-SCROLL LOGIC: เลื่อนลงไปที่ข้อความล่าสุดเมื่อ messages เปลี่ยน (unchanged)
+    // ⭐ AUTO-SCROLL LOGIC: เลื่อนลงไปที่ข้อความล่าสุดเมื่อ messages เปลี่ยน
     useEffect(() => {
+        // ใช้ requestAnimationFrame เพื่อให้แน่ใจว่า DOM ถูก Render ก่อน Scroll
         requestAnimationFrame(() => {
-            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+             chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
         });
     }, [messages]);
 
-    // ⭐ Handler สำหรับเปิด Cat Profile Modal (FIXED LOGIC)
+    // ⭐ Handler สำหรับเปิด Cat Profile Modal (UPDATED!)
     const handleOpenCatProfile = () => {
         
         if (!selected || !selected.cats || selected.cats.length === 0) return;
-        
-        // 1. หาชื่อแมวของเราที่ Match ด้วย
-        // ใช้ selected.myCatSlot ในการหาแมวของเราใน user.pets (ที่เพิ่งโหลดมา)
-        const myCat = user.pets?.find(c => c.slot === selected.myCatSlot); 
-        
-        // 2. กำหนดชื่อแมวของเรา
-        const catName = myCat?.name || 'N/A'; 
 
-        // สร้างข้อมูล Modal
-        setCatProfileModal({
-            open: true,
-            cats: selected.cats,
-            selectedIndex: 0,
-            matchedCatName: catName // ✅ แก้ไขชื่อแมวที่ Match กับเรา
-        });
-    };
+        
+        
+        /// 1. หาชื่อแมวของเราที่ Match ด้วย
+        // ⭐⭐ FIX: เปลี่ยน user.cats เป็น user.pets ⭐⭐
+        const myCat = user.pets?.find(c => c.slot === selected.myCatSlot); 
+        
+        // 2. กำหนดชื่อแมวของเรา (ป้องกัน myCat เป็น undefined/null)
+        const catName = myCat?.name || 'N/A'; // ⭐⭐ FIX: ใช้ Optional Chaining และ Fallback
+
+        // สร้างข้อมูล Modal
+        setCatProfileModal({
+            open: true,
+            cats: selected.cats,
+            selectedIndex: 0,
+            matchedCatName: catName
+        });
+    };
 
     const handleSelectCatInModal = (index) => {
         setCatProfileModal(prev => ({ ...prev, selectedIndex: index }));
@@ -305,8 +285,8 @@ export default function Messages() {
     };
 
     /* ================================
-    // ... (TIME FORMAT & GROUPING, SEND MESSAGE, SORT CHATS) ...
-    ================================= */
+      TIME FORMAT & GROUPING (unchanged)
+      ================================= */
     const formatTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     const formatDateHeader = (ts) => {
@@ -334,6 +314,9 @@ export default function Messages() {
         return groups;
     };
 
+    /* ================================
+      SEND MESSAGE (unchanged)
+      ================================= */
     const sendText = async (e) => {
         e.preventDefault();
         if (!input.trim() || !selected) return;
@@ -373,6 +356,9 @@ export default function Messages() {
         }
     };
 
+    /* ================================
+      SORT CHATS (unchanged)
+      ================================= */
     const sortedChats = matches
         .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity))
         .map(m => {
@@ -383,25 +369,86 @@ export default function Messages() {
         })
         .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
 
-
     /* ================================
-      UI
-      ================================= */
-    return (
-        <section className="max-w-6xl mx-auto px-4 py-6">
-            <div className="flex min-h-[70vh] max-h-[85vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
+      UI
+      ================================= */
+    return (
+        <section className="max-w-6xl mx-auto px-4 py-6">
+            <div className="flex min-h-[70vh] max-h-[85vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
 
-                {/* -------------------------------------
-                      SIDEBAR (unchanged)
-                    -------------------------------------- */}
-                <aside className="w-[280px] border-r bg-pink-50 flex flex-col">
-                    {/* ... Sidebar Content ... */}
-                </aside>
+                {/* -------------------------------------
+                      SIDEBAR (unchanged)
+                    -------------------------------------- */}
+                <aside className="w-[280px] border-r bg-pink-50 flex flex-col">
+                    <div className="p-4 border-b bg-white font-semibold text-slate-800 shadow-sm">
+                        Messages
+                    </div>
 
-                {/* -------------------------------------
-                      CHAT AREA
-                    -------------------------------------- */}
-                <main className="flex-1 flex flex-col bg-gradient-to-b from-white to-pink-50">
+                    <div className="flex-1 overflow-y-auto px-3 pb-3">
+                        {sortedChats.map((cat) => {
+                            const ownerId = cat.user?._id || cat.user || cat.owner?._id;
+                            const isUnread = cat.hasNewMessage; 
+                            const lastMsgText = cat.lastMessageContent || "Chat now"; 
+
+                            if (!ownerId || typeof ownerId !== "string" || ownerId.length !== 24) {
+                                console.warn("❌ Invalid ownerId:", ownerId);
+                                return null;
+                            }
+                            
+                            return (
+                                <div
+                                    key={ownerId}
+                                    onClick={() => navigate(`/messages/${ownerId}`)}
+                                    onContextMenu={(e) => openChatMenu(e, cat)}
+                                    className={`flex items-center justify-between p-3 mb-2 cursor-pointer rounded-2xl transition-all
+                                        ${
+                                            selected && (selected.user._id || selected.user) === ownerId
+                                                ? "bg-white shadow border border-pink-200"
+                                                : "hover:bg-white/70"
+                                        }
+                                        ${
+                                            cat.isPinned
+                                                ? "border border-pink-400"
+                                                : ""
+                                        }
+                                        ${ isUnread ? "bg-pink-100 font-bold" : "" }
+                                    `}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={cat.cats[0]?.image}
+                                            className="w-11 h-11 rounded-full object-cover shadow-sm"
+                                            alt={cat.cats[0]?.name}
+                                        />
+                                        <div>
+                                            <p className={`font-medium text-sm ${isUnread ? "text-pink-600" : ""}`}>
+                                                {cat.cats[0]?.name}
+                                            </p>
+                                            <p className={`text-xs w-[150px] truncate ${isUnread ? "text-slate-800 font-semibold" : "text-gray-600"}`}>
+                                                {lastMsgText} 
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Notification Dot / Pin Icon */}
+                                    <div className="flex items-center gap-1">
+                                        {isUnread && (
+                                            <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse mr-1"></span>
+                                        )}
+                                        {cat.isPinned && (
+                                            <span className="text-pink-500 text-xs">📌</span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </aside>
+
+                {/* -------------------------------------
+                      CHAT AREA
+                    -------------------------------------- */}
+                <main className="flex-1 flex flex-col bg-gradient-to-b from-white to-pink-50">
                     {selected ? (
                         <>
                             {/* ⭐ HEADER (Clickable to open Cat Profile Modal) ⭐ */}
@@ -418,6 +465,7 @@ export default function Messages() {
                                             alt={cat.name}
                                         />
                                     ))}
+
                                     {selected.cats?.length > 3 && (
                                         <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs">
                                             +{selected.cats.length - 3}
@@ -452,7 +500,7 @@ export default function Messages() {
                                                     <img
                                                         src={msg.image}
                                                         className="rounded-xl mb-2 max-h-40 cursor-pointer"
-                                                        onClick={() => openImageModal(msg.image)} // ✅ Added onClick
+                                                        onClick={() => openImageModal(msg.image)} 
                                                         alt="Pinned message image"
                                                     />
                                                 )}
@@ -466,13 +514,12 @@ export default function Messages() {
                                 </div>
                             )}
 
-                            {/* NORMAL MESSAGES */}
+                            {/* NORMAL MESSAGES (unchanged) */}
                             <div className="flex-1 overflow-y-auto p-6 space-y-4"> 
                                 {Object.entries(
                                     groupByDate(messages.filter((m) => !m.pinned))
                                 ).map(([day, msgs]) => (
                                     <div key={day}>
-                                        {/* Date Header */}
                                         <p className="text-center text-xs text-gray-400 mb-3">
                                             {formatDateHeader(msgs[0].createdAt)}
                                         </p>
@@ -481,7 +528,9 @@ export default function Messages() {
                                             <div
                                                 key={msg._id}
                                                 className={`flex ${
-                                                    msg.from === user._id ? "justify-end" : "justify-start"
+                                                    msg.from === user._id
+                                                        ? "justify-end"
+                                                        : "justify-start"
                                                 }`}
                                             >
                                                 <div
@@ -498,7 +547,7 @@ export default function Messages() {
                                                         <img
                                                             src={msg.image}
                                                             className="rounded-xl mb-2 max-h-48 cursor-pointer"
-                                                            onClick={() => openImageModal(msg.image)} // ✅ Added onClick
+                                                            onClick={() => openImageModal(msg.image)} // ⭐ Added onClick
                                                             alt="Message image"
                                                         />
                                                     )}
@@ -507,7 +556,9 @@ export default function Messages() {
 
                                                     <p
                                                         className={`text-[10px] mt-1 ${
-                                                            msg.from === user._id ? "text-pink-100" : "text-gray-400"
+                                                            msg.from === user._id
+                                                                ? "text-pink-100"
+                                                                : "text-gray-400"
                                                         }`}
                                                     >
                                                         {formatTime(msg.createdAt)}
@@ -525,7 +576,30 @@ export default function Messages() {
                                 className="p-4 border-t bg-white flex items-center gap-3 shadow-sm"
                                 onSubmit={(e) => (file ? sendImage(e) : sendText(e))}
                             >
-                                {/* ... Input and Send Button ... */}
+                                <label className="cursor-pointer text-pink-500 text-xl">
+                                    📎
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        onChange={(e) => setFile(e.target.files[0])}
+                                    />
+                                </label>
+
+                                {file && (
+                                    <span className="text-xs text-gray-600">{file.name}</span>
+                                )}
+
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder="Type your message..."
+                                    className="flex-1 px-4 py-2 rounded-2xl border text-sm"
+                                />
+
+                                <button className="p-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow">
+                                    ➤
+                                </button>
                             </form>
                         </>
                     ) : (
@@ -536,66 +610,65 @@ export default function Messages() {
                 </main>
             </div>
 
-            {/* MESSAGE CONTEXT MENU (unchanged) */}
-            {msgMenu.show && (
-                <div
-                    className="fixed z-50 bg-white border shadow-xl rounded-lg py-2 w-44 text-sm animate-fadeIn"
-                    style={{ top: msgMenu.y, left: msgMenu.x }}
-                >
-                    <button
-                        onClick={togglePinMessage}
-                        className="block w-full text-left px-4 py-2 hover:bg-pink-50"
-                    >
-                        📌 {msgMenu.msg?.pinned ? "Unpin message" : "Pin message"}
-                    </button>
+            {/* MESSAGE CONTEXT MENU (unchanged) */}
+            {msgMenu.show && (
+                <div
+                    className="fixed z-50 bg-white border shadow-xl rounded-lg py-2 w-44 text-sm animate-fadeIn"
+                    style={{ top: msgMenu.y, left: msgMenu.x }}
+                >
+                    <button
+                        onClick={togglePinMessage}
+                        className="block w-full text-left px-4 py-2 hover:bg-pink-50"
+                    >
+                        📌 {msgMenu.msg?.pinned ? "Unpin message" : "Pin message"}
+                    </button>
 
-                    <button
-                        onClick={deleteMessage}
-                        className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-500"
-                    >
-                        🗑 Delete message
-                    </button>
-                </div>
-            )}
+                    <button
+                        onClick={deleteMessage}
+                        className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-500"
+                    >
+                        🗑 Delete message
+                    </button>
+                </div>
+            )}
 
-            {/* CHAT CONTEXT MENU (unchanged) */}
-            {chatMenu.show && (
-                <div
-                    className="fixed z-50 bg-white border shadow-xl rounded-lg py-2 w-40 text-sm animate-fadeIn"
-                    style={{ top: chatMenu.y, left: chatMenu.x }}
-                >
-                    <button
-                        onClick={togglePinChat}
-                        className="block w-full text-left px-4 py-2 hover:bg-pink-50"
-                    >
-                        📌{" "}
-                        {pinnedChats.includes(
-                            chatMenu.chat.user._id || chatMenu.chat.user
-                        )
-                            ? "Unpin Chat"
-                            : "Pin Chat"}
-                    </button>
+            {/* CHAT CONTEXT MENU (unchanged) */}
+            {chatMenu.show && (
+                <div
+                    className="fixed z-50 bg-white border shadow-xl rounded-lg py-2 w-40 text-sm animate-fadeIn"
+                    style={{ top: chatMenu.y, left: chatMenu.x }}
+                >
+                    <button
+                        onClick={togglePinChat}
+                        className="block w-full text-left px-4 py-2 hover:bg-pink-50"
+                    >
+                        📌{" "}
+                        {pinnedChats.includes(
+                            chatMenu.chat.user._id || chatMenu.chat.user
+                        )
+                            ? "Unpin Chat"
+                            : "Pin Chat"}
+                    </button>
 
-                    <button
-                        onClick={deleteChat}
-                        className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-500"
-                    >
-                        🗑 Delete Chat
-                    </button>
-                </div>
-            )}
-            
-            {/* Image Modal Component ถูกเรียกใช้ที่นี่ */}
-            <ImageModal src={imageModal} onClose={closeImageModal} />
+                    <button
+                        onClick={deleteChat}
+                        className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-500"
+                    >
+                        🗑 Delete Chat
+                    </button>
+                </div>
+            )}
+            
+            {/* Image Modal Component ถูกเรียกใช้ที่นี่ */}
+            <ImageModal src={imageModal} onClose={closeImageModal} />
 
-            {/* ⭐ Cat Profile Modal Component ถูกเรียกใช้ที่นี่ (NEW!) */}
-            <CatProfileModal 
-                modalState={catProfileModal} 
-                onClose={handleCloseCatProfile} 
-                onSelectCat={handleSelectCatInModal}
-                openImageModal={openImageModal} // ✅ ส่ง handler ขยายรูปไป Modal
-            />
-            
-        </section>
-    );
+            {/* ⭐ Cat Profile Modal Component ถูกเรียกใช้ที่นี่ (NEW!) */}
+            <CatProfileModal 
+                modalState={catProfileModal} 
+                onClose={handleCloseCatProfile} 
+                onSelectCat={handleSelectCatInModal}
+            />
+            
+        </section>
+    );
 }
