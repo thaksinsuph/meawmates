@@ -6,6 +6,7 @@ import { socket } from '../socket';
 
 // =================================================================
 // ⭐ NEW: ฟังก์ชันสำหรับกำหนดรูปภาพและสีของเพศ
+// (เพิ่มกลับเข้ามาเนื่องจากถูกลบไปในโค้ดรอบล่าสุด)
 // =================================================================
 const getGenderImage = (gender) => {
     if (gender === "Male") {
@@ -54,25 +55,22 @@ const ImageModal = ({ src, onClose }) => {
 
 // =================================================================
 // ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (FIXED/UPDATED!)
-// *ใช้ชื่อ Field 'gender' และ 'color' ตัวพิมพ์เล็กเท่านั้น*
+// *รับ handleOpenImageFromCatProfile เข้ามา*
 // =================================================================
-const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) => {
+const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFromCatProfile }) => {
     if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
 
     const { cats, selectedIndex, matchedCatName } = modalState;
     const cat = cats[selectedIndex];
-
-    // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
+    
+    // ⭐ ดึงข้อมูลที่ขาดหายไป (Gender, Province)
     const breed = cat.breed || '—'; 
     const color = cat.color || '—'
     const age = cat.age || null;
     const ageDisplay = age ? `${age} yrs` : '—';
-    const gender = cat.gender || '—'; 
-    // ⭐ FIX: ดึงข้อมูลจังหวัด
-    const province = cat.province || '—'; 
-    
-    // ⭐ NEW: ดึงข้อมูลสำหรับ Icon
-    const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
+    const gender = cat.gender || '—';
+    const province = cat.province || '—'; // ⭐ เพิ่ม Province
+    const genderData = cat.gender ? getGenderImage(cat.gender) : null; // ⭐ ดึง Gender Icon
 
     return (
         <div 
@@ -84,7 +82,6 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) =
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="text-center">
-                    {/* ⭐ FIX/NEW: แสดงชื่อแมว (Name) */}
                     <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
                         {cat.name || 'Cat Profile'} 
                         <span className="text-xl align-top ml-2"></span>
@@ -114,7 +111,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) =
                         src={cat.image}
                         className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer"
                         alt={cat.name}
-                        onClick={() => openImageModal(cat.image)} // เปิดรูปภาพขนาดใหญ่ได้
+                        onClick={() => handleOpenImageFromCatProfile(cat.image)} // ⭐ FIX: เมื่อกดรูป ให้ปิด Modal นี้ด้วย
                     />
 
                     {/* Cat Details */}
@@ -123,7 +120,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) =
                         <p><strong>Color:</strong> {color}</p>
                         <p><strong>Age:</strong> {ageDisplay}</p>
                         
-                        {/* ⭐ FIX/NEW: แสดง Gender พร้อม Icon */}
+                        {/* ⭐ แสดง Gender พร้อม Icon */}
                         <p className="flex items-center gap-1">
                             <strong>Gender:</strong>
                             {genderData ? (
@@ -138,11 +135,11 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) =
                                     </span>
                                 </>
                             ) : (
-                                <span>{gender}</span> // ใช้ค่าเดิม '—' ถ้าไม่มีข้อมูล
+                                <span>{gender}</span> 
                             )}
                         </p>
                         
-                        {/* ⭐ FIX/NEW: แสดงจังหวัดพร้อมไอคอน */}
+                        {/* ⭐ แสดงจังหวัดพร้อมไอคอน */}
                         <p className="flex items-center gap-2 pt-1 border-t border-gray-100"> 
                             <img src="/images/location.png" className="w-4 h-4" alt="Location Icon" />
                             <strong>Province:</strong> {province}
@@ -192,6 +189,13 @@ export default function Messages() {
     });
 
     const user = JSON.parse(localStorage.getItem("user"));
+    
+    // ⭐ NEW: Handler สำหรับเปิด Image Modal จากภายใน CatProfileModal
+    const handleOpenImageFromCatProfile = (src) => {
+        handleCloseCatProfile(); // 1. สั่งปิด CatProfileModal (ป๊อปอัพตัวแม่)
+        openImageModal(src);     // 2. เปิด Image Modal (ซูมรูป)
+    };
+
 
     /* ... CONTEXT MENU & UI LOGIC (unchanged) ... */
     const [msgMenu, setMsgMenu] = useState({ show: false, x: 0, y: 0, msg: null });
@@ -200,7 +204,7 @@ export default function Messages() {
 
     const [chatMenu, setChatMenu] = useState({ show: false, x: 0, y: 0, chat: null });
     const openChatMenu = (e, chat) => { e.preventDefault(); setChatMenu({ show: true, x: e.clientX, y: e.clientY, chat }); };
-    const closeChatMenu = () => setChatMenu({ show: false, x: 0, y: 0, chat: null });
+    const closeChatMenu = () => setChatMenu({ show: false, x: 0, y: 0, msg: null });
 
     useEffect(() => {
         const closeMenus = () => { closeMsgMenu(); closeChatMenu(); };
@@ -543,7 +547,7 @@ export default function Messages() {
                                                     <img
                                                         src={msg.image}
                                                         className="rounded-xl mb-2 max-h-40 cursor-pointer"
-                                                        onClick={() => openImageModal(msg.image)} // ⭐ FIX/NEW: เพิ่ม onClick
+                                                        onClick={() => openImageModal(msg.image)} 
                                                         alt="Pinned message image"
                                                     />
                                                 )}
@@ -590,7 +594,7 @@ export default function Messages() {
                                                         <img
                                                             src={msg.image}
                                                             className="rounded-xl mb-2 max-h-48 cursor-pointer"
-                                                            onClick={() => openImageModal(msg.image)} // ⭐ FIX/NEW: เพิ่ม onClick
+                                                            onClick={() => openImageModal(msg.image)} 
                                                             alt="Message image"
                                                         />
                                                     )}
@@ -710,7 +714,7 @@ export default function Messages() {
                 modalState={catProfileModal} 
                 onClose={handleCloseCatProfile} 
                 onSelectCat={handleSelectCatInModal}
-                openImageModal={openImageModal} // ส่ง handler ลงไป
+                handleOpenImageFromCatProfile={handleOpenImageFromCatProfile} // ⭐ FIX: ส่ง handler ที่แก้ไขแล้วเข้าไป
             />
             
         </section>
