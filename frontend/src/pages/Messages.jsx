@@ -320,26 +320,37 @@ export default function Messages() {
 
     // ⭐ Handler สำหรับเปิด Cat Profile Modal (อัปเดต Logic การหาชื่อแมว)
     const handleOpenCatProfile = () => {
-        
-        if (!selected || !selected.cats || selected.cats.length === 0) return;
-        
-        // 1. ดึง user object ที่ถูกอัปเดตแล้วจาก local storage (เพื่อความแน่นอน)
-        const updatedUser = JSON.parse(localStorage.getItem("user")); 
-        
-        /// 2. หาชื่อแมวของเราที่ Match ด้วย slot
-        const myCat = updatedUser.pets?.find(c => c.slot === selected.myCatSlot); 
-        
-        // 3. กำหนดชื่อแมวของเรา (ป้องกัน myCat เป็น undefined/null)
-        const catName = myCat?.name || 'N/A'; 
+    
+    if (!selected || !selected.cats || selected.cats.length === 0) return;
+    
+    // 1. ดึง user object ที่ถูกอัปเดตแล้วจาก local storage
+    const updatedUser = JSON.parse(localStorage.getItem("user")); 
+    
+    let catName = 'N/A'; // กำหนดค่าเริ่มต้นเป็น N/A
+    
+    // 2. พยายามหาแมวของเราโดยใช้ myCatSlot ที่ API ส่งมา
+    const myCat = updatedUser.pets?.find(c => c.slot === selected.myCatSlot); 
 
-        // สร้างข้อมูล Modal
-        setCatProfileModal({
-            open: true,
-            cats: selected.cats,
-            selectedIndex: 0,
-            matchedCatName: catName
-        });
-    };
+    if (myCat?.name) {
+        // A. ถ้าหาเจอโดย Slot ให้ใช้ชื่อนั้น
+        catName = myCat.name;
+    } else if (updatedUser.pets && updatedUser.pets.length > 0) {
+        // B. FALLBACK: ถ้าหาไม่เจอโดย Slot (เช่น myCatSlot เป็นค่าว่าง) 
+        //    ให้ใช้ชื่อของแมวตัวแรกในรายการ Pet ของเราเองแทน
+        catName = updatedUser.pets[0].name || 'N/A';
+        
+        // ⭐ Optional Log: สามารถเปิดบรรทัดนี้เพื่อ debug ได้
+        // console.log("Warning: myCatSlot not found, using first pet:", catName);
+    }
+    
+    // 3. สร้างข้อมูล Modal
+    setCatProfileModal({
+        open: true,
+        cats: selected.cats,
+        selectedIndex: 0,
+        matchedCatName: catName // ส่งชื่อที่ถูกต้อง (หรือชื่อ Fallback)
+    });
+};
 
     const handleSelectCatInModal = (index) => {
         setCatProfileModal(prev => ({ ...prev, selectedIndex: index }));
