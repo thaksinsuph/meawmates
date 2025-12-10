@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 // ⭐ 1. IMPORT เฉพาะ BREEDS และ CAT_COLORS ที่มีอยู่ใน petData.js
-// (สมมติว่า petData.js อยู่ใน path ที่ถูกต้อง)
 import { 
-    BREEDS, 
-    CAT_COLORS, 
+    BREEDS, 
+    CAT_COLORS, 
 } from "../petData"; 
 
 import THAI_PROVINCES from "../thaiProvinces";
@@ -22,14 +21,14 @@ const PetdreegreeSelectionModal = ({
   colorOptions, 
   ageOptions, 
   genderOptions,
-  provinceOptions,
+  provinceOptions,
 }) => {
   // State สำหรับเก็บเงื่อนไขที่เลือก
   const [breed, setBreed] = useState("Any");
   const [color, setColor] = useState("Any");
   const [age, setAge] = useState("Any");
   const [gender, setGender] = useState("Any");
-  const [province, setProvince] = useState("Any");
+  const [province, setProvince] = useState("Any");
 
   if (!isOpen || !selectedPet) return null;
 
@@ -101,8 +100,8 @@ const PetdreegreeSelectionModal = ({
             </select>
           </label>
 
-          {/* ⭐ NEW: จังหวัด (Province) */}
-          <label className="block col-span-2">
+          {/* ⭐ NEW: จังหวัด (Province) */}
+          <label className="block col-span-2">
             <span className="text-gray-700 font-semibold">Province</span>
             <select
               value={province}
@@ -112,7 +111,7 @@ const PetdreegreeSelectionModal = ({
               {provinceOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
           </label>
-          
+          
         </div>
         
         {/* BUTTONS ของ Modal */}
@@ -134,25 +133,26 @@ const PetdreegreeSelectionModal = ({
           </button>
         </div>
       </div>
+      
     </div>
   );
 };
 
 // ⭐ 1. เพิ่มฟังก์ชันสำหรับกำหนดรูปภาพเพศ
 const getGenderImage = (gender) => {
-    if (gender === "Male") {
-        return { 
-            img: "/images/male.png", 
-            color: "text-blue-600"
-        };
-    }
-    if (gender === "Female") {
-        return { 
-            img: "/images/female.png", // ตรวจสอบว่า path นี้ถูกต้อง
-            color: "text-pink-600"
-        };
-    }
-    return null;
+    if (gender === "Male") {
+        return { 
+            img: "/images/male.png", 
+            color: "text-blue-600"
+        };
+    }
+    if (gender === "Female") {
+        return { 
+            img: "/images/female.png", // ตรวจสอบว่า path นี้ถูกต้อง
+            color: "text-pink-600"
+        };
+    }
+    return null;
 };
 
 
@@ -184,7 +184,8 @@ export default function Matching() {
         const res = await api.get(`/api/pets/${i}`);
         results.push({
           ...res.data,
-          image: fixImage(res.data?.image),
+          // ใช้ fixImage สำหรับรูปภาพใน Slot Card (เพื่อให้รูปจาก Backend แสดงผล)
+          image: fixImage(res.data?.image), 
           vaccineImage: fixImage(res.data?.vaccineImage),
           slot: i,
         });
@@ -205,7 +206,13 @@ export default function Matching() {
             setSelectedPet(null);
             return;
         }
-        setSelectedPet({ ...pet, slot: index + 1 });
+        // ⭐ MODIFIED: ต้องตั้งค่า selectedPet ให้มี province ด้วย
+        setSelectedPet({ 
+            ...pet, 
+            slot: index + 1, 
+            // ตรวจสอบว่า province ถูกดึงมาอย่างถูกต้อง
+            province: pet.province || "", 
+        });
     };
 
     const handleOpenCriteriaModal = () => {
@@ -225,7 +232,7 @@ export default function Matching() {
                 color: pet.color,
                 age: pet.age,
                 gender: pet.gender,
-                province: pet.province,
+                province: pet.province,
             },
             criteria: criteria
         };
@@ -242,7 +249,7 @@ export default function Matching() {
     const localAgeOptions = [ "Any", "0-1", "1-3", "3-7", "7+" ];
     const localGenderOptions = [ "Any", "Male", "Female" ];
 // ⭐ NEW: Options สำหรับจังหวัด
-    const localProvinceOptions = [ "Any", ...THAI_PROVINCES ];
+    const localProvinceOptions = [ "Any", ...THAI_PROVINCES ];
 
 
   /* ============================================================
@@ -263,7 +270,7 @@ export default function Matching() {
     colorOptions={["Any", ...Object.keys(CAT_COLORS)]} 
     ageOptions={localAgeOptions}
     genderOptions={localGenderOptions}
-    provinceOptions={localProvinceOptions}
+    provinceOptions={localProvinceOptions}
 />
 
       {/* ------------------ MANAGE PET BUTTON SECTION ------------------ */}
@@ -298,7 +305,7 @@ export default function Matching() {
         {pets.map((pet, index) => {
           const empty = isEmptyPet(pet);
           const isSelected = selectedPet?.slot === index + 1;
-          const genderData = pet?.gender ? getGenderImage(pet.gender) : null; // ⭐ ดึงข้อมูลเพศ
+          const genderData = pet?.gender ? getGenderImage(pet.gender) : null; // ⭐ ดึงข้อมูลเพศ
 
           return (
             <div
@@ -341,11 +348,17 @@ export default function Matching() {
                 <p><strong>Breed:</strong> {pet?.breed || "—"}</p>
                 <p><strong>Color:</strong> {pet?.color || "—"}</p>
                 <p><strong>Age:</strong> {pet?.age ? `${pet.age} yrs` : "—"}</p>
+                {/* ⭐ NEW: เพิ่มบรรทัดแสดงจังหวัด */}
+                <p className="flex items-center gap-1">
+                    <img src="/images/location.png" className="w-4 h-4" alt="Location" />
+                    <strong>Province:</strong> {pet?.province || "—"}
+                </p>
+                
                 <p className="flex items-center gap-1">
                   <strong>
-                        {/* 1. แสดงข้อความ "Gender:" ก่อน */}
+                        {/* 1. แสดงข้อความ "Gender:" ก่อน */}
                         Gender:
-                        {/* 2. แสดงรูปภาพ Gender (ถ้ามี) */}
+                        {/* 2. แสดงรูปภาพ Gender (ถ้ามี) */}
                         {genderData ? (
                             <img 
                                 src={genderData.img} 
