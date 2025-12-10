@@ -62,7 +62,7 @@ router.post("/mark-all-seen", auth, async (req, res) => {
 });
 
 /* ================================
-   1) โหลดข้อความระหว่าง Owner 2 คน
+   1) โหลดข้อความระหว่าง Owner 2 คน (FIXED: โหลดอย่างเดียว)
 ================================ */
 router.get("/:id", auth, async (req, res) => {
   try {
@@ -70,12 +70,9 @@ router.get("/:id", auth, async (req, res) => {
     const userB = req.params.id;
     const targetUserB = userB.toString(); 
 
-    // 1. อัปเดตสถานะการอ่าน (Seen)
-    await Message.updateMany(
-      { to: userA, from: targetUserB, seen: false },
-      { $set: { seen: true, seenAt: new Date() } }
-    );
-
+    // ⭐⭐ ลบ Logic Mark as Seen ออกจากตรงนี้ ⭐⭐
+    // อัปเดตสถานะการอ่าน (Seen) ถูกย้ายไปที่ POST /mark-as-seen/:id
+    
     // 2. ดึงข้อความ
     const msgs = await Message.find({
       $or: [
@@ -83,43 +80,31 @@ router.get("/:id", auth, async (req, res) => {
         { from: targetUserB, to: userA },
       ],
     }).sort({ pinnedAt: -1, createdAt: 1 }); 
-
-    // 🎯 เนื่องจากเราลบ Logic การแปลง URL ออกจากไฟล์นี้แล้ว 
-    // หากคุณได้แก้ไข Message.js ให้ใช้ Virtual Property แล้ว โค้ดนี้จะใช้ได้ทันที
     
     res.json(msgs); 
   } catch (err) {
-    console.error("Load chat error:", err);
+    console.error("Load chat error:", err);
     res.status(500).json({ message: "Load chat error" });
   }
 });
 
-/* ================================
-   2) ส่งข้อความ Text
-================================ */
-router.post("/text", auth, async (req, res) => {
-  try {
-    const { to, text } = req.body;
 
-    if (!to || to === "undefined") {
-      return res.status(400).json({ message: "Invalid 'to' user" });
-    }
-
-    const msg = await Message.create({
-      from: req.user._id,
-      to,
-      text,
-      type: "text",
-      seen: false, // ⭐ สำคัญ: ข้อความใหม่ต้องถูกตั้งค่าเป็นยังไม่ได้อ่าน
-    });
-
-    // 💡 หาก Backend มี Socket.IO: ควรส่ง io.to().emit('message:new', msg); ที่นี่
-    
-    res.json(msg);
-  } catch (err) {
-    console.error("Send text error", err);
-    res.status(500).json({ message: "Send text error" });
-  }
+// ⭐⭐ NEW ROUTE: ทำ Mark as Seen เมื่อ Frontend เรียก
+router.post("/mark-as-seen/:id", auth, async (req, res) => {
+    try {
+        const userA = req.user._id;
+        const userB = req.params.id;
+        const targetUserB = userB.toString();
+        
+        await Message.updateMany(
+            { to: userA, from: targetUserB, seen: false },
+            { $set: { seen: true, seenAt: new Date() } }
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Mark as seen error:", err);
+        res.status(500).json({ message: "Error marking messages as seen" });
+    }
 });
 
 /* ================================

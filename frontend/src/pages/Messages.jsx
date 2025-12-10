@@ -28,7 +28,6 @@ const getGenderImage = (gender) => {
 // =================================================================
 const ImageModal = ({ src, onClose }) => {
     if (!src) return null;
-    // ... (unchanged ImageModal component logic)
     return (
         <div 
             className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center backdrop-blur-sm" 
@@ -231,19 +230,29 @@ export default function Messages() {
         }
     };
 
-    /* ... LOAD CHAT (UPDATED: Remove redundant loadMatches) ... */
+    // ⭐ NEW: ฟังก์ชัน Mark as Seen ที่เรียก API ใหม่
+    const markChatAsRead = async (otherId) => {
+        try {
+            // ⭐ เรียก API Mark as Seen ที่เราเพิ่งสร้างใน Backend
+            await api.post(`/api/chat/mark-as-seen/${otherId}`);
+            loadMatches(); // อัปเดต Sidebar หลัง Mark as Seen สำเร็จ
+        } catch (err) {
+            console.error("Failed to mark chat as seen:", err);
+        }
+    };
+
+    /* ... LOAD CHAT (UPDATED: โหลดอย่างเดียว) ... */
     const loadChat = async (otherId) => {
         if (!otherId || otherId === "undefined") { console.warn("❌ Invalid chat ID:", otherId); return; }
         try {
-            // 1. โหลดข้อความ (Backend จะทำ Mark as Seen ให้แล้ว)
-            const res = await api.get(`/api/chat/${otherId}`);
+            // 1. โหลดข้อความ (ใช้ API ที่ไม่ Mark as Seen)
+            const res = await api.get(`/api/chat/${otherId}`); 
             setMessages(res.data);
             
             const found = matches.find((m) => (m.user._id || m.user).toString() === otherId.toString());
             setSelected(found);
             
-            // 2. ⭐ FIX: โหลด Match List ใหม่ เพื่ออัปเดตสถานะ Unread Count ใน Sidebar
-            loadMatches(); 
+            // ❌ ไม่เรียก loadMatches() ที่นี่แล้ว
 
         } catch (err) {
             console.error(err);
@@ -304,6 +313,19 @@ export default function Messages() {
         if (!matches.length || !id || id === "undefined") { setSelected(null); setMessages([]); return; }
         loadChat(id);
     }, [id, matches.length]);
+
+    // ⭐ NEW/FIX: ทำ Mark as Seen เมื่อห้องแชทเปิดสำเร็จ
+    useEffect(() => {
+        if (selected && id) {
+            // ตรวจสอบว่าห้องแชทนี้มีข้อความที่ยังไม่ได้อ่านหรือไม่
+            const chatHasUnseen = selected.unseenCount > 0;
+
+            if (chatHasUnseen) {
+                // ⭐ ทำ Mark as Seen ทันทีที่เข้าห้องแชท
+                markChatAsRead(id); 
+            }
+        }
+    }, [selected, id]); // จะทำงานเมื่อ selected หรือ id เปลี่ยน
 
     // ⭐ AUTO-SCROLL LOGIC: เลื่อนลงไปที่ข้อความล่าสุดเมื่อ messages เปลี่ยน
     useEffect(() => {
