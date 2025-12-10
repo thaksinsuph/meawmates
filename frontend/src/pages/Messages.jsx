@@ -249,7 +249,7 @@ export default function Messages() {
         if (!selected || !selected.cats || selected.cats.length === 0) return;
         
         // หาชื่อแมวของเราที่ Match ด้วย
-        const myCat = user.cats?.find(c => c.slot === selected.myCatSlot) || { name: 'Your Pet' };
+        const myCat = user.cats?.find(c => c.slot === selected.myCatSlot); // <--- ต้องมี user.cats
 
         // สร้างข้อมูล Modal
         setCatProfileModal({
