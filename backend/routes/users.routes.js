@@ -12,22 +12,14 @@ const router = express.Router();
 
 /* 📌 GET MY PROFILE */
 router.get("/me", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id)
-      .select("-password")
-      // ⭐⭐ FIX: เพิ่ม populate cats (Pet model) ⭐⭐
-      .populate({ 
-          path: 'cats', 
-          model: 'Pet', 
-          select: 'slot name image breed color age gender' // ดึงทุกฟิลด์ที่จำเป็น
-      }); 
-      // *************************************************
-
-    res.json(user);
-  } catch (err) {
-    console.error("GET /me error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
+  try {
+    const user = await User.findById(req.user._id)
+    .select("-password");
+    res.json(user);
+  } catch (err) {
+    console.error("GET /me error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 /* 📌 UPLOAD AVATAR (เพิ่มใหม่ ⭐) 
