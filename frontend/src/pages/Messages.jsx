@@ -5,7 +5,8 @@ import api from "../api";
 import { socket } from '../socket'; 
 
 // =================================================================
-// ⭐ Image Modal Component (สำหรับแสดงรูปภาพขนาดเต็ม)
+// ⭐ Image Modal Component (สำหรับแสดงรูปภาพขนาดเต็ม) (NEW!)
+// *ต้องมีการส่ง openImageModal และ closeImageModal ลงไปใน CatProfileModal และ Chat Message ด้วย*
 // =================================================================
 const ImageModal = ({ src, onClose }) => {
     if (!src) return null;
@@ -34,70 +35,71 @@ const ImageModal = ({ src, onClose }) => {
 
 // =================================================================
 // ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (FIXED!)
-// *ใช้ชื่อ Field 'gender' และ 'color' ตัวพิมพ์เล็กเท่านั้น*
+// *รับ openImageModal เข้ามาเพื่อใช้เปิดรูปภาพใหญ่*
 // =================================================================
-const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
-    if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
+const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) => { // ⭐ Add openImageModal
+    if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
 
-    const { cats, selectedIndex, matchedCatName } = modalState;
-    const cat = cats[selectedIndex];
+    const { cats, selectedIndex, matchedCatName } = modalState;
+    const cat = cats[selectedIndex];
 
-    // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
-    const breed = cat.breed || '—'; 
-    const color = cat.color || '—'
-    const age = cat.age || null;
-    const ageDisplay = age ? `${age} yrs` : '—';
-    const gender = cat.gender || '—';
+    // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
+    const breed = cat.breed || '—'; 
+    const color = cat.color || '—'
+    const age = cat.age || null;
+    const ageDisplay = age ? `${age} yrs` : '—';
+    const gender = cat.gender || '—'; // ⭐ FIX: ดึง Gender
     // ⭐ NEW: ดึงข้อมูลจังหวัด
-    const province = cat.province || '—';
+    const province = cat.province || '—'; // ⭐ NEW: ดึง Province
 
-    return (
-        <div 
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
-            onClick={onClose}
-        >
-            <div 
-                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="text-center">
-                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
-                        {cat.name} 
-                        <span className="text-xl align-top ml-2"></span>
-                    </h2>
-                    
-                    {/* Cat Selector (ถ้ามีหลายตัว) */}
-                    {cats.length > 1 && (
-                        <div className="flex justify-center mb-4 space-x-2">
-                            {cats.map((c, index) => (
-                                <button
-                                    key={c._id || index}
-                                    onClick={() => onSelectCat(index)}
-                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
-                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
-                                >
-                                    <img 
-                                        src={c.image} 
-                                        alt={c.name} 
-                                        className="w-full h-full object-cover"
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    )}  
-                    
-                    <img
-                        src={cat.image}
-                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4"
-                        alt={cat.name}
-                    />
+    return (
+        <div 
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
+            onClick={onClose}
+        >
+            <div 
+                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="text-center">
+                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
+                        {cat.name} 
+                        <span className="text-xl align-top ml-2"></span>
+                    </h2>
+                    
+                    {/* Cat Selector (ถ้ามีหลายตัว) */}
+                    {cats.length > 1 && (
+                        <div className="flex justify-center mb-4 space-x-2">
+                            {cats.map((c, index) => (
+                                <button
+                                    key={c._id || index}
+                                    onClick={() => onSelectCat(index)}
+                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
+                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
+                                >
+                                    <img 
+                                        src={c.image} 
+                                        alt={c.name} 
+                                        className="w-full h-full object-cover"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}  
+                    
+                    <img
+                        src={cat.image}
+                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer" // ⭐ Added cursor-pointer
+                        alt={cat.name}
+                        onClick={() => openImageModal(cat.image)} // ⭐ NEW: ทำให้รูปใน modal กดแล้วเปิดรูปใหญ่ได้
+                    />
 
-                    {/* Cat Details */}
-                    <div className="text-left space-y-2 text-gray-700">
-                        <p><strong>Breed:</strong> {breed}</p>
-                        <p><strong>Color:</strong> {color}</p>
-                        <p><strong>Age:</strong> {ageDisplay}</p>
-                        <p><strong>Gender:</strong> {gender}</p>
+                    {/* Cat Details */}
+                    <div className="text-left space-y-2 text-gray-700">
+                        <p><strong>Breed:</strong> {breed}</p>
+                        <p><strong>Color:</strong> {color}</p>
+                        <p><strong>Age:</strong> {ageDisplay}</p>
+                        <p><strong>Gender:</strong> {gender}</p> {/* ⭐ FIX: แสดง Gender */}
                         
                         {/* ⭐ NEW: แสดงจังหวัดพร้อมไอคอน */}
                         <p className="flex items-center gap-2 pt-1 border-t border-gray-100"> 
@@ -105,21 +107,21 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat }) => {
                             <strong>Province:</strong> {province}
                         </p>
                         
-                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
-                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
-                        </p>
-                    </div>
+                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
+                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
+                        </p>
+                    </div>
 
-                    <button
-                        onClick={onClose}
-                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+                    <button
+                        onClick={onClose}
+                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 
@@ -262,19 +264,19 @@ export default function Messages() {
         
         /// 1. หาชื่อแมวของเราที่ Match ด้วย
         // ⭐⭐ FIX: เปลี่ยน user.cats เป็น user.pets ⭐⭐
-        const myCat = user.pets?.find(c => c.slot === selected.myCatSlot); 
+        const myCat = user.pets?.find(c => c.slot === selected.myCatSlot); 
         
         // 2. กำหนดชื่อแมวของเรา (ป้องกัน myCat เป็น undefined/null)
-        const catName = myCat?.name || 'N/A'; // ⭐⭐ FIX: ใช้ Optional Chaining และ Fallback
+        const catName = myCat?.name || 'N/A'; // ⭐⭐ FIX: ใช้ Optional Chaining และ Fallback
 
-        // สร้างข้อมูล Modal
-        setCatProfileModal({
-            open: true,
-            cats: selected.cats,
-            selectedIndex: 0,
-            matchedCatName: catName
-        });
-    };
+        // สร้างข้อมูล Modal
+        setCatProfileModal({
+            open: true,
+            cats: selected.cats,
+            selectedIndex: 0,
+            matchedCatName: catName
+        });
+    };
 
     const handleSelectCatInModal = (index) => {
         setCatProfileModal(prev => ({ ...prev, selectedIndex: index }));
@@ -377,7 +379,7 @@ export default function Messages() {
             <div className="flex min-h-[70vh] max-h-[85vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
 
                 {/* -------------------------------------
-                      SIDEBAR (unchanged)
+                        SIDEBAR (unchanged)
                     -------------------------------------- */}
                 <aside className="w-[280px] border-r bg-pink-50 flex flex-col">
                     <div className="p-4 border-b bg-white font-semibold text-slate-800 shadow-sm">
@@ -446,7 +448,7 @@ export default function Messages() {
                 </aside>
 
                 {/* -------------------------------------
-                      CHAT AREA
+                        CHAT AREA
                     -------------------------------------- */}
                 <main className="flex-1 flex flex-col bg-gradient-to-b from-white to-pink-50">
                     {selected ? (
@@ -500,7 +502,7 @@ export default function Messages() {
                                                     <img
                                                         src={msg.image}
                                                         className="rounded-xl mb-2 max-h-40 cursor-pointer"
-                                                        onClick={() => openImageModal(msg.image)} 
+                                                        onClick={() => openImageModal(msg.image)} // ⭐ FIX/NEW: เพิ่ม onClick
                                                         alt="Pinned message image"
                                                     />
                                                 )}
@@ -547,7 +549,7 @@ export default function Messages() {
                                                         <img
                                                             src={msg.image}
                                                             className="rounded-xl mb-2 max-h-48 cursor-pointer"
-                                                            onClick={() => openImageModal(msg.image)} // ⭐ Added onClick
+                                                            onClick={() => openImageModal(msg.image)} // ⭐ FIX/NEW: เพิ่ม onClick
                                                             alt="Message image"
                                                         />
                                                     )}
@@ -667,6 +669,7 @@ export default function Messages() {
                 modalState={catProfileModal} 
                 onClose={handleCloseCatProfile} 
                 onSelectCat={handleSelectCatInModal}
+                openImageModal={openImageModal} // ⭐ Pass down the handler
             />
             
         </section>
