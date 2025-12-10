@@ -5,8 +5,27 @@ import api from "../api";
 import { socket } from '../socket'; 
 
 // =================================================================
-// ⭐ Image Modal Component (สำหรับแสดงรูปภาพขนาดเต็ม) (NEW!)
-// *ต้องมีการส่ง openImageModal และ closeImageModal ลงไปใน CatProfileModal และ Chat Message ด้วย*
+// ⭐ NEW: ฟังก์ชันสำหรับกำหนดรูปภาพและสีของเพศ
+// =================================================================
+const getGenderImage = (gender) => {
+    if (gender === "Male") {
+        return { 
+            img: "/images/male.png", 
+            color: "text-blue-600"
+        };
+    }
+    if (gender === "Female") {
+        return { 
+            img: "/images/female.png", // ตรวจสอบว่า path นี้ถูกต้อง
+            color: "text-pink-600"
+        };
+    }
+    return null;
+};
+
+
+// =================================================================
+// ⭐ Image Modal Component (สำหรับแสดงรูปภาพขนาดเต็ม)
 // =================================================================
 const ImageModal = ({ src, onClose }) => {
     if (!src) return null;
@@ -34,10 +53,10 @@ const ImageModal = ({ src, onClose }) => {
 };
 
 // =================================================================
-// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (FIXED!)
-// *รับ openImageModal เข้ามาเพื่อใช้เปิดรูปภาพใหญ่*
+// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (FIXED/UPDATED!)
+// *ใช้ชื่อ Field 'gender' และ 'color' ตัวพิมพ์เล็กเท่านั้น*
 // =================================================================
-const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) => { // ⭐ Add openImageModal
+const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) => {
     if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
 
     const { cats, selectedIndex, matchedCatName } = modalState;
@@ -48,9 +67,12 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) =
     const color = cat.color || '—'
     const age = cat.age || null;
     const ageDisplay = age ? `${age} yrs` : '—';
-    const gender = cat.gender || '—'; // ⭐ FIX: ดึง Gender
-    // ⭐ NEW: ดึงข้อมูลจังหวัด
-    const province = cat.province || '—'; // ⭐ NEW: ดึง Province
+    const gender = cat.gender || '—'; 
+    // ⭐ FIX: ดึงข้อมูลจังหวัด
+    const province = cat.province || '—'; 
+    
+    // ⭐ NEW: ดึงข้อมูลสำหรับ Icon
+    const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
 
     return (
         <div 
@@ -62,8 +84,9 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) =
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="text-center">
+                    {/* ⭐ FIX/NEW: แสดงชื่อแมว (Name) */}
                     <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
-                        {cat.name} 
+                        {cat.name || 'Cat Profile'} 
                         <span className="text-xl align-top ml-2"></span>
                     </h2>
                     
@@ -89,9 +112,9 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) =
                     
                     <img
                         src={cat.image}
-                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer" // ⭐ Added cursor-pointer
+                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer"
                         alt={cat.name}
-                        onClick={() => openImageModal(cat.image)} // ⭐ NEW: ทำให้รูปใน modal กดแล้วเปิดรูปใหญ่ได้
+                        onClick={() => openImageModal(cat.image)} // เปิดรูปภาพขนาดใหญ่ได้
                     />
 
                     {/* Cat Details */}
@@ -99,9 +122,27 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) =
                         <p><strong>Breed:</strong> {breed}</p>
                         <p><strong>Color:</strong> {color}</p>
                         <p><strong>Age:</strong> {ageDisplay}</p>
-                        <p><strong>Gender:</strong> {gender}</p> {/* ⭐ FIX: แสดง Gender */}
                         
-                        {/* ⭐ NEW: แสดงจังหวัดพร้อมไอคอน */}
+                        {/* ⭐ FIX/NEW: แสดง Gender พร้อม Icon */}
+                        <p className="flex items-center gap-1">
+                            <strong>Gender:</strong>
+                            {genderData ? (
+                                <>
+                                    <img 
+                                        src={genderData.img} 
+                                        className="w-4 h-4 inline-block align-middle ml-1" 
+                                        alt={cat.gender || 'Gender Icon'} 
+                                    />
+                                    <span className={genderData?.color || 'text-gray-600'}>
+                                        {cat.gender}
+                                    </span>
+                                </>
+                            ) : (
+                                <span>{gender}</span> // ใช้ค่าเดิม '—' ถ้าไม่มีข้อมูล
+                            )}
+                        </p>
+                        
+                        {/* ⭐ FIX/NEW: แสดงจังหวัดพร้อมไอคอน */}
                         <p className="flex items-center gap-2 pt-1 border-t border-gray-100"> 
                             <img src="/images/location.png" className="w-4 h-4" alt="Location Icon" />
                             <strong>Province:</strong> {province}
@@ -669,7 +710,7 @@ export default function Messages() {
                 modalState={catProfileModal} 
                 onClose={handleCloseCatProfile} 
                 onSelectCat={handleSelectCatInModal}
-                openImageModal={openImageModal} // ⭐ Pass down the handler
+                openImageModal={openImageModal} // ส่ง handler ลงไป
             />
             
         </section>

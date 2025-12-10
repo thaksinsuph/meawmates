@@ -1,12 +1,144 @@
-import { useEffect, useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api";
-// ⭐ 1. นำเข้า Socket Client จริง (สมมติว่าไฟล์นี้ถูกสร้างแล้วที่ src/socket.js)
-import { socket } from '../socket'; 
+// ⭐ 1. IMPORT เฉพาะ BREEDS และ CAT_COLORS ที่มีอยู่ใน petData.js
+import { 
+    BREEDS, 
+    CAT_COLORS, 
+} from "../petData"; 
 
-// =================================================================
-// ⭐ NEW: ฟังก์ชันสำหรับกำหนดรูปภาพและสีของเพศ
-// =================================================================
+import THAI_PROVINCES from "../thaiProvinces";
+
+
+// 💡 NEW COMPONENT: Modal สำหรับเลือกเงื่อนไขการจับคู่ (Petdreegree Selection)
+const PetdreegreeSelectionModal = ({ 
+  isOpen, 
+  onClose, 
+  onStartPairing,
+  selectedPet,
+  // ⭐ รับ Options ที่ส่งมา
+  breedOptions, 
+  colorOptions, 
+  ageOptions, 
+  genderOptions,
+  provinceOptions,
+}) => {
+  // State สำหรับเก็บเงื่อนไขที่เลือก
+  const [breed, setBreed] = useState("Any");
+  const [color, setColor] = useState("Any");
+  const [age, setAge] = useState("Any");
+  const [gender, setGender] = useState("Any");
+  const [province, setProvince] = useState("Any");
+
+  if (!isOpen || !selectedPet) return null;
+
+  const handleStart = () => {
+    // 💡 ส่งเงื่อนไขการจับคู่และข้อมูลแมวของเรากลับไป
+    onStartPairing(selectedPet, { breed, color, age, gender , province});
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl p-8 max-w-xl w-full shadow-2xl transform transition-all scale-100 duration-300">
+        
+        <h2 className="text-3xl font-extrabold text-pink-600 mb-6 border-b pb-3 flex items-center gap-2">
+          <img src="/images/paw-decor.png" className="w-7 h-7" alt="Paw" />
+          Petdreegree Criteria for: {selectedPet.name}
+        </h2>
+        
+        <p className="text-gray-600 mb-6">
+            Define the criteria for cats you want to see. 
+            <span className="font-semibold text-pink-500">(Any = No filter)</span>
+        </p>
+
+        <div className="grid grid-cols-2 gap-6">
+          {/* สายพันธุ์ (Breed) */}
+          <label className="block">
+            <span className="text-gray-700 font-semibold">Breed</span>
+            <select
+              value={breed}
+              onChange={(e) => setBreed(e.target.value)}
+              className="mt-1 block w-full rounded-xl border-gray-300 shadow-sm p-3 focus:ring-pink-500 focus:border-pink-500"
+            >
+              {breedOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </label>
+
+          {/* สี (Color) */}
+          <label className="block">
+            <span className="text-gray-700 font-semibold">Color</span>
+            <select
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="mt-1 block w-full rounded-xl border-gray-300 shadow-sm p-3 focus:ring-pink-500 focus:border-pink-500"
+            >
+              {colorOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </label>
+          
+          {/* อายุ (Age) */}
+          <label className="block">
+            <span className="text-gray-700 font-semibold">Age Group (Years)</span>
+            <select
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              className="mt-1 block w-full rounded-xl border-gray-300 shadow-sm p-3 focus:ring-pink-500 focus:border-pink-500"
+            >
+              {ageOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </label>
+          
+          {/* เพศ (Gender) */}
+          <label className="block">
+            <span className="text-gray-700 font-semibold">Gender</span>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="mt-1 block w-full rounded-xl border-gray-300 shadow-sm p-3 focus:ring-pink-500 focus:border-pink-500"
+            >
+              {genderOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </label>
+
+          {/* ⭐ NEW: จังหวัด (Province) */}
+          <label className="block col-span-2">
+            <span className="text-gray-700 font-semibold">Adress</span>
+            <select
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+              className="mt-1 block w-full rounded-xl border-gray-300 shadow-sm p-3 focus:ring-pink-500 focus:border-pink-500"
+            >
+              {provinceOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </label>
+          
+        </div>
+        
+        {/* BUTTONS ของ Modal */}
+        <div className="mt-8 flex justify-end gap-4">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 rounded-xl text-md font-semibold text-gray-700 border-2 border-gray-300 hover:bg-gray-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleStart}
+            className={`
+              px-8 py-3 rounded-xl text-lg font-extrabold shadow-lg text-white transition-all
+              bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 hover:shadow-pink-300
+            `}
+          >
+            Start Pairing
+          </button>
+        </div>
+      </div>
+      
+    </div>
+  );
+};
+
+// ⭐ 1. เพิ่มฟังก์ชันสำหรับกำหนดรูปภาพเพศ (Copy มาจาก Matching.jsx)
 const getGenderImage = (gender) => {
     if (gender === "Male") {
         return { 
@@ -16,7 +148,7 @@ const getGenderImage = (gender) => {
     }
     if (gender === "Female") {
         return { 
-            img: "/images/female.png", // ตรวจสอบว่า path นี้ถูกต้อง
+            img: "/images/female.png", 
             color: "text-pink-600"
         };
     }
@@ -24,695 +156,251 @@ const getGenderImage = (gender) => {
 };
 
 
-// =================================================================
-// ⭐ Image Modal Component (สำหรับแสดงรูปภาพขนาดเต็ม)
-// =================================================================
-const ImageModal = ({ src, onClose }) => {
-    if (!src) return null;
+export default function Matching() {
+  const navigate = useNavigate();
 
-    return (
-        <div 
-            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center backdrop-blur-sm" 
-            onClick={onClose}
-        >
-            <div className="relative p-4 max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
-                <button 
-                    onClick={onClose} 
-                    className="absolute top-4 right-4 text-white text-3xl p-2 rounded-full hover:bg-white/20 transition-colors"
-                >
-                    &times;
-                </button>
-                <img 
-                    src={src} 
-                    alt="Enlarged Chat Image" 
-                    className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl shadow-2xl"
-                />
-            </div>
-        </div>
-    );
-};
+  const [pets, setPets] = useState([{}, {}, {}, {}]);
+  const [selectedPet, setSelectedPet] = useState(null);
+  const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false); 
 
-// =================================================================
-// ⭐ Cat Profile Modal Component (แสดงข้อมูลแมวที่ Match) (FIXED/UPDATED!)
-// *ใช้ชื่อ Field 'gender' และ 'color' ตัวพิมพ์เล็กเท่านั้น*
-// =================================================================
-const CatProfileModal = ({ modalState, onClose, onSelectCat, openImageModal }) => {
-    if (!modalState || !modalState.open || !modalState.cats || modalState.cats.length === 0) return null;
+  const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
 
-    const { cats, selectedIndex, matchedCatName } = modalState;
-    const cat = cats[selectedIndex];
+    const fixImage = (img) => {
+        if (!img) return null;
+        if (img.startsWith("data:")) return img;
+        if (img.startsWith("http")) return img;
+        if (img.startsWith("/images/")) return img;
+        return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
+    };
 
-    // ⭐ FIX: ดึงข้อมูลโดยตรงจาก field ตัวพิมพ์เล็กตาม Pet Schema
-    const breed = cat.breed || '—'; 
-    const color = cat.color || '—'
-    const age = cat.age || null;
-    const ageDisplay = age ? `${age} yrs` : '—';
-    const gender = cat.gender || '—'; 
-    // ⭐ FIX: ดึงข้อมูลจังหวัด
-    const province = cat.province || '—'; 
-    
-    // ⭐ NEW: ดึงข้อมูลสำหรับ Icon
-    const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
+    const isEmptyPet = (pet) =>
+        !pet || (!pet.name && !pet.breed && !pet.color && !pet.age && !pet.image);
 
-    return (
-        <div 
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
-            onClick={onClose}
-        >
-            <div 
-                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="text-center">
-                    {/* ⭐ FIX/NEW: แสดงชื่อแมว (Name) */}
-                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
-                        {cat.name || 'Cat Profile'} 
-                        <span className="text-xl align-top ml-2"></span>
-                    </h2>
-                    
-                    {/* Cat Selector (ถ้ามีหลายตัว) */}
-                    {cats.length > 1 && (
-                        <div className="flex justify-center mb-4 space-x-2">
-                            {cats.map((c, index) => (
-                                <button
-                                    key={c._id || index}
-                                    onClick={() => onSelectCat(index)}
-                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
-                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
-                                >
-                                    <img 
-                                        src={c.image} 
-                                        alt={c.name} 
-                                        className="w-full h-full object-cover"
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    )}  
-                    
-                    <img
-                        src={cat.image}
-                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer"
-                        alt={cat.name}
-                        onClick={() => openImageModal(cat.image)} // เปิดรูปภาพขนาดใหญ่ได้
-                    />
+  /* ------------------ LOAD PETS (4 slots) ------------------ */
+  const loadAllPets = async () => {
+    const results = [];
+    for (let i = 1; i <= 4; i++) {
+      try {
+        const res = await api.get(`/api/pets/${i}`);
+        results.push({
+          ...res.data,
+          // ใช้ fixImage สำหรับรูปภาพใน Slot Card (เพื่อให้รูปจาก Backend แสดงผล)
+          image: fixImage(res.data?.image), 
+          vaccineImage: fixImage(res.data?.vaccineImage),
+          slot: i,
+        });
+      } catch {
+        results.push({});
+      }
+    }
+    setPets(results);
+  };
 
-                    {/* Cat Details */}
-                    <div className="text-left space-y-2 text-gray-700">
-                        <p><strong>Breed:</strong> {breed}</p>
-                        <p><strong>Color:</strong> {color}</p>
-                        <p><strong>Age:</strong> {ageDisplay}</p>
-                        
-                        {/* ⭐ FIX/NEW: แสดง Gender พร้อม Icon */}
-                        <p className="flex items-center gap-1">
-                            <strong>Gender:</strong>
-                            {genderData ? (
-                                <>
-                                    <img 
-                                        src={genderData.img} 
-                                        className="w-4 h-4 inline-block align-middle ml-1" 
-                                        alt={cat.gender || 'Gender Icon'} 
-                                    />
-                                    <span className={genderData?.color || 'text-gray-600'}>
-                                        {cat.gender}
-                                    </span>
-                                </>
-                            ) : (
-                                <span>{gender}</span> // ใช้ค่าเดิม '—' ถ้าไม่มีข้อมูล
-                            )}
-                        </p>
-                        
-                        {/* ⭐ FIX/NEW: แสดงจังหวัดพร้อมไอคอน */}
-                        <p className="flex items-center gap-2 pt-1 border-t border-gray-100"> 
-                            <img src="/images/location.png" className="w-4 h-4" alt="Location Icon" />
-                            <strong>Province:</strong> {province}
-                        </p>
-                        
-                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
-                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
-                        </p>
-                    </div>
+  useEffect(() => {
+    loadAllPets();
+  }, []);
 
-                    <button
-                        onClick={onClose}
-                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-
-export default function Messages() {
-    const navigate = useNavigate();
-    const { id } = useParams();
-
-    const [matches, setMatches] = useState([]);
-    const [selected, setSelected] = useState(null);
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState("");
-    const [file, setFile] = useState(null);
-    const [pinnedChats, setPinnedChats] = useState([]);
-    const chatEndRef = useRef(null);
-    
-    // ⭐ State สำหรับ Image Modal (ขยายรูปภาพที่ส่ง)
-    const [imageModal, setImageModal] = useState(null); 
-    const openImageModal = (src) => setImageModal(src);
-    const closeImageModal = () => setImageModal(null);
-
-    // ⭐ State สำหรับ Cat Profile Modal (แสดงข้อมูลแมวที่ Match) 
-    const [catProfileModal, setCatProfileModal] = useState({
-        open: false,
-        cats: [],
-        selectedIndex: 0,
-        matchedCatName: null,
-    });
-
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    /* ... CONTEXT MENU & UI LOGIC (unchanged) ... */
-    const [msgMenu, setMsgMenu] = useState({ show: false, x: 0, y: 0, msg: null });
-    const openMsgMenu = (e, msg) => { e.preventDefault(); setMsgMenu({ show: true, x: e.clientX, y: e.clientY, msg }); };
-    const closeMsgMenu = () => setMsgMenu({ show: false, x: 0, y: 0, msg: null });
-
-    const [chatMenu, setChatMenu] = useState({ show: false, x: 0, y: 0, chat: null });
-    const openChatMenu = (e, chat) => { e.preventDefault(); setChatMenu({ show: true, x: e.clientX, y: e.clientY, chat }); };
-    const closeChatMenu = () => setChatMenu({ show: false, x: 0, y: 0, chat: null });
-
-    useEffect(() => {
-        const closeMenus = () => { closeMsgMenu(); closeChatMenu(); };
-        document.addEventListener("click", closeMenus);
-        return () => document.removeEventListener("click", closeMenus);
-    }, []);
-
-    const togglePinChat = () => { closeChatMenu(); console.log("Pin Chat Toggle"); };
-    const deleteChat = async () => { closeChatMenu(); console.log("Delete Chat"); };
-    const togglePinMessage = async () => { closeMsgMenu(); console.log("Pin Message Toggle"); };
-    const deleteMessage = async () => { closeMsgMenu(); console.log("Delete Message"); };
-
-    /* ... LOAD MATCH LIST & NOTIFICATION (unchanged) ... */
-    const loadMatches = async () => {
-        try {
-            const res = await api.get("/api/matching/matches");
-            const updatedMatches = res.data.map(m => m);
-            setMatches(updatedMatches || []);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    /* ... LOAD CHAT (unchanged) ... */
-    const loadChat = async (otherId) => {
-        if (!otherId || otherId === "undefined") { console.warn("❌ Invalid chat ID:", otherId); return; }
-        try {
-            const res = await api.get(`/api/chat/${otherId}`);
-            setMessages(res.data);
-            const found = matches.find((m) => (m.user._id || m.user).toString() === otherId.toString());
-            setSelected(found);
-            loadMatches(); 
-        } catch (err) {
-            console.error(err);
-        }
-    };
-    /* ================================
-      MARK ALL AS READ ON PAGE LOAD
-    ================================= */
-    useEffect(() => {
-        if (!user?._id) return;
-
-        const markAllSeen = async () => {
-            try {
-                await api.post('/api/chat/mark-all-seen');
-                loadMatches(); 
-            } catch (err) {
-                console.error("Failed to mark all messages as seen:", err);
-            }
-        };
-
-        if (!id) {
-            markAllSeen();
-        }
-        
-    }, [user?._id, id]); 
-
-    /* ================================
-      SOCKET.IO CONNECTION AND LISTENERS
-      ================================= */
-    useEffect(() => {
-        if (!user?._id) return;
-        socket.emit('join', user._id); 
-        const handleNewMessage = (newMessage) => {
-            const fromUserId = newMessage.from;
-            const otherUserId = selected?.user?._id || selected?.user;
-
-            if (otherUserId === fromUserId || otherUserId === newMessage.to) {
-                setMessages(prev => [...prev, newMessage]);
-                if (fromUserId !== user._id) {
-                    loadMatches();
-                }
-            } else {
-                loadMatches(); 
-            }
-        };
-        socket.on('message:new', handleNewMessage); 
-        return () => { socket.off('message:new', handleNewMessage); };
-    }, [selected, user?._id]); 
-
-    useEffect(() => { loadMatches(); }, [user?._id]); 
-    
-    useEffect(() => {
-        if (!matches.length || !id || id === "undefined") { setSelected(null); setMessages([]); return; }
-        loadChat(id);
-    }, [id, matches.length]);
-
-    // ⭐ AUTO-SCROLL LOGIC: เลื่อนลงไปที่ข้อความล่าสุดเมื่อ messages เปลี่ยน
-    useEffect(() => {
-        // ใช้ requestAnimationFrame เพื่อให้แน่ใจว่า DOM ถูก Render ก่อน Scroll
-        requestAnimationFrame(() => {
-             chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const handleSelectSlot = (pet, index) => {
+        if (isEmptyPet(pet)) {
+            alert("No cat saved in this slot. Please manage your pets first.");
+            setSelectedPet(null);
+            return;
+        }
+        // ⭐ MODIFIED: ต้องตั้งค่า selectedPet ให้มี province ด้วย
+        setSelectedPet({ 
+            ...pet, 
+            slot: index + 1, 
+            // ตรวจสอบว่า province ถูกดึงมาอย่างถูกต้อง
+            province: pet.province || "", 
         });
-    }, [messages]);
+    };
 
-    // ⭐ Handler สำหรับเปิด Cat Profile Modal (UPDATED!)
-    const handleOpenCatProfile = () => {
-        
-        if (!selected || !selected.cats || selected.cats.length === 0) return;
+    const handleOpenCriteriaModal = () => {
+        if (!selectedPet || isEmptyPet(selectedPet)) {
+            alert("Please select a cat from the channels above before defining Petdreegree criteria.");
+            return;
+        }
+        setIsCriteriaModalOpen(true);
+    };
 
-        
-        
-        /// 1. หาชื่อแมวของเราที่ Match ด้วย
-        // ⭐⭐ FIX: เปลี่ยน user.cats เป็น user.pets ⭐⭐
-        const myCat = user.pets?.find(c => c.slot === selected.myCatSlot); 
-        
-        // 2. กำหนดชื่อแมวของเรา (ป้องกัน myCat เป็น undefined/null)
-        const catName = myCat?.name || 'N/A'; // ⭐⭐ FIX: ใช้ Optional Chaining และ Fallback
+    const handleStartPairing = (pet, criteria) => {
+        const dataToSave = {
+            pet: {
+                slot: pet.slot,
+                name: pet.name,
+                breed: pet.breed,
+                color: pet.color,
+                age: pet.age,
+                gender: pet.gender,
+                province: pet.province,
+            },
+            criteria: criteria
+        };
+        localStorage.setItem("matchingData", JSON.stringify(dataToSave));
+        setIsCriteriaModalOpen(false);
+        navigate("/matching/swipe");
+    };
 
-        // สร้างข้อมูล Modal
-        setCatProfileModal({
-            open: true,
-            cats: selected.cats,
-            selectedIndex: 0,
-            matchedCatName: catName
-        });
-    };
+    const handleManagePet = () => {
+        navigate("/manage-pet");
+    };
+    
+    // ⭐ 2. สร้าง Array สำหรับ Age และ Gender ภายใน Matching component
+    const localAgeOptions = [ "Any", "0-1", "1-3", "3-7", "7+" ];
+    const localGenderOptions = [ "Any", "Male", "Female" ];
+// ⭐ NEW: Options สำหรับจังหวัด
+    const localProvinceOptions = [ "Any", ...THAI_PROVINCES ];
 
-    const handleSelectCatInModal = (index) => {
-        setCatProfileModal(prev => ({ ...prev, selectedIndex: index }));
-    };
 
-    const handleCloseCatProfile = () => {
-        setCatProfileModal({ open: false, cats: [], selectedIndex: 0, matchedCatName: null });
-    };
+  /* ============================================================
+    UI
+  ============================================================ */
+  return (
+    <div className="w-full flex flex-col items-center py-12 px-4 gap-12">
+      
+      {/* ------------------ Modal Component ------------------ */}
+<PetdreegreeSelectionModal 
+    isOpen={isCriteriaModalOpen}
+    onClose={() => setIsCriteriaModalOpen(false)}
+    onStartPairing={handleStartPairing}
+    selectedPet={selectedPet}
+    
+    // ✅ โค้ด Prop ที่ถูกต้อง
+    breedOptions={["Any", ...Object.keys(BREEDS)]} 
+    colorOptions={["Any", ...Object.keys(CAT_COLORS)]} 
+    ageOptions={localAgeOptions}
+    genderOptions={localGenderOptions}
+    provinceOptions={localProvinceOptions}
+/>
 
-    /* ================================
-      TIME FORMAT & GROUPING (unchanged)
-      ================================= */
-    const formatTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      {/* ------------------ MANAGE PET BUTTON SECTION ------------------ */}
+      <div className="w-full flex justify-end max-w-6xl">
+        <button
+          onClick={handleManagePet}
+          className="
+            px-6 py-2 rounded-full text-sm font-semibold text-gray-700 border-2 border-gray-300
+            hover:bg-gray-100 transition-colors flex items-center gap-2
+          "
+        >
+          Manage Pets 
+          <img 
+            src="/images/cat.png" 
+            alt="Cat Icon"
+            className="w-4 h-4"
+          />
+        </button>
+      </div>
 
-    const formatDateHeader = (ts) => {
-        const d = new Date(ts);
-        const today = new Date();
-        const yesterday = new Date(Date.now() - 86400000);
+      <h1 className="text-4xl font-bold flex items-center gap-3 text-gray-800">
+        <img src="/images/love.png" className="w-10 h-10" alt="Heart Icon" />
+        Match Your Cat
+      </h1>
 
-        if (d.toDateString() === today.toDateString()) return "Today";
-        if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+      <p className="text-gray-600 text-lg">
+        **1. Select a cat** from the channels below, then **2. Press Go to Petdreegree** to define criteria.
+      </p>
 
-        return d.toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-        });
-    };
+      
 
-    const groupByDate = (msgs) => {
-        const groups = {};
-        msgs.forEach((msg) => {
-            const day = new Date(msg.createdAt).toDateString();
-            if (!groups[day]) groups[day] = [];
-            groups[day].push(msg);
-        });
-        return groups;
-    };
+{/* PET LIST */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-6xl">
+        {pets.map((pet, index) => {
+          const empty = isEmptyPet(pet);
+          const isSelected = selectedPet?.slot === index + 1;
+          const genderData = pet?.gender ? getGenderImage(pet.gender) : null; // ⭐ ดึงข้อมูลเพศ
 
-    /* ================================
-      SEND MESSAGE (unchanged)
-      ================================= */
-    const sendText = async (e) => {
-        e.preventDefault();
-        if (!input.trim() || !selected) return;
+          return (
+            <div
+              key={index}
+              onClick={() => handleSelectSlot(pet, index)}
+              className={`
+                p-6 rounded-3xl shadow-md border-2 flex flex-col transition-all bg-white
+                hover:shadow-xl hover:-translate-y-1 hover:bg-pink-50/60
+                ${isSelected ? "border-pink-500 shadow-xl ring-4 ring-pink-100" : "border-gray-200"}
+                ${empty ? "opacity-40 cursor-not-allowed hover:translate-y-0 hover:shadow-md" : "cursor-pointer"}
+              `}
+              style={{ minHeight: "380px" }}
+            >
+              {isSelected && (
+                <div className="absolute top-2 right-4 text-pink-500 text-xl font-extrabold"></div>
+              )}
 
-        const to = selected.user._id || selected.user;
-        
-        try {
-            const res = await api.post("/api/chat/text", { to, text: input });
-            setMessages((prev) => [...prev, res.data]);
-            setInput("");
-            loadMatches(); 
-        } catch (err) {
-            console.error(err);
-        }
-    };
-    
-    const sendImage = async (e) => {
-        e.preventDefault();
-        if (!file || !selected) return;
+              {/* CAT IMAGE */}
+              <div className="w-full h-56 bg-gray-100 rounded-2xl overflow-hidden flex items-center justify-center shadow-inner">
+                {pet?.image ? (
+                  <img
+                    src={fixImage(pet.image)}
+                    className="w-full h-full object-cover"
+                    alt={pet.name || 'Pet Image'}
+                  />
+                ) : (
+                  <span className="text-gray-400">No information</span>
+                )}
+              </div>
 
-        const to = selected.user._id || selected.user;
+              {/* SLOT TITLE */}
+              <p className="mt-4 font-bold text-xl text-gray-800 flex items-center gap-2">
+                <img src="/images/paw-decor.png" className="w-5 h-5 opacity-80" alt="Paw" />
+                Channel {index + 1}
+              </p>
 
-        try {
-            const form = new FormData();
-            form.append("file", file);
-            form.append("to", to);
+              {/* DETAILS: จัดเรียงใหม่ให้ Address อยู่ล่างสุด */}
+              <div className="text-sm text-gray-600 leading-6 mt-2 space-y-1">
+                <p><strong>Name:</strong> {pet?.name || "—"}</p>
+                <p><strong>Breed:</strong> {pet?.breed || "—"}</p>
+                <p><strong>Color:</strong> {pet?.color || "—"}</p>
+                <p><strong>Age:</strong> {pet?.age ? `${pet.age} yrs` : "—"}</p>
+                
+                {/* Gender (ย้ายมาอยู่เหนือ Address) */}
+                <p className="flex items-center gap-1">
+                  <strong>
+                        {/* 1. แสดงข้อความ "Gender:" ก่อน */}
+                        Gender:
+                        {/* 2. แสดงรูปภาพ Gender (ถ้ามี) */}
+                        {genderData ? (
+                            <img 
+                                src={genderData.img} 
+                                className="w-4 h-4 inline-block align-middle ml-1" 
+                                alt={genderData.label || 'Gender Icon'} 
+                            />
+                        ) : (
+                            // Icon default หรือเว้นว่าง
+                            <span className="w-4 h-4 inline-block align-middle ml-1"></span> 
+                        )} 
+                    </strong> 
+                  {pet?.gender ? (
+                    <span className={genderData?.color || 'text-gray-600'}>
+                      {pet.gender}
+                    </span>
+                  ) : '—'}
+                </p>
 
-            const res = await api.post("/api/chat/image", form, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+                {/* ⭐ Address/Province (ย้ายลงมาล่างสุด) */}
+                <p className="flex items-center gap-1">
+                    <img src="/images/location.png" className="w-4 h-4" alt="Location" />
+                    <strong>Adress:</strong> {pet?.province || "—"}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-            setMessages((prev) => [...prev, res.data]);
-            setFile(null);
-            loadMatches(); 
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    /* ================================
-      SORT CHATS (unchanged)
-      ================================= */
-    const sortedChats = matches
-        .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity))
-        .map(m => {
-            if (pinnedChats.includes(m.user._id || m.user)) {
-                return { ...m, isPinned: true };
-            }
-            return m;
-        })
-        .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-
-    /* ================================
-      UI
-      ================================= */
-    return (
-        <section className="max-w-6xl mx-auto px-4 py-6">
-            <div className="flex min-h-[70vh] max-h-[85vh] bg-white border rounded-[30px] shadow-md overflow-hidden">
-
-                {/* -------------------------------------
-                        SIDEBAR (unchanged)
-                    -------------------------------------- */}
-                <aside className="w-[280px] border-r bg-pink-50 flex flex-col">
-                    <div className="p-4 border-b bg-white font-semibold text-slate-800 shadow-sm">
-                        Messages
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto px-3 pb-3">
-                        {sortedChats.map((cat) => {
-                            const ownerId = cat.user?._id || cat.user || cat.owner?._id;
-                            const isUnread = cat.hasNewMessage; 
-                            const lastMsgText = cat.lastMessageContent || "Chat now"; 
-
-                            if (!ownerId || typeof ownerId !== "string" || ownerId.length !== 24) {
-                                console.warn("❌ Invalid ownerId:", ownerId);
-                                return null;
-                            }
-                            
-                            return (
-                                <div
-                                    key={ownerId}
-                                    onClick={() => navigate(`/messages/${ownerId}`)}
-                                    onContextMenu={(e) => openChatMenu(e, cat)}
-                                    className={`flex items-center justify-between p-3 mb-2 cursor-pointer rounded-2xl transition-all
-                                        ${
-                                            selected && (selected.user._id || selected.user) === ownerId
-                                                ? "bg-white shadow border border-pink-200"
-                                                : "hover:bg-white/70"
-                                        }
-                                        ${
-                                            cat.isPinned
-                                                ? "border border-pink-400"
-                                                : ""
-                                        }
-                                        ${ isUnread ? "bg-pink-100 font-bold" : "" }
-                                    `}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <img
-                                            src={cat.cats[0]?.image}
-                                            className="w-11 h-11 rounded-full object-cover shadow-sm"
-                                            alt={cat.cats[0]?.name}
-                                        />
-                                        <div>
-                                            <p className={`font-medium text-sm ${isUnread ? "text-pink-600" : ""}`}>
-                                                {cat.cats[0]?.name}
-                                            </p>
-                                            <p className={`text-xs w-[150px] truncate ${isUnread ? "text-slate-800 font-semibold" : "text-gray-600"}`}>
-                                                {lastMsgText} 
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Notification Dot / Pin Icon */}
-                                    <div className="flex items-center gap-1">
-                                        {isUnread && (
-                                            <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse mr-1"></span>
-                                        )}
-                                        {cat.isPinned && (
-                                            <span className="text-pink-500 text-xs">📌</span>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </aside>
-
-                {/* -------------------------------------
-                        CHAT AREA
-                    -------------------------------------- */}
-                <main className="flex-1 flex flex-col bg-gradient-to-b from-white to-pink-50">
-                    {selected ? (
-                        <>
-                            {/* ⭐ HEADER (Clickable to open Cat Profile Modal) ⭐ */}
-                            <div 
-                                className="border-b bg-white p-4 flex items-center gap-4 shadow-sm cursor-pointer hover:bg-pink-50 transition"
-                                onClick={handleOpenCatProfile} // ⭐ Added onClick Handler
-                            >
-                                <div className="flex -space-x-3">
-                                    {selected.cats?.slice(0, 3).map((cat, idx) => (
-                                        <img
-                                            key={idx}
-                                            src={cat.image}
-                                            className="w-11 h-11 rounded-full border-2 border-white shadow"
-                                            alt={cat.name}
-                                        />
-                                    ))}
-
-                                    {selected.cats?.length > 3 && (
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs">
-                                            +{selected.cats.length - 3}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-lg text-slate-800">
-                                        {selected.cats?.map((c) => c.name).join(" • ")}
-                                    </h3>
-                                    <p className="text-xs text-gray-500">Matched Cat Owner</p>
-                                </div>
-                            </div>
-
-                            {/* PINNED MESSAGES (unchanged) */}
-                            {messages.some((m) => m.pinned) && (
-                                <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
-                                    <p className="text-xs text-yellow-700 font-semibold mb-2">
-                                        📌 Pinned messages
-                                    </p>
-
-                                    {messages
-                                        .filter((m) => m.pinned)
-                                        .map((msg) => (
-                                            <div
-                                                key={msg._id}
-                                                onContextMenu={(e) => openMsgMenu(e, msg)}
-                                                className="bg-yellow-100 text-yellow-900 px-4 py-2 rounded-xl mb-2 shadow-sm cursor-pointer"
-                                            >
-                                                {msg.image && (
-                                                    <img
-                                                        src={msg.image}
-                                                        className="rounded-xl mb-2 max-h-40 cursor-pointer"
-                                                        onClick={() => openImageModal(msg.image)} // ⭐ FIX/NEW: เพิ่ม onClick
-                                                        alt="Pinned message image"
-                                                    />
-                                                )}
-
-                                                <p className="text-sm">{msg.text}</p>
-                                                <p className={`text-[10px] text-yellow-700 mt-1`}>
-                                                    {formatTime(msg.createdAt)}
-                                                </p>
-                                            </div>
-                                        ))}
-                                </div>
-                            )}
-
-                            {/* NORMAL MESSAGES (unchanged) */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4"> 
-                                {Object.entries(
-                                    groupByDate(messages.filter((m) => !m.pinned))
-                                ).map(([day, msgs]) => (
-                                    <div key={day}>
-                                        <p className="text-center text-xs text-gray-400 mb-3">
-                                            {formatDateHeader(msgs[0].createdAt)}
-                                        </p>
-
-                                        {msgs.map((msg) => (
-                                            <div
-                                                key={msg._id}
-                                                className={`flex ${
-                                                    msg.from === user._id
-                                                        ? "justify-end"
-                                                        : "justify-start"
-                                                }`}
-                                            >
-                                                <div
-                                                    onContextMenu={(e) => openMsgMenu(e, msg)}
-                                                    className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm cursor-pointer shadow-sm transition-all
-                                                        ${
-                                                            msg.from === user._id
-                                                                ? "bg-pink-500 text-white rounded-br-none"
-                                                                : "bg-white border rounded-bl-none"
-                                                        }
-                                                    `}
-                                                >
-                                                    {msg.image && (
-                                                        <img
-                                                            src={msg.image}
-                                                            className="rounded-xl mb-2 max-h-48 cursor-pointer"
-                                                            onClick={() => openImageModal(msg.image)} // ⭐ FIX/NEW: เพิ่ม onClick
-                                                            alt="Message image"
-                                                        />
-                                                    )}
-
-                                                    <p>{msg.text}</p>
-
-                                                    <p
-                                                        className={`text-[10px] mt-1 ${
-                                                            msg.from === user._id
-                                                                ? "text-pink-100"
-                                                                : "text-gray-400"
-                                                        }`}
-                                                    >
-                                                        {formatTime(msg.createdAt)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))}
-                                <div ref={chatEndRef} /> {/* ⭐ Auto-Scroll Ref */}
-                            </div>
-
-                            {/* INPUT BOX (unchanged) */}
-                            <form
-                                className="p-4 border-t bg-white flex items-center gap-3 shadow-sm"
-                                onSubmit={(e) => (file ? sendImage(e) : sendText(e))}
-                            >
-                                <label className="cursor-pointer text-pink-500 text-xl">
-                                    📎
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        onChange={(e) => setFile(e.target.files[0])}
-                                    />
-                                </label>
-
-                                {file && (
-                                    <span className="text-xs text-gray-600">{file.name}</span>
-                                )}
-
-                                <input
-                                    type="text"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Type your message..."
-                                    className="flex-1 px-4 py-2 rounded-2xl border text-sm"
-                                />
-
-                                <button className="p-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow">
-                                    ➤
-                                </button>
-                            </form>
-                        </>
-                    ) : (
-                        <div className="flex items-center justify-center flex-1 text-gray-400">
-                            Select a match to start chatting 💬
-                        </div>
-                    )}
-                </main>
-            </div>
-
-            {/* MESSAGE CONTEXT MENU (unchanged) */}
-            {msgMenu.show && (
-                <div
-                    className="fixed z-50 bg-white border shadow-xl rounded-lg py-2 w-44 text-sm animate-fadeIn"
-                    style={{ top: msgMenu.y, left: msgMenu.x }}
-                >
-                    <button
-                        onClick={togglePinMessage}
-                        className="block w-full text-left px-4 py-2 hover:bg-pink-50"
-                    >
-                        📌 {msgMenu.msg?.pinned ? "Unpin message" : "Pin message"}
-                    </button>
-
-                    <button
-                        onClick={deleteMessage}
-                        className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-500"
-                    >
-                        🗑 Delete message
-                    </button>
-                </div>
-            )}
-
-            {/* CHAT CONTEXT MENU (unchanged) */}
-            {chatMenu.show && (
-                <div
-                    className="fixed z-50 bg-white border shadow-xl rounded-lg py-2 w-40 text-sm animate-fadeIn"
-                    style={{ top: chatMenu.y, left: chatMenu.x }}
-                >
-                    <button
-                        onClick={togglePinChat}
-                        className="block w-full text-left px-4 py-2 hover:bg-pink-50"
-                    >
-                        📌{" "}
-                        {pinnedChats.includes(
-                            chatMenu.chat.user._id || chatMenu.chat.user
-                        )
-                            ? "Unpin Chat"
-                            : "Pin Chat"}
-                    </button>
-
-                    <button
-                        onClick={deleteChat}
-                        className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-500"
-                    >
-                        🗑 Delete Chat
-                    </button>
-                </div>
-            )}
-            
-            {/* Image Modal Component ถูกเรียกใช้ที่นี่ */}
-            <ImageModal src={imageModal} onClose={closeImageModal} />
-
-            {/* ⭐ Cat Profile Modal Component ถูกเรียกใช้ที่นี่ (NEW!) */}
-            <CatProfileModal 
-                modalState={catProfileModal} 
-                onClose={handleCloseCatProfile} 
-                onSelectCat={handleSelectCatInModal}
-                openImageModal={openImageModal} // ส่ง handler ลงไป
-            />
-            
-        </section>
-    );
+      {/* NEXT BUTTON (โค้ดเดิม) */}
+      <button
+        onClick={handleOpenCriteriaModal} 
+        disabled={!selectedPet || isEmptyPet(selectedPet)}
+        className={`
+          mt-6 px-14 py-4 rounded-2xl text-lg font-extrabold shadow-lg text-white
+          transition-all
+          ${!selectedPet || isEmptyPet(selectedPet) 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 hover:shadow-pink-300'
+          }
+        `}
+      >
+        Go to Petdreegree
+      </button>
+    </div>
+  );
 }
