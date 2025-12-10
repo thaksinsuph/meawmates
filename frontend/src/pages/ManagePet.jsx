@@ -80,7 +80,26 @@ export default function ManagePet() {
     });
 
     // loadPet, resetForm, handleImage, handleVaccineImage, openPopup
-    // ... (ฟังก์ชันเหล่านี้ใช้โค้ดเดิม) ...
+    const loadAllPets = async () => {
+        try {
+            // เรียก API เพื่อดึงข้อมูลทั้งหมด
+            const res = await api.get("/api/pets"); 
+            const loadedPets = res.data;
+            
+            // จัดเรียงข้อมูลลงใน array 4 ตำแหน่ง
+            const newAllPets = [{}, {}, {}, {}];
+            loadedPets.forEach(pet => {
+                if (pet.slot >= 1 && pet.slot <= 4) {
+                    newAllPets[pet.slot - 1] = pet;
+                }
+            });
+            setAllPets(newAllPets);
+        } catch (error) {
+            console.error("Failed to load all pets:", error);
+            // ในกรณีที่เกิด error อาจจะรีเซ็ตข้อมูลเป็นช่องว่างทั้งหมดเพื่อป้องกันการแสดงผลผิดพลาด
+            setAllPets([{}, {}, {}, {}]); 
+        }
+    };
 
     // ----------------------------
     // 📌 Load specific pet slot (unchanged logic)
@@ -135,7 +154,7 @@ export default function ManagePet() {
 
     // ... (useEffects เหมือนเดิม) ...
     useEffect(() => {
-        // ... loadAllPets
+        loadAllPets();
     }, []);
 
     useEffect(() => {
