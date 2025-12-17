@@ -17,7 +17,7 @@ const PetSchema = new mongoose.Schema(
     province: String,
 
     image: String,         // base64 รูปแมว
-    vaccineImage: String,  // ⭐ รูปสมุดวัคซีน (base64) — ที่เพิ่มใหม่
+    PetdreegreeImage: String,  // ⭐ รูปสมุดวัคซีน (base64) — ที่เพิ่มใหม่
   },
   { timestamps: true }
 );

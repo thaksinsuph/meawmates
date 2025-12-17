@@ -67,9 +67,9 @@ export default function ManagePet() {
         gender: "",
         province: "", // ✅ เพิ่ม province state
         image: null,      
-        vaccineImage: null, 
+        PetdreegreeImage: null, 
         imageFile: null,  
-        vaccineImageFile: null 
+        PetdreegreeImageFile: null 
     });
 
     const [popup, setPopup] = useState({
@@ -113,14 +113,14 @@ export default function ManagePet() {
                     gender: pet.gender || "", 
                     province: pet.province || "", // ✅ โหลดข้อมูลจังหวัด
                     image: pet.image || null,
-                    vaccineImage: pet.vaccineImage || null,
+                    PetdreegreeImage: pet.PetdreegreeImage || null,
                     imageFile: null,      
-                    vaccineImageFile: null 
+                    PetdreegreeImageFile: null 
                 });
                 
                 // ⭐ ใช้ URL ที่สมบูรณ์จาก Backend โดยตรง (ตามที่แจ้งว่าโค้ดเดิมทำงานได้)
                 setPreview(pet.image || null);
-                setVaccinePreview(pet.vaccineImage || null);
+                setVaccinePreview(pet.PetdreegreeImage || null);
             } else {
                 resetForm();
             }
@@ -139,9 +139,9 @@ export default function ManagePet() {
             gender: "", 
             province: "", // ✅ รีเซ็ตจังหวัด
             image: null,
-            vaccineImage: null,
+            PetdreegreeImage: null,
             imageFile: null,
-            vaccineImageFile: null
+            PetdreegreeImageFile: null
         });
 
         setPreview(null);
@@ -176,10 +176,10 @@ export default function ManagePet() {
     // ----------------------------
     // 📌 Upload Vaccine Image (UNCHANGED)
     // ----------------------------
-    const handleVaccineImage = (e) => {
+    const handlePetdreegreeImage = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setForm((prev) => ({ ...prev, vaccineImageFile: file }));
+            setForm((prev) => ({ ...prev, PetdreegreeImageFile: file }));
 
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -227,14 +227,14 @@ export default function ManagePet() {
             formData.append("province", form.province); // ✅ ส่งข้อมูลจังหวัด
 
             if (form.image) formData.append("image", form.image);
-            if (form.vaccineImage) formData.append("vaccineImage", form.vaccineImage);
+            if (form.PetdreegreeImage) formData.append("PetdreegreeImage", form.PetdreegreeImage);
 
             if (form.imageFile) {
                 formData.append("image", form.imageFile);
             }
             
-            if (form.vaccineImageFile) {
-                formData.append("vaccineImage", form.vaccineImageFile);
+            if (form.PetdreegreeImageFile) {
+                formData.append("PetdreegreeImage", form.PetdreegreeImageFile);
             }
 
             await api.post(`/api/pets/${selectedSlot}`, formData);
@@ -242,7 +242,7 @@ export default function ManagePet() {
             alert(`บันทึกข้อมูลช่องที่ ${selectedSlot} สำเร็จ!`);
             loadAllPets();
             
-            setForm(prev => ({ ...prev, imageFile: null, vaccineImageFile: null }));
+            setForm(prev => ({ ...prev, imageFile: null, PetdreegreeImageFile: null }));
 
         } catch (err) {
             console.error(err);
@@ -483,8 +483,8 @@ export default function ManagePet() {
                             </div>
 
                             <label className="mt-3 cursor-pointer bg-blue-100 px-4 py-2 rounded-xl hover:bg-blue-200 transition">
-                                Upload Vaccine Image
-                                <input type="file" className="hidden" onChange={handleVaccineImage} accept="image/*" />
+                                Upload Petdreegree Image
+                                <input type="file" className="hidden" onChange={handlePetdreegreeImage} accept="image/*" />
                             </label>
 
                             {vaccinePreview && (
@@ -492,10 +492,10 @@ export default function ManagePet() {
                                     className="mt-2 text-red-500 underline text-sm"
                                     onClick={() => {
                                         setVaccinePreview(null);
-                                        setForm({ ...form, vaccineImage: null, vaccineImageFile: null });
+                                        setForm({ ...form, PetdreegreeImage: null, PetdreegreeImageFile: null });
                                     }}
                                 >
-                                    Remove vaccine image
+                                    Remove Petdreegree image
                                 </button>
                             )}
                         </div>

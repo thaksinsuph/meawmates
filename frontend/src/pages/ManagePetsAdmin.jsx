@@ -71,7 +71,7 @@ export default function ManagePetsAdmin() {
               )}
 
               {/* ⭐ Vaccine Image */}
-              {p.vaccineImage && (
+              {p.PetdreegreeImage && (
                 <div>
                   <p className="text-xs text-gray-500 mt-2 mb-1 flex items-center gap-1">
                     <img src="/images/vaccine.png" className="w-4 h-4" />
@@ -79,8 +79,8 @@ export default function ManagePetsAdmin() {
                   </p>
 
                   <img
-                    onClick={() => setPreviewImage(fixURL(p.vaccineImage))}
-                    src={fixURL(p.vaccineImage)}
+                    onClick={() => setPreviewImage(fixURL(p.PetdreegreeImage))}
+                    src={fixURL(p.PetdreegreeImage)}
                     className="w-full h-48 object-cover rounded-xl border border-blue-200 cursor-pointer hover:opacity-90 transition"
                   />
                 </div>
