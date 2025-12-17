@@ -140,14 +140,12 @@ export default function ManagePet() {
             formData.append("gender", form.gender); 
             formData.append("province", form.province); 
 
-            // ⭐ ส่งไฟล์รูปภาพหลัก
             if (form.imageFile) {
                 formData.append("image", form.imageFile);
             } else if (form.image) {
                 formData.append("image", form.image);
             }
 
-            // ⭐ ส่งไฟล์ใบเพ็ด
             if (hasPetdreegree) {
                 if (form.PetdreegreeImageFile) {
                     formData.append("PetdreegreeImage", form.PetdreegreeImageFile);
@@ -159,16 +157,11 @@ export default function ManagePet() {
             }
 
             const res = await api.post(`/api/pets/${selectedSlot}`, formData);
-            
-            // ⭐ สำคัญ: รับข้อมูล Pet ที่บันทึกสำเร็จ (ซึ่งจะมี URL ของ Cloudinary)
             const savedPet = res.data.pet; 
 
             alert(`บันทึกข้อมูลสำเร็จ!`);
-            
-            // 1. อัปเดตรูปใน Slot ด้านบนทันที
             await loadAllPets();
             
-            // 2. อัปเดตหน้าจอแก้ไข (Preview และ Form) ด้วยข้อมูลจริงจาก DB
             setPreview(fixImage(savedPet.image));
             setPetdreegeePreview(fixImage(savedPet.PetdreegreeImage));
             setForm({
@@ -249,7 +242,7 @@ export default function ManagePet() {
                                     <option value="">Choose a color</option>
                                     {Object.keys(CAT_COLORS).map((c) => <option key={c} value={c}>{c}</option>)}
                                 </select>
-                                {form.color && <button type="button" onClick={() => openPopup(form.color, CAT_COLORS[form.color])} className="bg-pink-50 p-3 rounded-2xl hover:bg-pink-100 transition-colors border border-pink-200"><img src="/images/color.png" className="w-5 h-5" /></button>}
+                                {form.color && <button type="button" onClick={() => openPopup(form.color, CAT_COLORS[form.color])} className="bg-pink-50 p-3 rounded-2xl hover:bg-pink-100 transition-colors border border-pink-200"><img src="/images/info.png" className="w-5 h-5" /></button>}
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -272,7 +265,6 @@ export default function ManagePet() {
                         <button onClick={savePet} className="mt-6 w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-pink-200 transition-all active:scale-[0.98]">SAVE CAT INFORMATION</button>
                     </div>
 
-                    {/* RIGHT — IMAGE AREA */}
                     <div className="flex flex-col items-center bg-gray-50 rounded-[2.5rem] p-8 border-2 border-dashed border-gray-200">
                         <p className="font-black text-gray-700 mb-4 uppercase tracking-widest text-sm text-center">Cat Profile Picture</p>
                         <div className="w-72 h-72 bg-white border-4 border-white rounded-[3rem] shadow-2xl overflow-hidden flex items-center justify-center relative group">
@@ -302,6 +294,53 @@ export default function ManagePet() {
                     </div>
                 </div>
             </div>
+
+            {/* ---------------- ⭐ Popup Modal Section ⭐ ---------------- */}
+            {popup.open && (
+                <div 
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 cursor-pointer" 
+                    onClick={() => setPopup({ ...popup, open: false })}
+                >
+                    <div 
+                        className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl transform transition-all animate-fadeIn relative cursor-default" 
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button 
+                            onClick={() => setPopup({ ...popup, open: false })} 
+                            className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                        >
+                            &times;
+                        </button>
+                        
+                        <div className="text-center">
+                            <h3 className="text-2xl font-black text-gray-800 mb-6 uppercase tracking-tight italic">
+                                {popup.title}
+                            </h3>
+                            
+                            <div className="relative group mb-6 flex justify-center">
+                                <img 
+                                    src={popup.img} 
+                                    alt={popup.title} 
+                                    className="w-full h-48 object-cover rounded-[2rem] shadow-md border-2 border-gray-100" 
+                                />
+                            </div>
+
+                            <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 text-left">
+                                <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                                    {popup.desc}
+                                </p>
+                            </div>
+
+                            <button 
+                                onClick={() => setPopup({ ...popup, open: false })} 
+                                className="bg-gradient-to-r from-gray-700 to-gray-900 text-white py-3.5 rounded-2xl w-full mt-6 font-black shadow-lg hover:from-black hover:to-black transition-all active:scale-95 text-xs uppercase tracking-widest"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
