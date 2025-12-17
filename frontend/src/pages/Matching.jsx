@@ -317,6 +317,11 @@ export default function Matching() {
                 <p><strong className="text-gray-800">Breed:</strong> {pet?.breed || "—"}</p>
                 <p><strong className="text-gray-800">Color:</strong> {pet?.color || "—"}</p>
                 <p><strong className="text-gray-800">Age:</strong> {pet?.age ? `${pet.age} yrs` : "—"}</p>
+                <p className="flex items-center gap-1">
+                  <strong className="text-gray-800">Gender:</strong> 
+                  {genderData && <img src={genderData.img} className="w-4 h-4 ml-1" alt="Icon" />}
+                  <span className={genderData?.color || ''}>{pet.gender || '—'}</span>
+                </p>
                 
                 {/* ⭐ NEW: แสดง Petdreegree Yes/No ใน Card */}
                 <p>
@@ -330,11 +335,7 @@ export default function Matching() {
                     ) : "—"}
                 </p>
 
-                <p className="flex items-center gap-1">
-                  <strong className="text-gray-800">Gender:</strong> 
-                  {genderData && <img src={genderData.img} className="w-4 h-4 ml-1" alt="Icon" />}
-                  <span className={genderData?.color || ''}>{pet.gender || '—'}</span>
-                </p>
+                
 
                 <p className="flex items-center gap-1">
                     <img src="/images/location.png" className="w-4 h-4" alt="Loc" />
