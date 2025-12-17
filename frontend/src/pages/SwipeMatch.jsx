@@ -28,103 +28,60 @@ export default function SwipeMatch() {
   });
 
   // ---------------------------------------------------------
-  // Compatibility Engine & Utility Functions
+  // 🧠 Logic การคำนวณคะแนนที่สมเหตุสมผล
   // ---------------------------------------------------------
 
-  const colorGroups = {
-    warm: ["orange", "cream", "brown", "ginger", "gold", "tan"],
-    cool: ["gray", "black", "blue", "silver"],
-    neutral: ["white"],
-    mixed: ["calico", "tabby"],
-  };
-
-  const getColorGroup = (color) => {
-    if (!color) return "neutral";
-    const c = color.toLowerCase();
-    for (const group in colorGroups) {
-      if (colorGroups[group].some((g) => c.includes(g))) return group;
-    }
-    return "neutral";
-  };
-
-  const breedMatch = {
-    Persian: ["Ragdoll", "Himalayan", "British Shorthair"],
-    Ragdoll: ["Persian", "British Shorthair"],
-    Siamese: ["Burmese", "Oriental Shorthair"],
-    Bengal: ["Abyssinian"],
-    "British Shorthair": ["Scottish Fold", "Ragdoll"],
-  };
-
+  // 1. Breed Score (Max 50) - หัวใจหลักของสายพันธุ์
   const getBreedScore = (my, target) => {
-    if (!my || !target) return 15;
-    if (my === target) return 50; 
-    if (breedMatch[my]?.includes(target)) return 30;
-    return 15;
+    if (!my || !target) return 10;
+    if (my === target) return 50; // สายพันธุ์เดียวกันเป๊ะ
+
+    const breedMatch = {
+        Persian: ["Ragdoll", "Himalayan", "British Shorthair"],
+        Ragdoll: ["Persian", "British Shorthair"],
+        Siamese: ["Burmese", "Oriental Shorthair"],
+        "British Shorthair": ["Scottish Fold", "Ragdoll"],
+    };
+
+    if (breedMatch[my]?.includes(target)) return 30; // กลุ่มพันธุ์ใกล้เคียง
+    return 10;
   };
 
-  const getAgeScore = (my, target) => {
-    if (!my || !target) return 5;
-    const diff = Math.abs(my - target);
-    if (diff === 0) return 20;
-    if (diff <= 2) return 17;
-    if (diff <= 4) return 10;
-    return 4;
-  };
-
-  const getEnergyType = (breed) => {
-    const energetic = ["Bengal", "Siamese", "Abyssinian"];
-    const chill = ["Persian", "Ragdoll", "British Shorthair"];
-    if (energetic.includes(breed)) return "energetic";
-    if (chill.includes(breed)) return "chill";
-    return "medium";
-  };
-
-  const getEnergyScore = (my, target) => {
-    if (!my || !target) return 8;
-    if (my === target) return 20;
-    if ((my === "energetic" && target === "chill") || (my === "chill" && target === "energetic"))
-      return 6;
-    return 14;
-  };
-
+  // 2. Gender Score (Max 20) - บังคับต่างเพศ (สำคัญมากสำหรับการหาคู่)
   const getGenderScore = (my, target) => {
-    if (!my || !target) return 5;
-    if (my === target) return 0; // เพศเดียวกันได้ 0
-    if (my !== target) return 25; // เพศตรงข้าม
-    return 5;
-  };
-
-  const getNameVibe = (my, target) => {
     if (!my || !target) return 0;
-    return my[0].toLowerCase() === target[0].toLowerCase() ? 5 : 0;
+    return my !== target ? 20 : 0; // ถ้าเพศเดียวกัน คะแนนส่วนนี้เป็น 0 ทันที
   };
 
+  // 3. Province Score (Max 15) - ความสะดวกในการนัดพบ
   const getProvinceScore = (my, target) => {
     if (!my || !target) return 5;
-    if (my === target) return 15;
-    return 5;
+    return my === target ? 15 : 5;
   };
 
-  // ⭐ NEW Logic: เพิ่มคะแนนถ้าทั้งคู่มีใบเพ็ด
-  const getPedigreeScore = (my, target) => {
-    if (my?.PetdreegreeImage && target?.PetdreegreeImage) return 10;
-    return 0;
+  // 4. Pedigree Bonus (Max 10) - ความน่าเชื่อถือ/สุขภาพ
+  const getPedigreeScore = (target) => {
+    return target?.PetdreegreeImage ? 10 : 0;
+  };
+
+  // 5. Age Difference Score (Max 5)
+  const getAgeScore = (my, target) => {
+    if (!my || !target) return 2;
+    const diff = Math.abs(my - target);
+    if (diff <= 2) return 5;
+    if (diff <= 4) return 3;
+    return 1;
   };
 
   const calculateMatchScore = (me, target) => {
     if (!me || !target) return 0;
 
     let score = 0;
-    score += getBreedScore(me.breed, target.breed);
-    const myGroup = getColorGroup(me.color);
-    const tgGroup = getColorGroup(target.color);
-    score += myGroup === tgGroup ? 10 : 4;
-    score += getAgeScore(me.age, target.age);
-    score += getEnergyScore(getEnergyType(me.breed), getEnergyType(target.breed));
-    score += getNameVibe(me.name, target.name);
-    score += getGenderScore(me.gender, target.gender);
-    score += getProvinceScore(me.province, target.province);
-    score += getPedigreeScore(me, target);
+    score += getBreedScore(me.breed, target.breed);    // 50
+    score += getGenderScore(me.gender, target.gender); // 20
+    score += getProvinceScore(me.province, target.province); // 15
+    score += getPedigreeScore(target);                 // 10
+    score += getAgeScore(me.age, target.age);          // 5
 
     return Math.min(100, Math.max(0, Math.round(score)));
   };
@@ -224,6 +181,7 @@ export default function SwipeMatch() {
           <div className="max-w-xl max-h-[90vh] w-full bg-white rounded-3xl overflow-hidden shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
             <img src={imageModal.image} className="w-full h-full object-contain" alt={imageModal.name} />
             <button onClick={handleCloseImage} className="absolute top-4 right-4 bg-black/50 text-white rounded-full p-2 hover:bg-black transition text-lg font-bold">&times;</button>
+            <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-center p-2 font-semibold text-lg">{imageModal.name}</p>
           </div>
         </div>
       )}
@@ -232,16 +190,16 @@ export default function SwipeMatch() {
       {matchModal.open && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border-4 border-pink-300 text-center animate-fadeIn transform scale-105">
-            <h2 className="text-4xl font-extrabold text-pink-600 mb-4 drop-shadow-md tracking-wider"> IT'S A MATCH!</h2>
+            <h2 className="text-4xl font-extrabold text-pink-600 mb-4 drop-shadow-md tracking-wider">🎉 IT'S A MATCH!</h2>
             <p className="text-gray-700 text-lg">You and **{matchModal.cat?.name}** are a pair!</p>
             <div className="flex justify-center my-6">
-              <div className="w-24 h-24 rounded-full bg-pink-100 border-4 border-pink-400 flex items-center justify-center font-black text-xl text-pink-700">
+              <div className="w-24 h-24 rounded-full bg-pink-100 border-4 border-pink-400 flex items-center justify-center font-black text-xl text-pink-700 shadow-inner">
                 {matchModal.score}%
               </div>
             </div>
             <img src={matchModal.cat?.image} className="w-full h-48 object-cover rounded-2xl shadow-lg border border-gray-200" alt="Matched" />
-            <button onClick={() => setMatchModal({ ...matchModal, open: false })} className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md">Continue Selecting</button>
-            <button onClick={handleGoToChat} className="bg-green-500 text-white py-3 rounded-xl w-full mt-3 font-semibold shadow-md">Start Chatting Now 💬</button>
+            <button onClick={() => setMatchModal({ ...matchModal, open: false })} className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md transition-all hover:bg-indigo-600">Continue Selecting</button>
+            <button onClick={handleGoToChat} className="bg-green-500 text-white py-3 rounded-xl w-full mt-3 font-semibold shadow-md transition-all hover:bg-green-600">Start Chatting Now 💬</button>
           </div>
         </div>
       )}
@@ -250,11 +208,21 @@ export default function SwipeMatch() {
         <img src="/images/love.png" className="w-12 h-12" alt="Paw" /> Matching Results
       </h1>
 
+      <div className="text-center bg-white p-4 rounded-xl shadow-lg border border-pink-200 w-full max-w-4xl">
+        <p className="text-xl font-semibold text-gray-700 mb-1">
+          Your Cat: <span className="text-pink-600 font-extrabold">{myCat.name}</span>
+        </p>
+        <p className="text-sm text-gray-500 italic text-center">
+          Filtering for: {criteria.breed} / {criteria.color} / {criteria.age} / {criteria.gender} / **{criteria.province}**
+        </p>
+      </div>
+
       {/* TARGET LIST */}
       <div className="w-full max-w-4xl space-y-6 pb-12">
         {targets.length === 0 ? (
           <div className="text-center bg-white p-12 rounded-3xl shadow-xl mt-10 border border-gray-300">
             <h2 className="text-2xl text-gray-700 font-semibold mb-3">No potential matches found 😿</h2>
+            <button onClick={() => navigate("/matching")} className="text-pink-500 font-bold hover:underline">Change Criteria</button>
           </div>
         ) : (
           targets.map((target) => {
@@ -270,13 +238,13 @@ export default function SwipeMatch() {
                   <div className="flex-1 flex flex-col justify-start gap-2">
                     <h2 className="font-extrabold text-2xl text-gray-800">{target.name}</h2>
                     
-                    {/* Grid แสดงข้อมูล */}
+                    {/* Grid แสดงข้อมูลจัดเรียงตามที่ต้องการ */}
                     <div className="text-sm text-gray-700 grid grid-cols-2 gap-x-4 gap-y-1">
-                      {/* แถว 1 */}
+                      {/* แถว 1: Breed & Age */}
                       <p><strong>Breed:</strong> {target.breed || "—"}</p>
                       <p><strong>Age:</strong> {target.age ? `${target.age} yrs` : "—"}</p>
                       
-                      {/* แถว 2 */}
+                      {/* แถว 2: Color & Petdreegree */}
                       <p><strong>Color:</strong> {target.color || "—"}</p>
                       <p className="flex items-center gap-1">
                         <strong>Petdreegree:</strong>
@@ -289,7 +257,7 @@ export default function SwipeMatch() {
                         )}
                       </p>
 
-                      {/* แถว 3 */}
+                      {/* แถว 3: Address & Gender */}
                       <p className="flex items-center gap-1">
                         <img src="/images/location.png" className="w-4 h-4" alt="Location" />
                         <strong>Adress:</strong> {target.province || "—"}
@@ -305,16 +273,16 @@ export default function SwipeMatch() {
 
                 <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-16 h-16 rounded-full bg-pink-50 border-2 border-pink-300 flex flex-col items-center justify-center font-extrabold text-pink-600 text-lg shadow-sm">
+                    <div className={`w-16 h-16 rounded-full border-2 flex flex-col items-center justify-center font-extrabold text-lg shadow-sm ${score >= 80 ? 'bg-green-50 border-green-300 text-green-600' : score >= 50 ? 'bg-yellow-50 border-yellow-300 text-yellow-600' : 'bg-pink-50 border-pink-300 text-pink-600'}`}>
                       {score}%
                     </div>
                     <span className="text-gray-600 text-sm font-semibold">Match Score</span>
                   </div>
                   <div className="flex gap-3 flex-1 md:flex-none">
-                    <button onClick={() => handleSwipe(target, "right")} className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-bold shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2">
+                    <button onClick={() => handleSwipe(target, "right")} className="flex-1 bg-pink-500 text-white px-5 py-2 rounded-xl font-bold shadow-md hover:bg-pink-600 transition flex items-center justify-center gap-2 active:scale-95">
                       Like <img src="/images/Likematch.png" className="w-5 h-5 object-contain" alt="Like" />
                     </button>
-                    <button onClick={() => handleSwipe(target, "left")} className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-bold shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2">
+                    <button onClick={() => handleSwipe(target, "left")} className="flex-1 bg-gray-300 text-gray-700 px-5 py-2 rounded-xl font-bold shadow-md hover:bg-gray-400 transition flex items-center justify-center gap-2 active:scale-95">
                       Nope <img src="/images/dislike.png" className="w-5 h-5 object-contain" alt="Nope" />
                     </button>
                   </div>
