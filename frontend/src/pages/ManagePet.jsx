@@ -487,7 +487,7 @@ export default function ManagePet() {
                                 <input type="file" className="hidden" onChange={handlePetdreegreeImage} accept="image/*" />
                             </label>
 
-                            {PetdreegeePreviewPreview && (
+                            {PetdreegeePreview && (
                                 <button
                                     className="mt-2 text-red-500 underline text-sm"
                                     onClick={() => {
