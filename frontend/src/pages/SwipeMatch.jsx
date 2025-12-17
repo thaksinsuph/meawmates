@@ -251,7 +251,7 @@ export default function SwipeMatch() {
                         <strong>Petdreegree:</strong>
                         {target.PetdreegreeImage ? (
                           <span className="text-green-600 font-bold flex items-center gap-1">
-                            Yes <img src="/images/verify.png" className="w-3 h-3" alt="verified" />
+                            Yes 
                           </span>
                         ) : (
                           <span className="text-red-500 font-bold">No</span>
