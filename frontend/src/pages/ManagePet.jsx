@@ -242,7 +242,7 @@ export default function ManagePet() {
                                     <option value="">Choose a color</option>
                                     {Object.keys(CAT_COLORS).map((c) => <option key={c} value={c}>{c}</option>)}
                                 </select>
-                                {form.color && <button type="button" onClick={() => openPopup(form.color, CAT_COLORS[form.color])} className="bg-pink-50 p-3 rounded-2xl hover:bg-pink-100 transition-colors border border-pink-200"><img src="/images/info.png" className="w-5 h-5" /></button>}
+                                {form.color && <button type="button" onClick={() => openPopup(form.color, CAT_COLORS[form.color])} className="bg-pink-50 p-3 rounded-2xl hover:bg-pink-100 transition-colors border border-pink-200"><img src="/images/color.png" className="w-5 h-5" /></button>}
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
