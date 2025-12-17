@@ -94,18 +94,21 @@ router.get('/filtered-cats', auth, async (req, res) => {
 
 
 /* ======================================================
-📌 1) Swipe (Like / Dislike) - MODIFIED: บันทึก Province และ Pedigree ใน MatchCat
+📌 1) Swipe (Like / Dislike) - MODIFIED: รับคะแนน Match Score
 ====================================================== */
 router.post("/swipe", auth, async (req, res) => {
     try {
-        const { myCatSlot, targetCatId, liked } = req.body;
+        // ⭐ เพิ่ม matchScore ในการรับข้อมูลจาก body
+        const { myCatSlot, targetCatId, liked, matchScore } = req.body;
         const me = req.user._id;
 
+        // บันทึกการ Swipe พร้อมคะแนน
         await CatLike.create({
             user: me,
             myCatSlot,
             targetCat: targetCatId,
             liked,
+            matchScore: matchScore || 0, // ⭐ บันทึกคะแนนลงใน Database
         });
 
         if (!liked) return res.json({ match: false });
@@ -126,6 +129,9 @@ router.post("/swipe", auth, async (req, res) => {
 
         if (!theyLikedMe) return res.json({ match: false });
 
+        /* ======================================================
+          🎉 MATCH!! 
+        ====================================================== */
         const mySnapshot = await MatchCat.findOne({
             user: me,
             name: myPet.name,
@@ -155,7 +161,6 @@ router.post("/swipe", auth, async (req, res) => {
             }
         }
 
-        // ⭐ MODIFIED: Added PetdreegreeImage to snapshots
         const myMatchCat = mySnapshot
             ? mySnapshot
             : await MatchCat.create({
@@ -166,7 +171,7 @@ router.post("/swipe", auth, async (req, res) => {
                   age: myPet.age,
                   gender: myPet.gender,
                   province: myPet.province,
-                  PetdreegreeImage: myPet.PetdreegreeImage, // Added
+                  PetdreegreeImage: myPet.PetdreegreeImage,
                   image: myPet.image,
                   slot: myPet.slot,
               });
@@ -181,7 +186,7 @@ router.post("/swipe", auth, async (req, res) => {
                   age: targetPet.age,
                   gender: targetPet.gender,
                   province: targetPet.province,
-                  PetdreegreeImage: targetPet.PetdreegreeImage, // Added
+                  PetdreegreeImage: targetPet.PetdreegreeImage,
                   image: targetPet.image,
                   slot: targetPet.slot,
               });
@@ -203,16 +208,22 @@ router.post("/swipe", auth, async (req, res) => {
 });
 
 /* ======================================================
-📌 2) ประวัติ Like (โค้ดเดิม)
+📌 2) ประวัติ Like - MODIFIED: ส่งค่า matchScore กลับไป
 ====================================================== */
 router.get("/history", auth, async (req, res) => {
     try {
         const history = await CatLike.find({ user: req.user._id })
-            .populate("targetCat")
+            .populate({
+                path: "targetCat",
+                // ⭐ ตรวจสอบว่าดึง PetdreegreeImage และ province มาด้วย
+                select: "name image breed color age gender province PetdreegreeImage" 
+            })
             .sort({ createdAt: -1 });
 
+        // ค่า matchScore จะติดไปกับ object h อยู่แล้วเพราะอยู่ใน Schema CatLike
         res.json(history);
-    } catch {
+    } catch (err) {
+        console.error("Load history error:", err);
         res.status(500).json({ message: "Cannot load history" });
     }
 });

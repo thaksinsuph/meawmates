@@ -56,7 +56,7 @@ export default function MatchHistory() {
     }, []);
 
     return (
-        <div className="max-w-3xl mx-auto py-10 px-4 min-h-screen bg-gray-50">
+        <div className="max-w-3xl mx-auto py-10 px-4 min-h-screen">
             
             {/* ⭐ IMAGE VIEW MODAL UI */}
             {imageModal.open && (
@@ -102,59 +102,55 @@ export default function MatchHistory() {
                     return (
                         <div
                             key={h._id}
-                            className="flex items-center gap-4 bg-white shadow-md border-l-8 p-5 rounded-2xl hover:shadow-xl transition-all"
+                            className="flex items-center gap-4 bg-white shadow-lg border-l-8 p-5 rounded-2xl hover:shadow-xl transition-all"
                             style={{ borderColor: h.liked ? '#EC4899' : '#9CA3AF' }}
                         >
-                            {/* Image - คลิกเพื่อดูรูปใหญ่ */}
-                            <div className="relative flex-shrink-0">
-                                <img
-                                    src={targetCat.image}
-                                    className="w-28 h-28 rounded-2xl object-cover shadow-sm cursor-pointer hover:opacity-90 transition border border-gray-100"
-                                    alt={targetCat.name}
-                                    onClick={() => handleOpenImage(targetCat)}
-                                />
+                            {/* 1. วงกลมเปอร์เซ็นต์ (Score Circle) - แสดงเฉพาะเมื่อ Liked */}
+                            <div className="flex-shrink-0 flex flex-col items-center gap-1">
+                                <div className={`w-16 h-16 rounded-full border-2 flex flex-col items-center justify-center font-extrabold text-lg shadow-sm
+                                    ${score >= 80 ? 'bg-green-50 border-green-300 text-green-600' : 
+                                      score >= 50 ? 'bg-yellow-50 border-yellow-300 text-yellow-600' : 
+                                      'bg-pink-50 border-pink-300 text-pink-600'}`}
+                                >
+                                    <span className="text-base leading-none">{score}%</span>
+                                </div>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Match</span>
                             </div>
 
-                            <div className="flex-1">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h2 className="font-black text-2xl text-gray-800 truncate max-w-[180px]">
-                                        {targetCat.name}
-                                    </h2>
-                                    
-                                    {/* ⭐ Match Score Badge (แสดงเฉพาะเมื่อ Liked) */}
-                                    {h.liked && (
-                                        <div className={`flex flex-col items-center px-3 py-1 rounded-xl border-2 shadow-sm ${
-                                            score >= 80 ? 'bg-green-50 border-green-200 text-green-600' :
-                                            score >= 50 ? 'bg-yellow-50 border-yellow-200 text-yellow-600' :
-                                            'bg-pink-50 border-pink-200 text-pink-600'
-                                        }`}>
-                                            <span className="text-[10px] uppercase font-bold tracking-tighter leading-none">Match</span>
-                                            <span className="text-lg font-black leading-none">{score}%</span>
-                                        </div>
-                                    )}
-                                </div>
+                            {/* 2. รูปแมว - คลิกดูรูปใหญ่ */}
+                            <img
+                                src={targetCat.image}
+                                className="w-24 h-24 rounded-xl object-cover flex-shrink-0 shadow-inner cursor-pointer hover:opacity-80 transition border border-gray-100"
+                                alt={targetCat.name}
+                                onClick={() => handleOpenImage(targetCat)}
+                            />
+
+                            {/* 3. รายละเอียดแมว */}
+                            <div className="flex-1 min-w-0">
+                                <h2 className="font-black text-xl text-gray-800 truncate mb-1">
+                                    {targetCat.name}
+                                </h2>
                                 
-                                {/* ข้อมูลแมวจัดเรียงตามที่ต้องการ */}
-                                <div className="text-sm text-gray-600 grid grid-cols-2 gap-x-3 gap-y-1">
+                                <div className="text-xs text-gray-600 space-y-1">
                                     <p><strong>Breed:</strong> {targetCat.breed || "—"}</p>
-                                    <p><strong>Age:</strong> {targetCat.age ? `${targetCat.age} yrs` : "—"}</p>
                                     <p><strong>Color:</strong> {targetCat.color || "—"}</p>
+                                    <p><strong>Age:</strong> {targetCat.age ? `${targetCat.age} yrs` : "—"}</p>
                                     <p>
-                                        <strong>Petdreegree:</strong>{" "}
+                                        <strong>Pedigree:</strong>{" "}
                                         {targetCat.PetdreegreeImage ? (
                                             <span className="text-green-600 font-bold">Yes</span>
                                         ) : (
                                             <span className="text-red-400 font-bold">No</span>
                                         )}
                                     </p>
-                                    <p className="col-span-2 flex items-center gap-1 mt-1 text-gray-500">
-                                        <img src="/images/location.png" className="w-3.5 h-3.5" alt="Loc" />
+                                    <p className="flex items-center gap-1">
+                                        <img src="/images/location.png" className="w-3 h-3" alt="Loc" />
                                         {targetCat.province || "—"}
                                     </p>
-                                    <p className="col-span-2 flex items-center gap-1">
+                                    <p className="flex items-center gap-1">
                                         <strong>Gender:</strong> 
                                         {genderData?.img && (
-                                            <img src={genderData.img} className="w-4 h-4 ml-1" alt="Sex" />
+                                            <img src={genderData.img} className="w-3.5 h-3.5" alt="Sex" />
                                         )}
                                         <span className={genderData?.color || 'text-gray-600'}>
                                             {targetCat.gender || "—"}
@@ -163,16 +159,16 @@ export default function MatchHistory() {
                                 </div>
                             </div>
 
-                            {/* Status Section */}
-                            <div className="flex flex-col items-end min-w-[90px] border-l border-gray-100 pl-4">
-                                <div className={`flex items-center gap-1 font-black text-sm mb-2 ${h.liked ? 'text-pink-500' : 'text-gray-400'}`}>
+                            {/* 4. สถานะและวันที่ (ฝั่งขวาสุด) */}
+                            <div className="flex flex-col items-end flex-shrink-0 border-l border-gray-100 pl-4 min-w-[80px]">
+                                <p className={`text-sm font-black mb-2 flex items-center gap-1 ${h.liked ? 'text-pink-500' : 'text-gray-400'}`}>
                                     {h.liked ? "LIKED" : "NOPE"}
                                     <img 
                                         src={h.liked ? "/images/Likematch.png" : "/images/dislike.png"} 
-                                        className="w-5 h-5 object-contain" 
-                                        alt="Status" 
+                                        className="w-4 h-4 object-contain" 
+                                        alt="Status Icon" 
                                     />
-                                </div>
+                                </p>
                                 <div className="text-[10px] text-gray-400 text-right leading-tight">
                                     {new Date(h.createdAt).toLocaleDateString()}
                                     <br />
@@ -185,9 +181,8 @@ export default function MatchHistory() {
             </div>
 
             {history.length === 0 && (
-                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 mt-10">
+                <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 mt-10">
                     <p className="text-gray-400 text-xl font-medium">😺 No swipe history found</p>
-                    <p className="text-gray-300 text-sm mt-2">Start matching to see your history here!</p>
                 </div>
             )}
         </div>

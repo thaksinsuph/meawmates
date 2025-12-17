@@ -139,6 +139,7 @@ export default function SwipeMatch() {
         myCatSlot: matchingData.pet.slot,
         targetCatId: targetId,
         liked: direction === "right",
+        matchScore: target.matchScore, // ⭐ ส่งคะแนนไปด้วย
       });
 
       if (res.data.match) {
