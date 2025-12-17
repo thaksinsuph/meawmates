@@ -68,6 +68,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
     const province = cat.province || '—'; 
     const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
     const hasPedigree = !!cat.PetdreegreeImage;
+    const score = modalState.matchScore || 0;
 
     return (
         <div 
@@ -75,9 +76,21 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
             onClick={onClose}
         >
             <div 
-                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn" 
+                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn relative" 
                 onClick={(e) => e.stopPropagation()}
             >
+                {/* ⭐ Match Score Circle (วางมุมขวาบนของรูป) */}
+                <div className="absolute top-4 right-4 z-10 flex flex-col items-center">
+                    <div className={`w-14 h-14 rounded-full border-2 flex items-center justify-center font-black text-sm shadow-lg
+                        ${score >= 80 ? 'bg-green-50 border-green-400 text-green-600' : 
+                          score >= 50 ? 'bg-yellow-50 border-yellow-400 text-yellow-600' : 
+                          'bg-pink-50 border-pink-300 text-pink-600'}`}
+                    >
+                        {score}%
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase bg-white/80 px-1 rounded mt-1">Match</span>
+                </div>
+
                 <div className="text-center">
                     <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
                         {cat.name || 'Cat Profile'} 
@@ -108,45 +121,47 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
 
                     {/* Cat Details */}
                     <div className="text-left space-y-2 text-gray-700">
-                        <p><strong>Breed:</strong> {breed}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <p><strong>Breed:</strong> {breed}</p>
+                            <p><strong>Age:</strong> {ageDisplay}</p>
+                        </div>
                         <p><strong>Color:</strong> {color}</p>
-                        <p><strong>Age:</strong> {ageDisplay}</p>
                         
-                        <p className="flex items-center gap-1">
-                            <strong>Gender:</strong>
-                            {genderData ? (
-                                <>
-                                    <img src={genderData.img} className="w-4 h-4 ml-1" alt="Icon" />
-                                    <span className={genderData.color}>{cat.gender}</span>
-                                </>
-                            ) : <span>{cat.gender || '—'}</span>}
-                        </p>
-
-                        {/* ⭐ NEW: แสดงสถานะ Petdreegree */}
-                        <p className="flex items-center gap-1">
-                            <strong>Petdreegree:</strong>
-                            {hasPedigree ? (
-                                <span className="text-green-600 font-bold flex items-center gap-1">
-                                    Yes <img src="/images/verify.png" className="w-3 h-3" alt="verified" />
-                                </span>
-                            ) : (
-                                <span className="text-red-500 font-bold">No</span>
-                            )}
-                        </p>
+                        <div className="flex items-center justify-between pt-1">
+                            <p className="flex items-center gap-1">
+                                <strong>Gender:</strong>
+                                {genderData ? (
+                                    <>
+                                        <img src={genderData.img} className="w-4 h-4 ml-1" alt="Icon" />
+                                        <span className={genderData.color}>{cat.gender}</span>
+                                    </>
+                                ) : <span>{cat.gender || '—'}</span>}
+                            </p>
+                            <p className="flex items-center gap-1">
+                                <strong>Pedigree:</strong>
+                                {hasPedigree ? (
+                                    <span className="text-green-600 font-bold flex items-center gap-1 text-sm">
+                                        Yes <img src="/images/verify.png" className="w-3 h-3" alt="v" />
+                                    </span>
+                                ) : (
+                                    <span className="text-red-400 font-bold text-sm">No</span>
+                                )}
+                            </p>
+                        </div>
                         
-                        <p className="flex items-center gap-2 pt-1 border-t border-gray-100"> 
+                        <p className="flex items-center gap-2 pt-2 border-t border-gray-100"> 
                             <img src="/images/location.png" className="w-4 h-4" alt="Loc" />
                             <strong>Province:</strong> {province}
                         </p>
                         
-                        <p className="text-sm italic pt-3 text-gray-500 border-t border-gray-100">
-                            (Matched with your pet: **{matchedCatName || 'N/A'}**)
+                        <p className="text-[11px] italic pt-2 text-gray-400 text-center">
+                            Matched with your pet: <span className="font-bold text-pink-400">{matchedCatName || 'N/A'}</span>
                         </p>
                     </div>
 
                     <button
                         onClick={onClose}
-                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-6 font-semibold shadow-md hover:bg-indigo-600 transition"
+                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-5 font-bold shadow-md hover:bg-indigo-600 transition active:scale-95"
                     >
                         Close
                     </button>
