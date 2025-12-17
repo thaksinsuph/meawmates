@@ -97,7 +97,7 @@ export default function MatchHistory() {
                     if (!targetCat) return null;
 
                     const genderData = getGenderImage(targetCat.gender);
-                    const score = h.matchScore || 0; // ดึงคะแนนจาก Backend
+                    const score = h.matchScore || 0;
 
                     return (
                         <div
@@ -105,7 +105,7 @@ export default function MatchHistory() {
                             className="flex items-center gap-4 bg-white shadow-lg border-l-8 p-5 rounded-2xl hover:shadow-xl transition-all"
                             style={{ borderColor: h.liked ? '#EC4899' : '#9CA3AF' }}
                         >
-                            {/* 1. วงกลมเปอร์เซ็นต์ (Score Circle) - แสดงเฉพาะเมื่อ Liked */}
+                            {/* 1. วงกลมเปอร์เซ็นต์ (ด้านซ้ายสุด) */}
                             <div className="flex-shrink-0 flex flex-col items-center gap-1">
                                 <div className={`w-16 h-16 rounded-full border-2 flex flex-col items-center justify-center font-extrabold text-lg shadow-sm
                                     ${score >= 80 ? 'bg-green-50 border-green-300 text-green-600' : 
@@ -117,7 +117,7 @@ export default function MatchHistory() {
                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Match</span>
                             </div>
 
-                            {/* 2. รูปแมว - คลิกดูรูปใหญ่ */}
+                            {/* 2. รูปแมว */}
                             <img
                                 src={targetCat.image}
                                 className="w-24 h-24 rounded-xl object-cover flex-shrink-0 shadow-inner cursor-pointer hover:opacity-80 transition border border-gray-100"
@@ -125,41 +125,41 @@ export default function MatchHistory() {
                                 onClick={() => handleOpenImage(targetCat)}
                             />
 
-                            {/* 3. รายละเอียดแมว */}
-                            <div className="flex-1 min-w-0">
+                            {/* 3. รายละเอียดแมว - ปรับให้ชิดขวา (Text Right) */}
+                            <div className="flex-1 min-w-0 text-right pr-2">
                                 <h2 className="font-black text-xl text-gray-800 truncate mb-1">
                                     {targetCat.name}
                                 </h2>
                                 
                                 <div className="text-xs text-gray-600 space-y-1">
-                                    <p><strong>Breed:</strong> {targetCat.breed || "—"}</p>
-                                    <p><strong>Color:</strong> {targetCat.color || "—"}</p>
-                                    <p><strong>Age:</strong> {targetCat.age ? `${targetCat.age} yrs` : "—"}</p>
+                                    <p> {targetCat.breed || "—"} <strong>: Breed</strong></p>
+                                    <p> {targetCat.color || "—"} <strong>: Color</strong></p>
+                                    <p> {targetCat.age ? `${targetCat.age} yrs` : "—"} <strong>: Age</strong></p>
                                     <p>
-                                        <strong>Pedigree:</strong>{" "}
                                         {targetCat.PetdreegreeImage ? (
                                             <span className="text-green-600 font-bold">Yes</span>
                                         ) : (
                                             <span className="text-red-400 font-bold">No</span>
                                         )}
+                                        <strong> : Pedigree</strong>
                                     </p>
-                                    <p className="flex items-center gap-1">
-                                        <img src="/images/location.png" className="w-3 h-3" alt="Loc" />
+                                    <p className="flex items-center justify-end gap-1">
                                         {targetCat.province || "—"}
+                                        <img src="/images/location.png" className="w-3 h-3" alt="Loc" />
                                     </p>
-                                    <p className="flex items-center gap-1">
-                                        <strong>Gender:</strong> 
-                                        {genderData?.img && (
-                                            <img src={genderData.img} className="w-3.5 h-3.5" alt="Sex" />
-                                        )}
+                                    <p className="flex items-center justify-end gap-1">
                                         <span className={genderData?.color || 'text-gray-600'}>
                                             {targetCat.gender || "—"}
                                         </span>
+                                        {genderData?.img && (
+                                            <img src={genderData.img} className="w-3.5 h-3.5" alt="Sex" />
+                                        )}
+                                        <strong> : Gender</strong>
                                     </p>
                                 </div>
                             </div>
 
-                            {/* 4. สถานะและวันที่ (ฝั่งขวาสุด) */}
+                            {/* 4. สถานะและวันที่ (ขวาสุด) */}
                             <div className="flex flex-col items-end flex-shrink-0 border-l border-gray-100 pl-4 min-w-[80px]">
                                 <p className={`text-sm font-black mb-2 flex items-center gap-1 ${h.liked ? 'text-pink-500' : 'text-gray-400'}`}>
                                     {h.liked ? "LIKED" : "NOPE"}
