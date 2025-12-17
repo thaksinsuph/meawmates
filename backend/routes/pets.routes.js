@@ -12,7 +12,7 @@ const validateSlot = (slot) => {
   return n;
 };
 
-// ⭐ Config รับไฟล์ 2 จุด: 'image' (รูปแมว) และ 'vaccineImage' (สมุดวัคซีน)
+// ⭐ Config รับไฟล์ 2 จุด: 'image' (รูปแมว) และ 'PetdreegreeImage' (สมุดวัคซีน)
 const petUploads = upload.fields([
   { name: 'image', maxCount: 1 },
   { name: 'PetdreegreeImage', maxCount: 1 }
@@ -70,7 +70,7 @@ router.post("/:slot", auth, petUploads, async (req, res) => {
 
     // เตรียมตัวแปรสำหรับ URL รูปภาพ
     let imageUrl = req.body.image; // ค่าเดิม (ถ้ามี)
-    let vaccineUrl = req.body.PetdreegreeImage; // ค่าเดิม (ถ้ามี)
+    let PetdreegreeUrl = req.body.PetdreegreeImage; // ค่าเดิม (ถ้ามี)
 
     // ⭐ ตรวจสอบว่ามีการอัปโหลดไฟล์ "image" ใหม่มาหรือไม่? (No Change)
     if (req.files && req.files['image']) {
@@ -79,7 +79,7 @@ router.post("/:slot", auth, petUploads, async (req, res) => {
 
     // ⭐ ตรวจสอบว่ามีการอัปโหลดไฟล์ "PetdreegreeImage" ใหม่มาหรือไม่? (No Change)
     if (req.files && req.files['PetdreegreeImage']) {
-       vaccineUrl = req.files['PetdreegreeImage'][0].path; // ใช้ URL ใหม่จาก Cloudinary
+       PetdreegreeUrl = req.files['PetdreegreeImage'][0].path; // ใช้ URL ใหม่จาก Cloudinary
     }
 
     // ค้นหา Pet เดิมใน Slot นี้
@@ -95,7 +95,7 @@ router.post("/:slot", auth, petUploads, async (req, res) => {
       // ⭐ MODIFIED: อัปเดต province
       pet.province = province; 
       pet.image = imageUrl; // อัปเดต URL (ใหม่หรือเก่า)
-      pet.PetdreegreeImage = vaccineUrl; // อัปเดต URL (ใหม่หรือเก่า)
+      pet.PetdreegreeImage = PetdreegreeUrl; // อัปเดต URL (ใหม่หรือเก่า)
       
       await pet.save();
       return res.json({ message: "Updated successfully", pet });
@@ -114,7 +114,7 @@ router.post("/:slot", auth, petUploads, async (req, res) => {
       // ⭐ MODIFIED: สร้าง province
       province, 
       image: imageUrl,
-      PetdreegreeImage: vaccineUrl,
+      PetdreegreeImage: PetdreegreeUrl,
     });
 
     return res.json({ message: "Created successfully", pet });

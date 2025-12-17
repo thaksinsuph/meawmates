@@ -249,7 +249,7 @@ export default function SwipeMatch() {
       {matchModal.open && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border-4 border-pink-300 text-center animate-fadeIn transform scale-105">
-            <h2 className="text-4xl font-extrabold text-pink-600 mb-4 drop-shadow-md tracking-wider">🎉 IT'S A MATCH!</h2>
+            <h2 className="text-4xl font-extrabold text-pink-600 mb-4 drop-shadow-md tracking-wider"> IT'S A MATCH!</h2>
             <p className="text-gray-700 text-lg">You and **{matchModal.cat?.name}** are a purr-fect pair!</p>
             {matchModal.cat?.province && (
               <p className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-1">
@@ -269,7 +269,7 @@ export default function SwipeMatch() {
       )}
 
       <h1 className="text-4xl md:text-5xl font-extrabold flex items-center gap-3 text-gray-800 drop-shadow-sm">
-        <img src="/images/love.png" className="w-12 h-12" alt="Paw" /> Petdreegree Results
+        <img src="/images/love.png" className="w-12 h-12" alt="Paw" /> Matching Results
       </h1>
 
       <div className="text-center bg-white p-4 rounded-xl shadow-lg border border-pink-200 w-full max-w-4xl">

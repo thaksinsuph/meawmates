@@ -56,7 +56,7 @@ export default function ManagePet() {
     const navigate = useNavigate(); 
     const [selectedSlot, setSelectedSlot] = useState(1);
     const [preview, setPreview] = useState(null);
-    const [vaccinePreview, setVaccinePreview] = useState(null);
+    const [PetdreegeePreview, setPetdreegeePreview] = useState(null);
     const [allPets, setAllPets] = useState([{}, {}, {}, {}]);
 
     const [form, setForm] = useState({
@@ -120,7 +120,7 @@ export default function ManagePet() {
                 
                 // ⭐ ใช้ URL ที่สมบูรณ์จาก Backend โดยตรง (ตามที่แจ้งว่าโค้ดเดิมทำงานได้)
                 setPreview(pet.image || null);
-                setVaccinePreview(pet.PetdreegreeImage || null);
+                setPetdreegeePreview(pet.PetdreegreeImage || null);
             } else {
                 resetForm();
             }
@@ -145,7 +145,7 @@ export default function ManagePet() {
         });
 
         setPreview(null);
-        setVaccinePreview(null);
+        setPetdreegeePreview(null);
     };
 
     // ... (useEffects)
@@ -174,7 +174,7 @@ export default function ManagePet() {
     };
 
     // ----------------------------
-    // 📌 Upload Vaccine Image (UNCHANGED)
+    // 📌 Upload Petdreegree Image (UNCHANGED)
     // ----------------------------
     const handlePetdreegreeImage = (e) => {
         const file = e.target.files[0];
@@ -183,7 +183,7 @@ export default function ManagePet() {
 
             const reader = new FileReader();
             reader.onloadend = () => {
-                setVaccinePreview(reader.result);
+                setPetdreegeePreview(reader.result);
             };
             reader.readAsDataURL(file);
         }
@@ -467,18 +467,18 @@ export default function ManagePet() {
                         </label>
 
                         {/* ---------------------------
-                            Vaccine Picture
+                            Petdreegree Picture
                         ---------------------------- */}
                         <div className="flex flex-col items-center mt-10">
                             <p className="font-medium mb-2 flex items-center gap-2">
-                                Vaccination Record
+                                Petdreegree Record
                             </p>
 
                             <div className="w-64 h-40 bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center">
-                                {vaccinePreview ? (
-                                    <img src={vaccinePreview} className="w-full h-full object-cover" />
+                                {PetdreegeePreview ? (
+                                    <img src={PetdreegeePreview} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="text-blue-400 text-sm">No vaccination record</div>
+                                    <div className="text-blue-400 text-sm">No Petdreegree record</div>
                                 )}
                             </div>
 
@@ -487,11 +487,11 @@ export default function ManagePet() {
                                 <input type="file" className="hidden" onChange={handlePetdreegreeImage} accept="image/*" />
                             </label>
 
-                            {vaccinePreview && (
+                            {PetdreegeePreviewtPreview && (
                                 <button
                                     className="mt-2 text-red-500 underline text-sm"
                                     onClick={() => {
-                                        setVaccinePreview(null);
+                                        setPetdreegeePreview(null);
                                         setForm({ ...form, PetdreegreeImage: null, PetdreegreeImageFile: null });
                                     }}
                                 >

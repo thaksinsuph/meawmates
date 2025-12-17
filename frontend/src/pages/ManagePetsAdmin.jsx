@@ -70,12 +70,12 @@ export default function ManagePetsAdmin() {
                 />
               )}
 
-              {/* ⭐ Vaccine Image */}
+              {/* ⭐ Petdreegree Image */}
               {p.PetdreegreeImage && (
                 <div>
                   <p className="text-xs text-gray-500 mt-2 mb-1 flex items-center gap-1">
                     <img src="/images/vaccine.png" className="w-4 h-4" />
-                    Vaccine Record
+                    Petdreegree Record
                   </p>
 
                   <img
