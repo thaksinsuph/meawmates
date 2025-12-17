@@ -357,7 +357,7 @@ export default function Messages() {
         selectedIndex: 0,
         matchedCatName: catName,
         // ⭐ แก้ไขจุดนี้: ดึงคะแนนจากแมวตัวแรกของรายการ Match นั้นๆ
-        matchScore: selected.cats[0]?.matchScore || 0 
+        matchScore: selected.matchScore || selected.cats[0]?.matchScore || 0 
     });
 };
 
