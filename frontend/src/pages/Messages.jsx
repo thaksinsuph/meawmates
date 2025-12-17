@@ -59,111 +59,90 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
     const { cats, selectedIndex, matchedCatName } = modalState;
     const cat = cats[selectedIndex];
     
-    // ⭐ ดึงข้อมูล Gender, Province
     const breed = cat.breed || '—'; 
     const color = cat.color || '—'
-    const age = cat.age || null;
-    const ageDisplay = age ? `${age} yrs` : '—';
-    const gender = cat.gender || '—';
+    const ageDisplay = cat.age ? `${cat.age} yrs` : '—';
     const province = cat.province || '—'; 
     const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
-    const hasPedigree = !!cat.PetdreegreeImage;
+    const hasPedigree = !!cat.PetdreegreeImage || cat.hasPedigree === "Yes";
     const score = modalState.matchScore || 0;
 
     return (
-        <div 
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" 
-            onClick={onClose}
-        >
-            <div 
-                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-pink-300 transform transition-all duration-300 animate-fadeIn relative" 
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* ⭐ Match Score Circle (วางมุมขวาบนของรูป) */}
-                <div className="absolute top-4 right-4 z-10 flex flex-col items-center">
-                    <div className={`w-14 h-14 rounded-full border-2 flex items-center justify-center font-black text-sm shadow-lg
-                        ${score >= 80 ? 'bg-green-50 border-green-400 text-green-600' : 
-                          score >= 50 ? 'bg-yellow-50 border-yellow-400 text-yellow-600' : 
-                          'bg-pink-50 border-pink-300 text-pink-600'}`}
-                    >
-                        {score}%
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" onClick={onClose}>
+            <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border-4 border-pink-200 transform transition-all animate-fadeIn relative" onClick={(e) => e.stopPropagation()}>
+                
+                {/* Match Score Circle */}
+                <div className="absolute -top-6 -right-6 z-20">
+                    <div className={`w-20 h-20 rounded-full border-4 border-white flex flex-col items-center justify-center font-black shadow-xl
+                        ${score >= 80 ? 'bg-green-500 text-white' : score >= 50 ? 'bg-yellow-500 text-white' : 'bg-pink-500 text-white'}`}>
+                        <span className="text-xl leading-none">{score}%</span>
+                        <span className="text-[10px] uppercase">Match</span>
                     </div>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase bg-white/80 px-1 rounded mt-1">Match</span>
                 </div>
 
                 <div className="text-center">
-                    <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
-                        {cat.name || 'Cat Profile'} 
-                    </h2>
+                    <h2 className="text-3xl font-black text-gray-800 mb-2 truncate px-4">{cat.name}</h2>
+                    <p className="text-pink-500 font-bold text-sm mb-4 tracking-widest uppercase italic">Cat Profile</p>
                     
                     {/* Cat Selector */}
                     {cats.length > 1 && (
-                        <div className="flex justify-center mb-4 space-x-2">
+                        <div className="flex justify-center mb-6 gap-2 bg-pink-50 p-2 rounded-2xl">
                             {cats.map((c, index) => (
-                                <button
-                                    key={c._id || index}
-                                    onClick={() => onSelectCat(index)}
-                                    className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
-                                        ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
-                                >
-                                    <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
+                                <button key={index} onClick={() => onSelectCat(index)} className={`w-12 h-12 rounded-xl border-2 transition-all overflow-hidden ${index === selectedIndex ? 'border-pink-500 scale-110 shadow-md' : 'border-white opacity-60'}`}>
+                                    <img src={c.image} alt="thumb" className="w-full h-full object-cover" />
                                 </button>
                             ))}
                         </div>
                     )}  
                     
-                    <img
-                        src={cat.image}
-                        className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer"
-                        alt={cat.name}
-                        onClick={() => handleOpenImageFromCatProfile(cat.image)}
-                    />
-
-                    {/* Cat Details */}
-                    <div className="text-left space-y-2 text-gray-700">
-                        <div className="grid grid-cols-2 gap-2">
-                            <p><strong>Breed:</strong> {breed}</p>
-                            <p><strong>Age:</strong> {ageDisplay}</p>
-                        </div>
-                        <p><strong>Color:</strong> {color}</p>
-                        
-                        <div className="flex items-center justify-between pt-1">
-                            <p className="flex items-center gap-1">
-                                <strong>Gender:</strong>
-                                {genderData ? (
-                                    <>
-                                        <img src={genderData.img} className="w-4 h-4 ml-1" alt="Icon" />
-                                        <span className={genderData.color}>{cat.gender}</span>
-                                    </>
-                                ) : <span>{cat.gender || '—'}</span>}
-                            </p>
-                            <p className="flex items-center gap-1">
-                                <strong>Pedigree:</strong>
-                                {hasPedigree ? (
-                                    <span className="text-green-600 font-bold flex items-center gap-1 text-sm">
-                                        Yes <img src="/images/verify.png" className="w-3 h-3" alt="v" />
-                                    </span>
-                                ) : (
-                                    <span className="text-red-400 font-bold text-sm">No</span>
-                                )}
-                            </p>
-                        </div>
-                        
-                        <p className="flex items-center gap-2 pt-2 border-t border-gray-100"> 
-                            <img src="/images/location.png" className="w-4 h-4" alt="Loc" />
-                            <strong>Province:</strong> {province}
-                        </p>
-                        
-                        <p className="text-[11px] italic pt-2 text-gray-400 text-center">
-                            Matched with your pet: <span className="font-bold text-pink-400">{matchedCatName || 'N/A'}</span>
-                        </p>
+                    <div className="relative group mb-6">
+                        <img src={cat.image} className="w-full h-72 object-cover rounded-[2rem] shadow-inner border-2 border-gray-100 cursor-pointer transition-transform active:scale-95" alt={cat.name} onClick={() => handleOpenImageFromCatProfile(cat.image)} />
+                        <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-gray-600 shadow-sm">Click to zoom 🔍</div>
                     </div>
 
-                    <button
-                        onClick={onClose}
-                        className="bg-indigo-500 text-white py-3 rounded-xl w-full mt-5 font-bold shadow-md hover:bg-indigo-600 transition active:scale-95"
-                    >
-                        Close
+                    {/* จัดระเบียบรายละเอียดแมว */}
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm text-left bg-gray-50 p-5 rounded-[1.5rem] border border-gray-100">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Breed</span>
+                            <span className="font-bold text-gray-700 truncate">{breed}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Age</span>
+                            <span className="font-bold text-gray-700">{ageDisplay}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Color</span>
+                            <span className="font-bold text-gray-700 truncate">{color}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Pedigree</span>
+                            {hasPedigree ? 
+                                <span className="text-green-600 font-bold flex items-center gap-1">Yes <img src="/images/verify.png" className="w-3 h-3" alt="v" /></span> : 
+                                <span className="text-red-400 font-bold">No</span>
+                            }
+                        </div>
+                        <div className="flex flex-col col-span-2 border-t border-gray-200 pt-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Location</span>
+                            <div className="flex items-center gap-1">
+                                <img src="/images/location.png" className="w-3 h-3" alt="L" />
+                                <span className="font-bold text-gray-700">{province}</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col col-span-2 border-t border-gray-200 pt-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Gender</span>
+                            <div className="flex items-center gap-2">
+                                {genderData && <img src={genderData.img} className="w-5 h-5" alt="sex" />}
+                                <span className={`font-bold ${genderData?.color || 'text-gray-700'}`}>{cat.gender || '—'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="text-[10px] text-gray-400 mt-4 italic">
+                        Matched with your pet: <span className="text-pink-400 font-bold">{matchedCatName}</span>
+                    </p>
+
+                    <button onClick={onClose} className="bg-gradient-to-r from-gray-700 to-gray-900 text-white py-4 rounded-2xl w-full mt-6 font-black shadow-lg hover:from-black hover:to-black transition-all active:scale-95 uppercase tracking-widest text-xs">
+                        Back to Chat
                     </button>
                 </div>
             </div>
@@ -363,32 +342,25 @@ export default function Messages() {
     
     if (!selected || !selected.cats || selected.cats.length === 0) return;
     
-    // 1. ดึง user object ที่ถูกอัปเดตแล้วจาก local storage
     const updatedUser = JSON.parse(localStorage.getItem("user")); 
-    
-    let catName = 'N/A'; // กำหนดค่าเริ่มต้นเป็น N/A
-    
-    // 2. ดึง Pets Array ล่าสุด
+    let catName = 'N/A';
     const userPets = updatedUser.pets;
-
-    // 3. พยายามหาแมวของเราโดยใช้ myCatSlot (ถ้า Slot มีค่าถูกต้อง)
     const myCat = userPets?.find(c => c.slot === selected.myCatSlot); 
 
     if (myCat?.name) {
-        // A. ถ้าหาเจอโดย Slot ให้ใช้ชื่อนั้น
         catName = myCat.name;
     } else if (userPets && userPets.length > 0) {
-        // B. FALLBACK: ถ้าหาไม่เจอโดย Slot (Match เก่า/Slot ว่าง) ให้ใช้ชื่อของแมวตัวแรก
         catName = userPets[0].name || 'N/A';
-        // console.log("Fallback used. Slot:", selected.myCatSlot, "Pet Name:", catName); // Debug line
     }
     
-    // 4. สร้างข้อมูล Modal
     setCatProfileModal({
         open: true,
         cats: selected.cats,
         selectedIndex: 0,
-        matchedCatName: catName // ส่งชื่อที่ถูกต้อง (หรือชื่อ Fallback)
+        matchedCatName: catName,
+        // ⭐ ตรวจสอบว่า API ส่ง matchScore มาในก้อนของ selected หรือไม่
+        // ถ้าไม่มี ให้ใช้ fallback เป็นค่าที่เคยสไลด์ไว้ (ถ้ามีการส่งมา)
+        matchScore: selected.cats[0]?.matchScore || selected.matchScore || 0 
     });
 };
 
