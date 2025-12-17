@@ -8,21 +8,18 @@ const PetSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    slot: { type: Number, required: true }, // 1–4
+    slot: { type: Number, required: true },
     name: String,
     breed: String,
     color: String,
     age: Number,
     gender: String,
-    province: String,
-
     province: { type: String, default: "" },
+    image: { type: String, default: "" }, // ⭐ เพิ่มบรรทัดนี้ เพื่อเก็บ URL รูปแมว
     PetdreegreeImage: { type: String, default: "" },
   },
   { timestamps: true }
 );
 
-// ไม่ให้ user คนเดียวมีแมวซ้ำ slot เดียวกัน
 PetSchema.index({ user: 1, slot: 1 }, { unique: true });
-
 export default mongoose.model("Pet", PetSchema);
