@@ -32,13 +32,14 @@ router.get("/cats", auth, async (req, res) => {
 });
 
 /* ======================================================
-⭐ MODIFIED ENDPOINT: ดึงรายการสัตว์เลี้ยงตามเงื่อนไข Petdreegree (List View)
-GET /api/matching/filtered-cats?breed=...&province=...
+⭐ MODIFIED ENDPOINT: ดึงรายการสัตว์เลี้ยงตามเงื่อนไข Petdreegree
+GET /api/matching/filtered-cats?breed=...&hasPedigree=...
 ====================================================== */
 router.get('/filtered-cats', auth, async (req, res) => {
     try {
         const userId = req.user._id; 
-        const { breed, color, age, gender, province } = req.query; 
+        // ⭐ Added hasPedigree to query destructuring
+        const { breed, color, age, gender, province, hasPedigree } = req.query; 
 
         const swiped = await CatLike.find({ user: userId }).distinct("targetCat");
 
@@ -54,6 +55,19 @@ router.get('/filtered-cats', auth, async (req, res) => {
         if (gender && gender !== 'Any') { filter.gender = gender; }
         if (province && province !== 'Any') { filter.province = province; }
 
+        // ⭐ NEW LOGIC: Petdreegree (Pedigree) Filter
+        if (hasPedigree === "Yes") {
+            // Find cats that HAVE a pedigree image (not empty, not null)
+            filter.PetdreegreeImage = { $ne: "", $exists: true, $not: /^\s*$/ };
+        } else if (hasPedigree === "No") {
+            // Find cats that DO NOT have a pedigree image
+            filter.$or = [
+                { PetdreegreeImage: "" },
+                { PetdreegreeImage: null },
+                { PetdreegreeImage: { $exists: false } }
+            ];
+        }
+
         if (age && age !== 'Any') {
             const [minStr, maxStr] = age.split('-');
             const min = parseInt(minStr);
@@ -67,7 +81,7 @@ router.get('/filtered-cats', auth, async (req, res) => {
         }
         
         const targets = await Pet.find(filter)
-            .select('name breed color age gender province image user')
+            .select('name breed color age gender province image user PetdreegreeImage')
             .limit(50); 
         
         res.json(targets);
@@ -80,7 +94,7 @@ router.get('/filtered-cats', auth, async (req, res) => {
 
 
 /* ======================================================
-📌 1) Swipe (Like / Dislike) - MODIFIED: บันทึก Province ใน MatchCat
+📌 1) Swipe (Like / Dislike) - MODIFIED: บันทึก Province และ Pedigree ใน MatchCat
 ====================================================== */
 router.post("/swipe", auth, async (req, res) => {
     try {
@@ -112,10 +126,6 @@ router.post("/swipe", auth, async (req, res) => {
 
         if (!theyLikedMe) return res.json({ match: false });
 
-        /* ======================================================
-          🎉 MATCH!! → กันสร้างซ้ำแบบถูกต้อง
-        ====================================================== */
-
         const mySnapshot = await MatchCat.findOne({
             user: me,
             name: myPet.name,
@@ -128,7 +138,6 @@ router.post("/swipe", auth, async (req, res) => {
             slot: targetPet.slot,
         });
 
-        // มี match เดิมแล้ว
         if (mySnapshot && targetSnapshot) {
             const existing = await CatMatch.findOne({
                 $or: [
@@ -146,7 +155,7 @@ router.post("/swipe", auth, async (req, res) => {
             }
         }
 
-        // ⭐ MODIFIED: เพิ่ม province ใน MatchCat.create
+        // ⭐ MODIFIED: Added PetdreegreeImage to snapshots
         const myMatchCat = mySnapshot
             ? mySnapshot
             : await MatchCat.create({
@@ -157,11 +166,11 @@ router.post("/swipe", auth, async (req, res) => {
                   age: myPet.age,
                   gender: myPet.gender,
                   province: myPet.province,
+                  PetdreegreeImage: myPet.PetdreegreeImage, // Added
                   image: myPet.image,
                   slot: myPet.slot,
               });
 
-        // ⭐ MODIFIED: เพิ่ม province ใน MatchCat.create
         const targetMatchCat = targetSnapshot
             ? targetSnapshot
             : await MatchCat.create({
@@ -172,6 +181,7 @@ router.post("/swipe", auth, async (req, res) => {
                   age: targetPet.age,
                   gender: targetPet.gender,
                   province: targetPet.province,
+                  PetdreegreeImage: targetPet.PetdreegreeImage, // Added
                   image: targetPet.image,
                   slot: targetPet.slot,
               });
@@ -208,13 +218,12 @@ router.get("/history", auth, async (req, res) => {
 });
 
 /* ======================================================
-📌 3) รายชื่อคู่ที่ Match แล้ว (FINAL FIX: ใช้ Pet Model เสริมข้อมูล Gender/Province และนับ Unseen Count)
+📌 3) รายชื่อคู่ที่ Match แล้ว
 ====================================================== */
 router.get("/matches", auth, async (req, res) => {
     try {
         const me = req.user._id;
 
-        // 1. Populate CatMatch 
         const matches = await CatMatch.find()
             .populate("cat1")
             .populate("cat2");
@@ -227,65 +236,59 @@ router.get("/matches", auth, async (req, res) => {
 
         const grouped = {};
 
-        // 2. Map ผ่าน Match ต่างๆ แล้ว Populate Pet Document มาเสริม
         const matchPromises = myMatches.map(async (m) => {
              const iAmCat1 = m.cat1.user.toString() === me.toString();
              const otherMatchCat = iAmCat1 ? m.cat2 : m.cat1;
              const ownerId = otherMatchCat.user.toString();
 
-             // ⭐ NEW STEP: ดึง Pet Document (จาก Pet Model) ที่สมบูรณ์มาใช้
+             // Get full data from Pet model if snapshot is missing details
              const fullOtherPet = await Pet.findOne({ 
                  user: ownerId, 
                  name: otherMatchCat.name 
-             }).select('gender province'); 
+             }).select('gender province PetdreegreeImage'); 
              
-             // 3. จัดกลุ่ม (Grouped logic)
              if (!grouped[ownerId]) {
                 grouped[ownerId] = {
-                    user: ownerId,      
+                    user: ownerId,      
                     cats: [],
                     lastMatchedAt: m.createdAt,
                     myCatSlot: iAmCat1 ? m.cat1.slot : m.cat2.slot,
                 };
              }
 
-             // ใช้ข้อมูลจาก Pet Document ถ้าข้อมูลใน MatchCat ไม่สมบูรณ์
              const finalGender = otherMatchCat.gender || fullOtherPet?.gender || '—';
              const finalProvince = otherMatchCat.province || fullOtherPet?.province || '—';
+             const hasPedigree = (otherMatchCat.PetdreegreeImage || fullOtherPet?.PetdreegreeImage) ? "Yes" : "No";
 
-             // 4. Push ข้อมูลที่ถูกแก้ไขแล้ว
              grouped[ownerId].cats.push({
                 name: otherMatchCat.name,
                 image: otherMatchCat.image,
                 breed: otherMatchCat.breed,
                 color: otherMatchCat.color,
                 age: otherMatchCat.age,
-                gender: finalGender,         // ⭐ ใช้ finalGender
-                province: finalProvince,     // ⭐ ใช้ finalProvince
+                gender: finalGender,
+                province: finalProvince,
+                hasPedigree: hasPedigree, // Added for frontend card display
                 _id: otherMatchCat._id,      
             });
 
-            // update last matched time
             if (m.createdAt > grouped[ownerId].lastMatchedAt) {
                  grouped[ownerId].lastMatchedAt = m.createdAt;
             }
-
         });
         
         await Promise.all(matchPromises); 
 
-        // ⭐⭐ FIX: Map เพื่อหา Last Message และ Unread Status
         const groupsForLastMessage = Object.values(grouped); 
         
         const resultWithLastMessage = await Promise.all(
             groupsForLastMessage.map(async (group) => {
                 const ownerId = group.user; 
                 
-                // ⭐ NEW: นับจำนวนข้อความที่ยังไม่ได้อ่าน
                 const unseenCount = await Message.countDocuments({
-                    to: req.user._id, // ส่งถึงฉัน
-                    from: ownerId,    // มาจากคู่แชท
-                    seen: false,      // ยังไม่ได้อ่าน
+                    to: req.user._id,
+                    from: ownerId,
+                    seen: false,
                 });
                 
                 const lastMessage = await Message.findOne({
@@ -297,14 +300,9 @@ router.get("/matches", auth, async (req, res) => {
                 .sort({ createdAt: -1 })
                 .select('text image from to seen createdAt');
                 
-                let hasNewMessage = false;
+                let hasNewMessage = unseenCount > 0;
                 let lastMessageContent = "Chat now";
                 let lastActivity = group.lastMatchedAt; 
-
-                // Logic ตรวจสอบข้อความใหม่ (ใช้ unseenCount)
-                if (unseenCount > 0) {
-                     hasNewMessage = true; 
-                }
 
                 if (lastMessage) {
                     lastMessageContent = lastMessage.text || "[Image]";
@@ -317,12 +315,11 @@ router.get("/matches", auth, async (req, res) => {
                     lastMessageContent: lastMessageContent, 
                     hasNewMessage: hasNewMessage, 
                     lastActivity: lastActivity, 
-                    unseenCount: unseenCount, // ⭐ FIX: ส่ง unseenCount กลับไป
+                    unseenCount: unseenCount,
                 };
             })
         );
 
-        // ⭐ เรียงลำดับแชทตาม Activity ล่าสุด
         resultWithLastMessage.sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
 
         res.json(resultWithLastMessage); 
@@ -332,6 +329,5 @@ router.get("/matches", auth, async (req, res) => {
         res.status(500).json({ message: "Cannot load matches" });
     }
 });
-
 
 export default router;
