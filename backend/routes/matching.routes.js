@@ -138,34 +138,33 @@ router.post("/swipe", auth, async (req, res) => {
 
         // สร้างหรืออัปเดตข้อมูลแมวของเราในระบบ Match
         const myMatchCat = mySnapshot ? mySnapshot : await MatchCat.create({
-            user: me,
-            name: myPet.name,
-            breed: myPet.breed,
-            color: myPet.color,
-            age: myPet.age,
-            gender: myPet.gender,
-            province: myPet.province,
-            PetdreegreeImage: myPet.PetdreegreeImage,
-            image: myPet.image,
-            slot: myPet.slot,
-            matchScore: matchScore || 0, // ⭐ เพิ่ม: บันทึกคะแนนลงใน Snapshot ของเรา
-        });
+    user: me,
+    name: myPet.name,
+    breed: myPet.breed,
+    color: myPet.color,
+    age: myPet.age,
+    gender: myPet.gender,
+    province: myPet.province,
+    PetdreegreeImage: myPet.PetdreegreeImage,
+    image: myPet.image,
+    slot: myPet.slot,
+    matchScore: Number(matchScore) || 0, // ⭐ ใช้ Number() ครอบเพื่อความชัวร์ว่าเป็นตัวเลข
+});
 
         // สร้างหรืออัปเดตข้อมูลแมวคู่ Match
         const targetMatchCat = targetSnapshot ? targetSnapshot : await MatchCat.create({
-            user: targetOwner,
-            name: targetPet.name,
-            breed: targetPet.breed,
-            color: targetPet.color,
-            age: targetPet.age,
-            gender: targetPet.gender,
-            province: targetPet.province,
-            PetdreegreeImage: targetPet.PetdreegreeImage,
-            image: targetPet.image,
-            slot: targetPet.slot,
-            matchScore: matchScore || 0, // ⭐ เพิ่ม: บันทึกคะแนนลงใน Snapshot ของเขา
-        });
-
+    user: targetOwner,
+    name: targetPet.name,
+    breed: targetPet.breed,
+    color: targetPet.color,
+    age: targetPet.age,
+    gender: targetPet.gender,
+    province: targetPet.province,
+    PetdreegreeImage: targetPet.PetdreegreeImage,
+    image: targetPet.image,
+    slot: targetPet.slot,
+    matchScore: Number(matchScore) || 0, // ⭐ บันทึกคะแนนลงในฝั่งเขาด้วย
+});
         // บันทึกคู่ Match
         await CatMatch.create({
             cat1: myMatchCat._id,
@@ -248,15 +247,16 @@ router.get("/matches", auth, async (req, res) => {
              const hasPedigree = (otherMatchCat.PetdreegreeImage || fullOtherPet?.PetdreegreeImage) ? "Yes" : "No";
 
              grouped[ownerId].cats.push({
-                name: otherMatchCat.name,
-                image: otherMatchCat.image,
-                breed: otherMatchCat.breed,
-                color: otherMatchCat.color,
-                age: otherMatchCat.age,
-                gender: finalGender,
-                province: finalProvince,
-                hasPedigree: hasPedigree, // Added for frontend card display
-                _id: otherMatchCat._id,      
+    name: otherMatchCat.name,
+    image: otherMatchCat.image,
+    breed: otherMatchCat.breed,
+    color: otherMatchCat.color,
+    age: otherMatchCat.age,
+    gender: finalGender,
+    province: finalProvince,
+    hasPedigree: hasPedigree,
+    matchScore: otherMatchCat.matchScore || 0, // ⭐ เพิ่มบรรทัดนี้เพื่อให้ Frontend ดึงไปโชว์ใน Modal แชทได้เลย
+    _id: otherMatchCat._id,
             });
 
             if (m.createdAt > grouped[ownerId].lastMatchedAt) {

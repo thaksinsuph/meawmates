@@ -62,6 +62,25 @@ router.post("/mark-all-seen", auth, async (req, res) => {
 });
 
 /* ================================
+   9) MARK MESSAGES FROM SPECIFIC USER AS READ
+================================ */
+router.post("/mark-as-seen/:fromId", auth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const fromId = req.params.fromId;
+
+        await Message.updateMany(
+            { to: userId, from: fromId, seen: false },
+            { $set: { seen: true, seenAt: new Date() } }
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ message: "Error" });
+    }
+});
+
+/* ================================
    1) โหลดข้อความระหว่าง Owner 2 คน
 ================================ */
 router.get("/:id", auth, async (req, res) => {
