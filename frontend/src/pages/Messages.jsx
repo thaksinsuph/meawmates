@@ -65,7 +65,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
     const province = cat.province || '—'; 
     const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
     const hasPedigree = !!cat.PetdreegreeImage || cat.hasPedigree === "Yes";
-    const score = modalState.matchScore || 0;
+    const score = cat.matchScore || modalState.matchScore || 0;
 
     return (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" onClick={onClose}>
@@ -339,7 +339,6 @@ export default function Messages() {
 
     // ⭐ Handler สำหรับเปิด Cat Profile Modal (FINAL FIX FOR N/A)
     const handleOpenCatProfile = () => {
-    
     if (!selected || !selected.cats || selected.cats.length === 0) return;
     
     const updatedUser = JSON.parse(localStorage.getItem("user")); 
@@ -358,9 +357,8 @@ export default function Messages() {
         cats: selected.cats,
         selectedIndex: 0,
         matchedCatName: catName,
-        // ⭐ ตรวจสอบว่า API ส่ง matchScore มาในก้อนของ selected หรือไม่
-        // ถ้าไม่มี ให้ใช้ fallback เป็นค่าที่เคยสไลด์ไว้ (ถ้ามีการส่งมา)
-        matchScore: selected.cats[0]?.matchScore || selected.matchScore || 0 
+        // ⭐ แก้ไขจุดนี้: ดึงคะแนนจากแมวตัวแรกของรายการ Match นั้นๆ
+        matchScore: selected.cats[0]?.matchScore || 0 
     });
 };
 

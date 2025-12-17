@@ -94,21 +94,20 @@ router.get('/filtered-cats', auth, async (req, res) => {
 
 
 /* ======================================================
-📌 1) Swipe (Like / Dislike) - MODIFIED: รับคะแนน Match Score
+📌 1) Swipe (Like / Dislike) - แก้ไขเพื่อบันทึกคะแนนลง Snapshot
 ====================================================== */
 router.post("/swipe", auth, async (req, res) => {
     try {
-        // ⭐ เพิ่ม matchScore ในการรับข้อมูลจาก body
         const { myCatSlot, targetCatId, liked, matchScore } = req.body;
         const me = req.user._id;
 
-        // บันทึกการ Swipe พร้อมคะแนน
+        // 1. บันทึกประวัติการ Swipe (CatLike)
         await CatLike.create({
             user: me,
             myCatSlot,
             targetCat: targetCatId,
             liked,
-            matchScore: matchScore || 0, // ⭐ บันทึกคะแนนลงใน Database
+            matchScore: matchScore || 0, 
         });
 
         if (!liked) return res.json({ match: false });
@@ -130,67 +129,44 @@ router.post("/swipe", auth, async (req, res) => {
         if (!theyLikedMe) return res.json({ match: false });
 
         /* ======================================================
-          🎉 MATCH!! 
+           🎉 MATCH OCCURRED! - สร้าง Snapshot พร้อมบันทึกคะแนน
         ====================================================== */
-        const mySnapshot = await MatchCat.findOne({
+        
+        // ค้นหาสแนปช็อตเดิม (ถ้ามี)
+        const mySnapshot = await MatchCat.findOne({ user: me, name: myPet.name, slot: myPet.slot });
+        const targetSnapshot = await MatchCat.findOne({ user: targetOwner, name: targetPet.name, slot: targetPet.slot });
+
+        // สร้างหรืออัปเดตข้อมูลแมวของเราในระบบ Match
+        const myMatchCat = mySnapshot ? mySnapshot : await MatchCat.create({
             user: me,
             name: myPet.name,
+            breed: myPet.breed,
+            color: myPet.color,
+            age: myPet.age,
+            gender: myPet.gender,
+            province: myPet.province,
+            PetdreegreeImage: myPet.PetdreegreeImage,
+            image: myPet.image,
             slot: myPet.slot,
+            matchScore: matchScore || 0, // ⭐ เพิ่ม: บันทึกคะแนนลงใน Snapshot ของเรา
         });
 
-        const targetSnapshot = await MatchCat.findOne({
+        // สร้างหรืออัปเดตข้อมูลแมวคู่ Match
+        const targetMatchCat = targetSnapshot ? targetSnapshot : await MatchCat.create({
             user: targetOwner,
             name: targetPet.name,
+            breed: targetPet.breed,
+            color: targetPet.color,
+            age: targetPet.age,
+            gender: targetPet.gender,
+            province: targetPet.province,
+            PetdreegreeImage: targetPet.PetdreegreeImage,
+            image: targetPet.image,
             slot: targetPet.slot,
+            matchScore: matchScore || 0, // ⭐ เพิ่ม: บันทึกคะแนนลงใน Snapshot ของเขา
         });
 
-        if (mySnapshot && targetSnapshot) {
-            const existing = await CatMatch.findOne({
-                $or: [
-                    { cat1: mySnapshot._id, cat2: targetSnapshot._id },
-                    { cat1: targetSnapshot._id, cat2: mySnapshot._id },
-                ],
-            });
-
-            if (existing) {
-                return res.json({
-                    match: true,
-                    matchedCat: targetSnapshot,
-                    ownerId: targetOwner, 
-                });
-            }
-        }
-
-        const myMatchCat = mySnapshot
-            ? mySnapshot
-            : await MatchCat.create({
-                  user: me,
-                  name: myPet.name,
-                  breed: myPet.breed,
-                  color: myPet.color,
-                  age: myPet.age,
-                  gender: myPet.gender,
-                  province: myPet.province,
-                  PetdreegreeImage: myPet.PetdreegreeImage,
-                  image: myPet.image,
-                  slot: myPet.slot,
-              });
-
-        const targetMatchCat = targetSnapshot
-            ? targetSnapshot
-            : await MatchCat.create({
-                  user: targetOwner,
-                  name: targetPet.name,
-                  breed: targetPet.breed,
-                  color: targetPet.color,
-                  age: targetPet.age,
-                  gender: targetPet.gender,
-                  province: targetPet.province,
-                  PetdreegreeImage: targetPet.PetdreegreeImage,
-                  image: targetPet.image,
-                  slot: targetPet.slot,
-              });
-
+        // บันทึกคู่ Match
         await CatMatch.create({
             cat1: myMatchCat._id,
             cat2: targetMatchCat._id,
