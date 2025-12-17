@@ -97,7 +97,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
                     
                     <div className="relative group mb-6">
                         <img src={cat.image} className="w-full h-72 object-cover rounded-[2rem] shadow-inner border-2 border-gray-100 cursor-pointer transition-transform active:scale-95" alt={cat.name} onClick={() => handleOpenImageFromCatProfile(cat.image)} />
-                        <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-gray-600 shadow-sm">Click to zoom 🔍</div>
+                        <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-gray-600 shadow-sm"></div>
                     </div>
 
                     {/* จัดระเบียบรายละเอียดแมว */}
@@ -117,22 +117,22 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Pedigree</span>
                             {hasPedigree ? 
-                                <span className="text-green-600 font-bold flex items-center gap-1">Yes <img src="/images/verify.png" className="w-3 h-3" alt="v" /></span> : 
+                                <span className="text-green-600 font-bold flex items-center gap-1">Yes </span> : 
                                 <span className="text-red-400 font-bold">No</span>
                             }
-                        </div>
-                        <div className="flex flex-col col-span-2 border-t border-gray-200 pt-2">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Location</span>
-                            <div className="flex items-center gap-1">
-                                <img src="/images/location.png" className="w-3 h-3" alt="L" />
-                                <span className="font-bold text-gray-700">{province}</span>
-                            </div>
                         </div>
                         <div className="flex flex-col col-span-2 border-t border-gray-200 pt-2">
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Gender</span>
                             <div className="flex items-center gap-2">
                                 {genderData && <img src={genderData.img} className="w-5 h-5" alt="sex" />}
                                 <span className={`font-bold ${genderData?.color || 'text-gray-700'}`}>{cat.gender || '—'}</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col col-span-2 border-t border-gray-200 pt-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Location</span>
+                            <div className="flex items-center gap-1">
+                                <img src="/images/location.png" className="w-3 h-3" alt="L" />
+                                <span className="font-bold text-gray-700">{province}</span>
                             </div>
                         </div>
                     </div>
