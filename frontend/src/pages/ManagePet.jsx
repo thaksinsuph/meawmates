@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { BREEDS, CAT_COLORS } from "../petData"; 
 import api from "../api";
+
+// ⭐ NEW: Import ข้อมูล 77 จังหวัดจากไฟล์แยก
 import THAI_PROVINCES from "../thaiProvinces"; 
 
 // ⭐ ฟังก์ชันสำหรับจัดการ URL รูปภาพ (Backend Base URL)
@@ -9,7 +11,8 @@ const backendBase = import.meta.env.VITE_API_URL.replace("/api", "");
 
 const fixImage = (img) => {
     if (!img) return null;
-    if (img.startsWith("data:")) return img; // ถ้าเป็น base64 (Preview)
+    if (img.startsWith("data:")) return img; // ถ้าเป็น base64
+    if (img.startsWith("blob:")) return img; // ถ้าเป็น Blob URL (Preview ชั่วคราว)
     if (img.startsWith("http")) return img;  // ถ้าเป็น URL สมบูรณ์
     return `${backendBase}${img.startsWith("/") ? img : "/" + img}`;
 };
@@ -63,6 +66,8 @@ export default function ManagePet() {
     const [preview, setPreview] = useState(null);
     const [PetdreegeePreview, setPetdreegeePreview] = useState(null);
     const [allPets, setAllPets] = useState([{}, {}, {}, {}]);
+
+    // ⭐ NEW STATE: สำหรับสถานะ Yes/No ของใบเพ็ด
     const [hasPetdreegree, setHasPetdreegree] = useState(false);
 
     const [form, setForm] = useState({
@@ -103,21 +108,13 @@ export default function ManagePet() {
             const res = await api.get(`/api/pets/${slot}`);
             const pet = res.data;
 
-            if (pet) {
+            if (pet && pet.name) {
                 setForm({
-                    name: pet.name || "",
-                    breed: pet.breed || "",
-                    color: pet.color || "",
-                    age: pet.age || "",
-                    gender: pet.gender || "", 
-                    province: pet.province || "", 
-                    image: pet.image || null,
-                    PetdreegreeImage: pet.PetdreegreeImage || null,
-                    imageFile: null,      
+                    ...pet,
+                    imageFile: null,  
                     PetdreegreeImageFile: null 
                 });
                 
-                // ⭐ แก้ไข: ใช้ fixImage เพื่อดึงรูปจาก Backend มาแสดงใน Preview
                 setPreview(fixImage(pet.image));
                 setPetdreegeePreview(fixImage(pet.PetdreegreeImage));
                 setHasPetdreegree(!!pet.PetdreegreeImage);
@@ -136,7 +133,7 @@ export default function ManagePet() {
         });
         setPreview(null);
         setPetdreegeePreview(null);
-        setHasPetdreegree(false);
+        setHasPetdreegree(false); 
     };
 
     useEffect(() => { loadAllPets(); }, []);
@@ -146,9 +143,8 @@ export default function ManagePet() {
         const file = e.target.files[0];
         if (file) {
             setForm((prev) => ({ ...prev, imageFile: file }));
-            const reader = new FileReader();
-            reader.onloadend = () => setPreview(reader.result);
-            reader.readAsDataURL(file);
+            const objectUrl = URL.createObjectURL(file);
+            setPreview(objectUrl);
         }
     };
 
@@ -156,9 +152,8 @@ export default function ManagePet() {
         const file = e.target.files[0];
         if (file) {
             setForm((prev) => ({ ...prev, PetdreegreeImageFile: file }));
-            const reader = new FileReader();
-            reader.onloadend = () => setPetdreegeePreview(reader.result);
-            reader.readAsDataURL(file);
+            const objectUrl = URL.createObjectURL(file);
+            setPetdreegeePreview(objectUrl);
         }
     };
 
@@ -171,6 +166,7 @@ export default function ManagePet() {
         if (!form.gender) return alert("กรุณาเลือกเพศ");
         if (!form.province) return alert("กรุณาเลือกจังหวัด");
         if (!form.imageFile && !form.image) return alert("กรุณาใส่รูปน้องแมว");
+
         if (hasPetdreegree && !PetdreegeePreview) return alert("กรุณาอัปโหลดรูปใบเพ็ดดีกรี");
 
         try {
@@ -182,12 +178,14 @@ export default function ManagePet() {
             formData.append("gender", form.gender); 
             formData.append("province", form.province); 
 
-            if (form.imageFile) formData.append("image", form.imageFile);
-            else if (form.image) formData.append("image", form.image);
+            if (form.imageFile) {
+                formData.append("image", form.imageFile);
+            }
 
             if (hasPetdreegree) {
-                if (form.PetdreegreeImageFile) formData.append("PetdreegreeImage", form.PetdreegreeImageFile);
-                else if (form.PetdreegreeImage) formData.append("PetdreegreeImage", form.PetdreegreeImage);
+                if (form.PetdreegreeImageFile) {
+                    formData.append("PetdreegreeImage", form.PetdreegreeImageFile);
+                }
             } else {
                 formData.append("PetdreegreeImage", ""); 
             }
@@ -195,9 +193,10 @@ export default function ManagePet() {
             await api.post(`/api/pets/${selectedSlot}`, formData);
             alert(`บันทึกข้อมูลสำเร็จ!`);
             
-            // ⭐ โหลดข้อมูลใหม่ทั้งหมดเพื่อให้ Slot Cards อัปเดตรูป
+            // ⭐ บังคับดึงข้อมูลใหม่ทันที
             await loadAllPets();
-            // รีเซ็ตเฉพาะส่วน File เพื่อป้องกันการส่งซ้ำ
+            await loadPet(selectedSlot);
+            
             setForm(prev => ({ ...prev, imageFile: null, PetdreegreeImageFile: null }));
         } catch (err) {
             console.error(err);
@@ -209,14 +208,15 @@ export default function ManagePet() {
         if (!confirm(`ต้องการลบข้อมูลช่องที่ ${slot}?`)) return;
         try {
             await api.delete(`/api/pets/${slot}`);
+            await loadAllPets();
             if (slot === selectedSlot) resetForm();
-            loadAllPets();
             alert("ลบสำเร็จ");
         } catch { alert("ลบไม่สำเร็จ"); }
     };
 
     return (
         <div className="w-full flex flex-col items-center py-12 px-4 gap-12 bg-gray-50 min-h-screen">
+            
             <div className="w-full flex justify-start max-w-6xl">
                 <button onClick={() => navigate("/matching")} className="px-6 py-2 rounded-full text-sm font-semibold text-gray-700 border-2 border-gray-300 hover:bg-white transition-colors flex items-center gap-2 shadow-sm">
                     <img src="/images/back.png" alt="Back" className="w-4 h-4" /> Back to Pairing Selection
@@ -232,12 +232,7 @@ export default function ManagePet() {
                 {allPets.map((pet, i) => (
                     <div key={i} className={`p-4 rounded-2xl shadow-md cursor-pointer border-2 bg-white transition-all ${selectedSlot === i + 1 ? "border-pink-500 ring-4 ring-pink-100 scale-105" : "border-gray-100 hover:border-pink-200"}`} onClick={() => setSelectedSlot(i + 1)}>
                         <div className="w-full h-32 bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center border shadow-inner">
-                            {/* ⭐ แก้ไข: ใช้ fixImage(pet.image) */}
-                            {pet?.image ? (
-                                <img src={fixImage(pet.image)} className="w-full h-full object-cover" alt="pet" />
-                            ) : (
-                                <span className="text-gray-300 font-bold">Slot Empty</span>
-                            )}
+                            {pet?.image ? <img src={fixImage(pet.image)} className="w-full h-full object-cover" /> : <span className="text-gray-300 font-bold">Slot Empty</span>}
                         </div>
                         <p className="mt-3 font-bold text-gray-800">Channel {i + 1}</p>
                         <p className="text-sm text-gray-500 truncate">{pet?.name || "—"}</p>
