@@ -72,12 +72,19 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
             <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border-4 border-pink-200 transform transition-all animate-fadeIn relative" onClick={(e) => e.stopPropagation()}>
                 
                 {/* Match Score Circle */}
-                <div className="absolute -top-6 -right-6 z-20">
-                <div className={`w-20 h-20 ... ${score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-500' : 'bg-pink-500'}`}>
-                    <span className="text-xl leading-none">{score}%</span>
-                    <span className="text-[10px] uppercase">Match</span>
-                </div>
-            </div>
+<div className="absolute -top-6 -right-6 z-20">
+    <div className={`w-20 h-20 rounded-full border-4 border-white flex flex-col items-center justify-center font-black shadow-xl transform hover:scale-110 transition-transform
+        ${score >= 80 ? 'bg-green-500 text-white' : 
+          score >= 50 ? 'bg-yellow-500 text-white' : 
+          'bg-pink-500 text-white'}`}>
+        
+        {/* ตัวเลขเปอร์เซ็นต์ */}
+        <span className="text-xl leading-none">{score}%</span>
+        
+        {/* คำว่า Match ด้านล่างตัวเลข */}
+        <span className="text-[10px] uppercase tracking-tighter">Match</span>
+    </div>
+</div>
 
                 <div className="text-center">
                     <h2 className="text-3xl font-black text-gray-800 mb-2 truncate px-4">{cat.name}</h2>
