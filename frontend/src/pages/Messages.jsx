@@ -65,7 +65,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
     const province = cat.province || '—'; 
     const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
     const hasPedigree = !!cat.PetdreegreeImage || cat.hasPedigree === "Yes";
-    const score = cat.matchScore || modalState.matchScore || 0;
+    const score = modalState.matchScore || cat.matchScore || 0;
 
     return (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center backdrop-blur-sm p-4" onClick={onClose}>
@@ -73,12 +73,11 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
                 
                 {/* Match Score Circle */}
                 <div className="absolute -top-6 -right-6 z-20">
-                    <div className={`w-20 h-20 rounded-full border-4 border-white flex flex-col items-center justify-center font-black shadow-xl
-                        ${score >= 80 ? 'bg-green-500 text-white' : score >= 50 ? 'bg-yellow-500 text-white' : 'bg-pink-500 text-white'}`}>
-                        <span className="text-xl leading-none">{score}%</span>
-                        <span className="text-[10px] uppercase">Match</span>
-                    </div>
+                <div className={`w-20 h-20 ... ${score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-500' : 'bg-pink-500'}`}>
+                    <span className="text-xl leading-none">{score}%</span>
+                    <span className="text-[10px] uppercase">Match</span>
                 </div>
+            </div>
 
                 <div className="text-center">
                     <h2 className="text-3xl font-black text-gray-800 mb-2 truncate px-4">{cat.name}</h2>
