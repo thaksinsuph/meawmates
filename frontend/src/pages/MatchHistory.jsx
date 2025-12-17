@@ -56,7 +56,7 @@ export default function MatchHistory() {
     }, []);
 
     return (
-        <div className="max-w-3xl mx-auto py-10 px-4">
+        <div className="max-w-3xl mx-auto py-10 px-4 min-h-screen bg-gray-50">
             
             {/* ⭐ IMAGE VIEW MODAL UI */}
             {imageModal.open && (
@@ -91,93 +91,104 @@ export default function MatchHistory() {
                 Swipe History
             </h1>
 
-            {history.map((h) => {
-                const targetCat = h.targetCat;
-                if (!targetCat) return null; // กัน Error ถ้าข้อมูลแมวหาย
+            <div className="space-y-4">
+                {history.map((h) => {
+                    const targetCat = h.targetCat;
+                    if (!targetCat) return null;
 
-                const genderData = getGenderImage(targetCat.gender);
-                
-                return (
-                    <div
-                        key={h._id}
-                        className="flex items-start gap-4 bg-white shadow-lg border-l-4 p-4 rounded-xl mb-4 
-                        hover:shadow-xl transition-shadow"
-                        style={{ borderColor: h.liked ? '#EC4899' : '#9CA3AF' }}
-                    >
-                        {/* Image - คลิกเพื่อดูรูปใหญ่ */}
-                        <img
-                            src={targetCat.image}
-                            className="w-24 h-24 rounded-lg object-cover flex-shrink-0 shadow-inner cursor-pointer hover:opacity-80 transition"
-                            alt={targetCat.name}
-                            onClick={() => handleOpenImage(targetCat)}
-                        />
+                    const genderData = getGenderImage(targetCat.gender);
+                    const score = h.matchScore || 0; // ดึงคะแนนจาก Backend
 
-                        <div className="flex-1">
-                            <h2 className="font-extrabold text-xl text-gray-800 mb-1">
-                                {targetCat.name}
-                            </h2>
-                            
-                            <div className="text-sm text-gray-700 space-y-1">
-                                <p><strong>Breed:</strong> {targetCat.breed || "—"}</p>
-                                <p><strong>Color:</strong> {targetCat.color || "—"}</p>
-                                <p><strong>Age:</strong> {targetCat.age ? `${targetCat.age} yrs` : "—"}</p>
-
-                                {/* ⭐ NEW: Petdreegree Status (แสดงก่อน Address) */}
-                                <p>
-                                    <strong>Petdreegree:</strong>{" "}
-                                    {targetCat.PetdreegreeImage ? (
-                                        <span className="text-green-600 font-bold">Yes</span>
-                                    ) : (
-                                        <span className="text-red-500 font-bold">No</span>
-                                    )}
-                                </p>
-
-                                {/* Address */}
-                                <p className="flex items-center gap-2">
-                                    <strong>Adress:</strong> {targetCat.province || "—"}
-                                </p>
-                                
-                                {/* Gender */}
-                                <p className="flex items-center gap-1">
-                                    <strong>Gender:</strong> 
-                                    {genderData?.img && (
-                                        <img 
-                                            src={genderData.img} 
-                                            className="w-4 h-4 inline-block align-middle ml-1" 
-                                            alt={genderData.label} 
-                                        />
-                                    )}
-                                    <span className={genderData?.color || 'text-gray-600'} style={{ marginLeft: '4px' }}>
-                                        {targetCat.gender || "—"}
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-                        
-                        {/* Status Label (LIKED/DISLIKED) */}
-                        <div className="flex flex-col items-end flex-shrink-0">
-                            <p className={`text-md font-bold mb-2 flex items-center gap-1 ${h.liked ? 'text-pink-500' : 'text-gray-500'}`}>
-                                {h.liked ? "LIKED" : "DISLIKED"}
-                                <img 
-                                    src={h.liked ? "/images/Likematch.png" : "/images/dislike.png"} 
-                                    className="w-4 h-4" 
-                                    alt="Status Icon" 
+                    return (
+                        <div
+                            key={h._id}
+                            className="flex items-center gap-4 bg-white shadow-md border-l-8 p-5 rounded-2xl hover:shadow-xl transition-all"
+                            style={{ borderColor: h.liked ? '#EC4899' : '#9CA3AF' }}
+                        >
+                            {/* Image - คลิกเพื่อดูรูปใหญ่ */}
+                            <div className="relative flex-shrink-0">
+                                <img
+                                    src={targetCat.image}
+                                    className="w-28 h-28 rounded-2xl object-cover shadow-sm cursor-pointer hover:opacity-90 transition border border-gray-100"
+                                    alt={targetCat.name}
+                                    onClick={() => handleOpenImage(targetCat)}
                                 />
-                            </p>
-                            <div className="text-xs text-gray-400 text-right leading-tight">
-                                {new Date(h.createdAt).toLocaleDateString()}
-                                <br />
-                                {new Date(h.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h2 className="font-black text-2xl text-gray-800 truncate max-w-[180px]">
+                                        {targetCat.name}
+                                    </h2>
+                                    
+                                    {/* ⭐ Match Score Badge (แสดงเฉพาะเมื่อ Liked) */}
+                                    {h.liked && (
+                                        <div className={`flex flex-col items-center px-3 py-1 rounded-xl border-2 shadow-sm ${
+                                            score >= 80 ? 'bg-green-50 border-green-200 text-green-600' :
+                                            score >= 50 ? 'bg-yellow-50 border-yellow-200 text-yellow-600' :
+                                            'bg-pink-50 border-pink-200 text-pink-600'
+                                        }`}>
+                                            <span className="text-[10px] uppercase font-bold tracking-tighter leading-none">Match</span>
+                                            <span className="text-lg font-black leading-none">{score}%</span>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* ข้อมูลแมวจัดเรียงตามที่ต้องการ */}
+                                <div className="text-sm text-gray-600 grid grid-cols-2 gap-x-3 gap-y-1">
+                                    <p><strong>Breed:</strong> {targetCat.breed || "—"}</p>
+                                    <p><strong>Age:</strong> {targetCat.age ? `${targetCat.age} yrs` : "—"}</p>
+                                    <p><strong>Color:</strong> {targetCat.color || "—"}</p>
+                                    <p>
+                                        <strong>Petdreegree:</strong>{" "}
+                                        {targetCat.PetdreegreeImage ? (
+                                            <span className="text-green-600 font-bold">Yes</span>
+                                        ) : (
+                                            <span className="text-red-400 font-bold">No</span>
+                                        )}
+                                    </p>
+                                    <p className="col-span-2 flex items-center gap-1 mt-1 text-gray-500">
+                                        <img src="/images/location.png" className="w-3.5 h-3.5" alt="Loc" />
+                                        {targetCat.province || "—"}
+                                    </p>
+                                    <p className="col-span-2 flex items-center gap-1">
+                                        <strong>Gender:</strong> 
+                                        {genderData?.img && (
+                                            <img src={genderData.img} className="w-4 h-4 ml-1" alt="Sex" />
+                                        )}
+                                        <span className={genderData?.color || 'text-gray-600'}>
+                                            {targetCat.gender || "—"}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Status Section */}
+                            <div className="flex flex-col items-end min-w-[90px] border-l border-gray-100 pl-4">
+                                <div className={`flex items-center gap-1 font-black text-sm mb-2 ${h.liked ? 'text-pink-500' : 'text-gray-400'}`}>
+                                    {h.liked ? "LIKED" : "NOPE"}
+                                    <img 
+                                        src={h.liked ? "/images/Likematch.png" : "/images/dislike.png"} 
+                                        className="w-5 h-5 object-contain" 
+                                        alt="Status" 
+                                    />
+                                </div>
+                                <div className="text-[10px] text-gray-400 text-right leading-tight">
+                                    {new Date(h.createdAt).toLocaleDateString()}
+                                    <br />
+                                    {new Date(h.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
 
             {history.length === 0 && (
-                <p className="text-gray-500 text-center mt-10 p-10 border border-dashed rounded-3xl bg-gray-50">
-                    😺 You haven't swiped any cats yet. 
-                </p>
+                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 mt-10">
+                    <p className="text-gray-400 text-xl font-medium">😺 No swipe history found</p>
+                    <p className="text-gray-300 text-sm mt-2">Start matching to see your history here!</p>
+                </div>
             )}
         </div>
     );

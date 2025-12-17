@@ -67,6 +67,7 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
     const gender = cat.gender || '—';
     const province = cat.province || '—'; 
     const genderData = cat.gender ? getGenderImage(cat.gender) : null; 
+    const hasPedigree = !!cat.PetdreegreeImage;
 
     return (
         <div 
@@ -80,10 +81,9 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
                 <div className="text-center">
                     <h2 className="text-3xl font-extrabold text-pink-600 mb-4 drop-shadow-md">
                         {cat.name || 'Cat Profile'} 
-                        <span className="text-xl align-top ml-2"></span>
                     </h2>
                     
-                    {/* Cat Selector (ถ้ามีหลายตัว) */}
+                    {/* Cat Selector */}
                     {cats.length > 1 && (
                         <div className="flex justify-center mb-4 space-x-2">
                             {cats.map((c, index) => (
@@ -93,21 +93,17 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
                                     className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden
                                         ${index === selectedIndex ? 'border-pink-500 ring-2 ring-pink-300' : 'border-gray-300 hover:border-pink-400'}`}
                                 >
-                                    <img 
-                                        src={c.image} 
-                                        alt={c.name} 
-                                        className="w-full h-full object-cover"
-                                    />
+                                    <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
                                 </button>
                             ))}
                         </div>
-                    )}  
+                    )}  
                     
                     <img
                         src={cat.image}
                         className="w-full h-64 object-cover rounded-2xl shadow-lg border border-gray-200 mb-4 cursor-pointer"
                         alt={cat.name}
-                        onClick={() => handleOpenImageFromCatProfile(cat.image)} // เปิดรูปและปิดตัวแม่
+                        onClick={() => handleOpenImageFromCatProfile(cat.image)}
                     />
 
                     {/* Cat Details */}
@@ -116,28 +112,30 @@ const CatProfileModal = ({ modalState, onClose, onSelectCat, handleOpenImageFrom
                         <p><strong>Color:</strong> {color}</p>
                         <p><strong>Age:</strong> {ageDisplay}</p>
                         
-                        {/* ⭐ แสดง Gender พร้อม Icon */}
                         <p className="flex items-center gap-1">
                             <strong>Gender:</strong>
                             {genderData ? (
                                 <>
-                                    <img 
-                                        src={genderData.img} 
-                                        className="w-4 h-4 inline-block align-middle ml-1" 
-                                        alt={cat.gender || 'Gender Icon'} 
-                                    />
-                                    <span className={genderData?.color || 'text-gray-600'}>
-                                        {cat.gender}
-                                    </span>
+                                    <img src={genderData.img} className="w-4 h-4 ml-1" alt="Icon" />
+                                    <span className={genderData.color}>{cat.gender}</span>
                                 </>
+                            ) : <span>{cat.gender || '—'}</span>}
+                        </p>
+
+                        {/* ⭐ NEW: แสดงสถานะ Petdreegree */}
+                        <p className="flex items-center gap-1">
+                            <strong>Petdreegree:</strong>
+                            {hasPedigree ? (
+                                <span className="text-green-600 font-bold flex items-center gap-1">
+                                    Yes <img src="/images/verify.png" className="w-3 h-3" alt="verified" />
+                                </span>
                             ) : (
-                                <span>{gender}</span> 
+                                <span className="text-red-500 font-bold">No</span>
                             )}
                         </p>
                         
-                        {/* ⭐ แสดงจังหวัดพร้อมไอคอน */}
                         <p className="flex items-center gap-2 pt-1 border-t border-gray-100"> 
-                            <img src="/images/location.png" className="w-4 h-4" alt="Location Icon" />
+                            <img src="/images/location.png" className="w-4 h-4" alt="Loc" />
                             <strong>Province:</strong> {province}
                         </p>
                         
